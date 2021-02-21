@@ -6,19 +6,22 @@ using System.Text;
 
 namespace EasySocket.Protocols.Filters
 {
-    public abstract class FixedHeaderSizePacketFilter : IPacketFilter
+    ///<summary>
+    /// 헤더가 포함된 패킷의 필터 입니다.
+    ///</summary>
+    public abstract class HeaderIncludedPacketFilter : IPacketFilter
     {
         protected readonly int headerSize;
 
         protected int bodySize { get; private set; } = 0;
         protected bool parsedHeader { get; private set; } = false;
 
-        protected FixedHeaderSizePacketFilter(int headerSize)
+        protected HeaderIncludedPacketFilter(int headerSize)
         {
             this.headerSize = headerSize;
         }
 
-        public IPacketInfo Filter(SequenceReader<byte> reader)
+        public IPacketInfo Filter(ref SequenceReader<byte> reader)
         {
             if (!parsedHeader)
             {
@@ -40,7 +43,7 @@ namespace EasySocket.Protocols.Filters
                 {
                     if (bodySize == 0)
                     {
-                        return ParsePacketInfoFromTotal(ref headerSeq);
+                        return ParsePacketInfo(ref headerSeq, ref headerSeq);
                     }
                 }
                 finally
@@ -59,8 +62,10 @@ namespace EasySocket.Protocols.Filters
 
             try
             {
-                var totalSeq = reader.Sequence.Slice(0, headerSize + bodySize);
-                return ParsePacketInfoFromTotal(ref totalSeq);
+                var headerSeq = reader.Sequence.Slice(0, headerSize);
+                var bodySeq = reader.Sequence.Slice(headerSize, bodySize);
+
+                return ParsePacketInfo(ref headerSeq, ref bodySeq);
             }
             finally
             {
@@ -75,7 +80,15 @@ namespace EasySocket.Protocols.Filters
             parsedHeader = false;
         }
 
+        ///<summary>
+        /// 헤더 데이터에서 body 사이즈를 파싱합니다.
+        ///</summary>
         protected abstract int ParseBodySizeFromHeader(ref ReadOnlySequence<byte> buffer);
-        protected abstract IPacketInfo ParsePacketInfoFromTotal(ref ReadOnlySequence<byte> buffer);
+        
+        
+        ///<summary>
+        /// 전체 데이터에서 PacketInfo를 파싱합니다.
+        ///</summary>
+        protected abstract IPacketInfo ParsePacketInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq);
     }
 }

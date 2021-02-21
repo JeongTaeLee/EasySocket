@@ -6,7 +6,7 @@ namespace EasySocket.Protocols.Filters
 {
     public interface IPacketFilter
     {
-        IPacketInfo Filter(SequenceReader<byte> sequence);
+        IPacketInfo Filter(ref SequenceReader<byte> sequence);
         void Reset();
     }
 }
