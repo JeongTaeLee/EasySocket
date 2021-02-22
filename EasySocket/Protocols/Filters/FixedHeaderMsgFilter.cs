@@ -1,27 +1,35 @@
-﻿using EasySocket.Protocols.PacketInfos;
-using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Buffers;
+using EasySocket.Protocols.MsgInfos;
 
 namespace EasySocket.Protocols.Filters
 {
     ///<summary>
-    /// 헤더가 포함된 패킷의 필터 입니다.
+    /// Body 부분 사이즈를 고정된 사이즈의 헤더에 포함하는 Msg 필터
+    /// Message 구조 = Header(width BodySize) + Body
     ///</summary>
-    public abstract class HeaderIncludedPacketFilter : IPacketFilter
+    public abstract class FixedHeaderMsgFilter : IMsgFilter
     {
+        /// <summary>
+        /// 고정된 헤더 사이즈
+        /// </summary>
         protected readonly int headerSize;
 
+        /// <summary>
+        /// 헤더에서 파싱한 Body 사이즈
+        /// </summary>
         protected int bodySize { get; private set; } = 0;
+
+        /// <summary>
+        /// 헤더가 파싱됬는지를 구분하는 플라그 (Ture : 파싱됨)
+        /// </summary>
         protected bool parsedHeader { get; private set; } = false;
 
-        protected HeaderIncludedPacketFilter(int headerSize)
+        protected FixedHeaderMsgFilter(int headerSize)
         {
             this.headerSize = headerSize;
         }
 
-        public IPacketInfo Filter(ref SequenceReader<byte> reader)
+        public IMsgInfo Filter(ref SequenceReader<byte> reader)
         {
             if (!parsedHeader)
             {
@@ -31,8 +39,10 @@ namespace EasySocket.Protocols.Filters
                 }
 
                 var headerSeq = reader.Sequence.Slice(0, headerSize);
+                
+                // 파싱한 만큼 포지션을 이동
+                reader.Advance(headerSize);
 
-                // 헤더 파싱 시작 - body 사이즈 가져 오기.
                 bodySize = ParseBodySizeFromHeader(ref headerSeq);
                 if (0 >= bodySize)
                 {
@@ -41,15 +51,15 @@ namespace EasySocket.Protocols.Filters
 
                 try
                 {
+                    // Body size 가 0이라면 헤더만 파싱함.
                     if (bodySize == 0)
                     {
-                        return ParsePacketInfo(ref headerSeq, ref headerSeq);
+                        return ParseMsgInfo(ref headerSeq, ref headerSeq);
                     }
                 }
                 finally
                 {
-                    // 헤더로만 파싱 완료.
-                    reader.Advance(headerSize);
+                    Reset();
                 }
 
                 parsedHeader = true;
@@ -65,11 +75,13 @@ namespace EasySocket.Protocols.Filters
                 var headerSeq = reader.Sequence.Slice(0, headerSize);
                 var bodySeq = reader.Sequence.Slice(headerSize, bodySize);
 
-                return ParsePacketInfo(ref headerSeq, ref bodySeq);
+                // 파싱한 만큼 포지션을 이동
+                reader.Advance(bodySize);
+                
+                return ParseMsgInfo(ref headerSeq, ref bodySeq);
             }
             finally
             {
-                reader.Advance(bodySize);
                 Reset();
             }
         }
@@ -81,14 +93,14 @@ namespace EasySocket.Protocols.Filters
         }
 
         ///<summary>
-        /// 헤더 데이터에서 body 사이즈를 파싱합니다.
+        /// Message Header 부분에서 body의 사이즈를 파싱합니다.
         ///</summary>
         protected abstract int ParseBodySizeFromHeader(ref ReadOnlySequence<byte> buffer);
         
-        
         ///<summary>
-        /// 전체 데이터에서 PacketInfo를 파싱합니다.
+        /// Message Body 부분에서 IMsgInfo를 파싱합니다.
         ///</summary>
-        protected abstract IPacketInfo ParsePacketInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq);
+        protected abstract IMsgInfo ParseMsgInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq);
+
     }
 }

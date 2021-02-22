@@ -1,17 +1,17 @@
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using EasySocket.Protocols.PacketInfos;
-using EasySocket.Protocols.Filters;
-using System.Buffers;
 using System;
 using System.Text;
+using System.Buffers;
+using System.Collections.Generic;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using EasySocket.Protocols.Filters;
+using EasySocket.Protocols.MsgInfos;
 
 namespace EasySocket.Test
 {
     [TestClass]
-    public class HeaderIncludedPacketFilterTest
+    public class FixedHeaderMsgFilterTest
     {
-        class CustomInfo : IPacketInfo
+        class CustomInfo : IMsgInfo
         {
             public int key {get; private set;} = 0;
             public string data {get; private set;} = string.Empty;
@@ -23,7 +23,7 @@ namespace EasySocket.Test
             }
         }
 
-        class CustomFilter : HeaderIncludedPacketFilter
+        class CustomFilter : FixedHeaderMsgFilter
         {
             public CustomFilter()
                 : base(8)
@@ -36,7 +36,7 @@ namespace EasySocket.Test
                 return BitConverter.ToInt32(buffer.Slice(0, 4).FirstSpan);
             }
 
-            protected override IPacketInfo ParsePacketInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq)
+            protected override IMsgInfo ParseMsgInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq)
             {
                 int key = BitConverter.ToInt32(headerSeq.Slice(4, 4).FirstSpan);
                 string data = Encoding.UTF8.GetString(bodySeq.FirstSpan);           
@@ -80,7 +80,7 @@ namespace EasySocket.Test
         CustomFilter filter = new CustomFilter();
 
         private List<TPacketInfo> Filter<TPacketInfo>(ReadOnlySequence<byte> seq)
-            where TPacketInfo : class, IPacketInfo
+            where TPacketInfo : class, IMsgInfo
         {
             var lst = new List<TPacketInfo>();
 
