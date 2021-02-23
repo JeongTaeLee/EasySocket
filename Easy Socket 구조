@@ -1,0 +1,81 @@
+Easy Socket 구조
+
+EasySocketService
+
+* User (라이브러리 사용자 구현)
+- ServerBehavior
+    - OnSessionConnected
+    - OnSessionDisconnected
+    - OnError
+
+- SessionBehavior
+    - OnStarted
+    - OnClosed
+    - Network data received
+    - OnError
+
+- RawDataConverter
+    - Convert
+
+- ConvertedData
+    
+
+* Core (라이브러리에서 제공)
+- Server Worker
+    .Socket Listening
+        (Session connect process)
+        {
+            Socket Accepted 
+            -> Session Work creation and configuration 
+            -> Register to Session Worker Managerment System
+            -> Call OnSessionConnected from ServerBehavior
+        
+            -> Start Receive Process
+            -> OnStarted
+        }
+
+    .Session Worker Management
+
+    .ErrorHandling
+        (Error Handling Process)
+        {
+            Error occurred
+            -> Call OnError from SessionBehavior
+        
+        
+        
+        }
+
+    .CreateSessionWorker
+
+        
+- Session Worker
+    .Important point
+        {
+            creating in CreateSessionWorker from Server worker
+        }
+    .Receive Process
+        (Receive Process)
+        {
+            Network data entered
+            -> Converting Raw data
+            -> Call SessionBehavior
+        
+        
+         and Forward Converted data
+        }
+
+    .Send Process
+        (Provide Send Function)
+
+    .ErrorHandling
+        (Error Handling Process)
+        {
+            Error occurred
+            -> Call OnError from SessionBehavior
+        
+        
+        
+        }
+
+        
