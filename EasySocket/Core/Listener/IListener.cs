@@ -9,6 +9,8 @@ namespace EasySocket.Core.Listener
 
     public interface IListener
     {
+        ListenerConfig config { get; }
+
         event ListenerAcceptHandler accepted;
         event ListenerErrorHandler error;
 
