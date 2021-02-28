@@ -1,3 +1,5 @@
+using System;
+
 namespace EasySocket.Behaviors
 {
     /// <summary>
@@ -16,5 +18,10 @@ namespace EasySocket.Behaviors
         /// Socket Close -> session close process -> Call!
         /// </summary>
         void OnSessionDisconnected();
+
+        /// <summary>
+        /// 서버 내부에서 오류 발생 시 호출됩니다.
+        /// </summary>
+        void OnError(Exception ex);
     }
 }

@@ -65,9 +65,9 @@ namespace EasySocket.Listeners
                     {
                         return;
                     }
+
+                    acceptedSocket.NoDelay = true;
  
-                    acceptedSocket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.KeepAlive, true);
-            
                     accepted?.Invoke(this, acceptedSocket);               
                 }
                 catch (Exception ex)
