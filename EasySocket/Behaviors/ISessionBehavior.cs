@@ -1,7 +1,7 @@
-namespace EasySocket.Behavior
+namespace EasySocket.Behaviors
 {
     /// <summary>
-    /// 서버에 연결된 각 세션의 행동을 정의하는 핸들러 클래스입니다.
+    /// 세션의 각종 이벤트를 구현하는 클래스입니다.
     /// </summary>
     public interface ISessionBehavior
     {

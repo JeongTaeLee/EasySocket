@@ -1,4 +1,4 @@
-namespace EasySocket.Core.Listener
+namespace EasySocket.Listeners
 {
     public class ListenerConfig
     {

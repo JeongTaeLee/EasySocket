@@ -1,4 +1,4 @@
-namespace EasySocket.Core
+namespace EasySocket.Workers
 {
     public class AsyncSocketServerWorker : BaseServerWorker
     {
