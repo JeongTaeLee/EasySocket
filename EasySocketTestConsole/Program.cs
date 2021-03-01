@@ -4,6 +4,7 @@ using EasySocket.Workers;
 using EasySocket.Workers.Async;
 using EasySocket.Listeners;
 using EasySocket.Behaviors;
+using System.Net.Sockets;
 
 namespace EasySocketTestConsole
 {

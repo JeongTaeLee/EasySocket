@@ -11,10 +11,10 @@ namespace EasySocket.Workers
     public interface ISocketServerWorker
     {
         /// <summary>
-        /// 해당 서버의 설정 객체인 <see cref="EasySocket.Workers.IServerWorkerConfig"> 입니다.
+        /// 해당 서버의 설정 객체인 <see cref="EasySocket.Workers.ISocketServerWorkerConfig"> 입니다.
         /// </summary>
         /// <value></value>
-        IServerWorkerConfig config { get; }
+        ISocketServerWorkerConfig config { get; }
 
         /// <summary>
         /// 해당 서버를 소유하는 <see cref="EasySocket.EasySocketService"/> 입니다.
@@ -43,8 +43,8 @@ namespace EasySocket.Workers
         ISocketServerWorker SetServerBehavior(IServerBehavior behavior);
 
         /// <summary>
-        /// 해당 서버의 설정 객체인 <see cref="EasySocket.Workers.IServerWorkerConfig"/>를 설정합니다.
+        /// 해당 서버의 설정 객체인 <see cref="EasySocket.Workers.ISocketServerWorkerConfig"/>를 설정합니다.
         /// </summary>
-        ISocketServerWorker SetServerConfig(IServerWorkerConfig config);
+        ISocketServerWorker SetServerConfig(ISocketServerWorkerConfig config);
     }
 }

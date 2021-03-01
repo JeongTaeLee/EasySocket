@@ -1,6 +1,6 @@
 namespace EasySocket.Workers
 {
-    public interface IServerWorkerConfig
+    public interface ISocketServerWorkerConfig
     {
         public int recvBufferSize {get;}
         public int sendBufferSize {get;}

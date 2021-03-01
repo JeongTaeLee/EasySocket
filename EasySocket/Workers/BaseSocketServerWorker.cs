@@ -8,7 +8,7 @@ namespace EasySocket.Workers
 {
     public abstract class BaseSocketServerWorker : ISocketServerWorker
     {
-        public IServerWorkerConfig config { get; private set; } = null;
+        public ISocketServerWorkerConfig config { get; private set; } = null;
         public EasySocketService service { get; private set; } = null;
 
         public IReadOnlyList<IListener> listeners { get; private set; } = null;
@@ -39,7 +39,7 @@ namespace EasySocket.Workers
             return this;
         }
 
-        public virtual ISocketServerWorker SetServerConfig(IServerWorkerConfig config)
+        public virtual ISocketServerWorker SetServerConfig(ISocketServerWorkerConfig config)
         {
             if (config == null)
             {

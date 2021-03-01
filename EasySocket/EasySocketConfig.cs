@@ -88,7 +88,7 @@ namespace EasySocket
                 return this; 
             }  
 
-            public EasySocketConfig.Builder SetServerGenerator<TServer>(IServerWorkerConfig config, IServerBehavior behavior)
+            public EasySocketConfig.Builder SetServerGenerator<TServer>(ISocketServerWorkerConfig config, IServerBehavior behavior)
                 where TServer : class, ISocketServerWorker, new()
             {
                 if (config == null)
