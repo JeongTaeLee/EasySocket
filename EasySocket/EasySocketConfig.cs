@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using EasySocket.Behaviors;
 using EasySocket.Listeners;
 using EasySocket.Workers;
 
@@ -8,9 +9,9 @@ namespace EasySocket
 {    public class EasySocketConfig
     {
         public readonly IReadOnlyList<ListenerConfig> listenerConfigs;
-        public readonly Func<IServerWorker> serverGenerator;
+        public readonly Func<ISocketServerWorker> serverGenerator;
 
-        private EasySocketConfig(IReadOnlyList<ListenerConfig> listenerConfigs, Func<IServerWorker> serverGenerator)
+        private EasySocketConfig(IReadOnlyList<ListenerConfig> listenerConfigs, Func<ISocketServerWorker> serverGenerator)
         {
             if (listenerConfigs == null)
             {
@@ -37,7 +38,7 @@ namespace EasySocket
             
             public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
 
-            public Func<IServerWorker> serverGenerator { get; private set; } = null;
+            public Func<ISocketServerWorker> serverGenerator { get; private set; } = null;
   
 
             public Builder()
@@ -75,7 +76,7 @@ namespace EasySocket
                 return _listenerConfigs.RemoveAll(x => predicate(x));
             }
             
-            public EasySocketConfig.Builder SetServerGenerator(Func<IServerWorker> serverGenerator)
+            public EasySocketConfig.Builder SetServerGenerator(Func<ISocketServerWorker> serverGenerator)
             {
                 if (serverGenerator == null)
                 {
@@ -87,12 +88,24 @@ namespace EasySocket
                 return this; 
             }  
 
-            public EasySocketConfig.Builder SetServerGenerator<TServer>()
-                where TServer : class, IServerWorker, new()
+            public EasySocketConfig.Builder SetServerGenerator<TServer>(IServerWorkerConfig config, IServerBehavior behavior)
+                where TServer : class, ISocketServerWorker, new()
             {
+                if (config == null)
+                {
+                    throw new ArgumentNullException(nameof(config));
+                }
+
+                if (behavior == null)
+                {
+                    throw new ArgumentNullException(nameof(behavior));
+                }
+
                 this.serverGenerator = () =>
                 {
-                    return new TServer();
+                    return new TServer()
+                        .SetServerConfig(config)
+                        .SetServerBehavior(behavior);
                 };
 
                 return this;

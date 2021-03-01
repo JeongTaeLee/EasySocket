@@ -17,7 +17,7 @@ namespace EasySocket.Listeners
         /// <summary>
         /// 해당 리스너를 소유하는 <see cref="EasySocket.Core.IServerWorker"/> 객체 입니다.
         /// </summary>
-        IServerWorker server { get; }
+        ISocketServerWorker server { get; }
 
         /// <summary>
         /// 리스너에 새로운 소켓이 Accept 되었을 때 호출되는 콜백입니다.

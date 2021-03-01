@@ -14,7 +14,7 @@ namespace EasySocket.Listeners
         private Task _acceptLoopTask = null; 
         private CancellationTokenSource _acceptLoopCanelToken = null;
 
-        public AsyncSocketListener(IServerWorker server)
+        public AsyncSocketListener(ISocketServerWorker server)
             :base(server)
         {
         }
@@ -30,6 +30,7 @@ namespace EasySocket.Listeners
             _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             _listenSocket.Bind(endPoint);
             _listenSocket.Listen(this.config.backlog);
+            _listenSocket.NoDelay = config.listenerNoDelay;
 
             _acceptLoopTask = AcceptLoop();
         }
@@ -66,8 +67,6 @@ namespace EasySocket.Listeners
                         return;
                     }
 
-                    acceptedSocket.NoDelay = true;
- 
                     accepted?.Invoke(this, acceptedSocket);               
                 }
                 catch (Exception ex)

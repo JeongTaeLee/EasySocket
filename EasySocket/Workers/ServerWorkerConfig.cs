@@ -1,12 +1,13 @@
-﻿using System;
 namespace EasySocket.Workers
 {
-    public class ServerWorkerConfig : IServerWorkerConfig
+    public class SocketServerWorkerConfig : ISocketServerWorkerConfig
     {
-        public int sendBufferSize { get; private set; }
+        public int recvBufferSize {get; private set;} = 1024 * 4;
+        public int sendBufferSize {get; private set;} = 1024 * 4;
 
-        public int recvBufferSize { get; private set; }
+        public int recvTimeout {get; private set;} = 0;
+        public int sendTimeout {get; private set;} = 0;
 
-        public bool noDelay { get; private set; }
+        public bool noDelay {get; private set;} = true;
     }
 }

@@ -6,12 +6,12 @@ namespace EasySocket.Listeners
     public abstract class BaseListener : IListener
     {
         public ListenerConfig config { get; private set; }
-        public IServerWorker server { get; private set; }
+        public ISocketServerWorker server { get; private set; }
 
         public ListenerAcceptHandler accepted {get; set;} = null;
         public ListenerErrorHandler error {get; set;} = null;
 
-        protected BaseListener(IServerWorker server)
+        protected BaseListener(ISocketServerWorker server)
         {
             if (server == null)
             {
