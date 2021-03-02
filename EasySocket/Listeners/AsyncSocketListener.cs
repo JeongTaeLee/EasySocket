@@ -51,7 +51,7 @@ namespace EasySocket.Listeners
 
         private async Task AcceptLoop()
         {
-            while (true)
+            while (!_acceptLoopCanelToken.IsCancellationRequested)
             {
                 try
                 {
@@ -62,7 +62,7 @@ namespace EasySocket.Listeners
                         return;
                     }
 
-                    if (_acceptLoopCanelToken.IsCancellationRequested == true)
+                    if (_acceptLoopCanelToken.IsCancellationRequested)
                     {
                         return;
                     }

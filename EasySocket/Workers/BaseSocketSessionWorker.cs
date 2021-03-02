@@ -17,7 +17,7 @@ namespace EasySocket.Workers
             this.server = server;
         }
 
-        public abstract void Send(byte[] buffer, int offset, int count);
-        public abstract ValueTask SendAsync(byte[] buffer, int offset, int count);
+        public abstract void Send(ReadOnlyMemory<byte> sendMemory);
+        public abstract ValueTask SendAsync(ReadOnlyMemory<byte> sendMemory);
     }
 }

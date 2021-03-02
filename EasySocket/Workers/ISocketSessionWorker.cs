@@ -10,7 +10,7 @@ namespace EasySocket.Workers
         /// </summary>
         public ISocketServerWorker server { get; }
 
-        void Send(byte[] buffer, int offset, int count);
-        ValueTask SendAsync(byte[] buffer, int offset, int count);
+        void Send(ReadOnlyMemory<byte> sendMemory);
+        ValueTask SendAsync(ReadOnlyMemory<byte> sendMemory);
     }
 }
