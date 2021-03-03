@@ -6,7 +6,8 @@ using EasySocket.Listeners;
 using EasySocket.Workers;
 
 namespace EasySocket
-{    public class EasySocketConfig
+{
+    public class EasySocketConfig
     {
         public readonly IReadOnlyList<ListenerConfig> listenerConfigs;
         public readonly Func<ISocketServerWorker> serverGenerator;
@@ -35,17 +36,16 @@ namespace EasySocket
         public class Builder
         {
             private List<ListenerConfig> _listenerConfigs = new List<ListenerConfig>();
-            
+
             public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
 
             public Func<ISocketServerWorker> serverGenerator { get; private set; } = null;
-  
 
             public Builder()
             {
 
             }
-            
+
             public EasySocketConfig Build()
             {
                 return new EasySocketConfig(
@@ -75,7 +75,7 @@ namespace EasySocket
 
                 return _listenerConfigs.RemoveAll(x => predicate(x));
             }
-            
+
             public EasySocketConfig.Builder SetServerGenerator(Func<ISocketServerWorker> serverGenerator)
             {
                 if (serverGenerator == null)
@@ -85,8 +85,8 @@ namespace EasySocket
 
                 this.serverGenerator = serverGenerator;
 
-                return this; 
-            }  
+                return this;
+            }
 
             public EasySocketConfig.Builder SetServerGenerator<TServer>(ISocketServerWorkerConfig config, IServerBehavior behavior)
                 where TServer : class, ISocketServerWorker, new()

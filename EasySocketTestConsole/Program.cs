@@ -8,7 +8,7 @@ using System.Net.Sockets;
 
 namespace EasySocketTestConsole
 {
-    class TestBehavior : IServerBehavior
+    class TestServerBehavior : IServerBehavior
     {
         public void OnError(Exception ex)
         {
@@ -29,21 +29,41 @@ namespace EasySocketTestConsole
         }
     }
 
+    class TestSessionBehavior : ISessionBehavior
+    {
+        public void OnClosed()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnStarted()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     class Program
     {
-        
-
         static void Main(string[] args)
         {
-            EasySocketConfig config = new EasySocketConfig.Builder()
-                .SetServerGenerator<AsyncSocketServerWorker>(
-                    new SocketServerWorkerConfig(), 
-                    new TestBehavior())
-                .AddListener(new ListenerConfig("Any", 9199, 10000, true))
-                .Build();
-        
+            var service = new EasySocketService()
+                .SetSocketServer<AsyncSocketServerWorker>()
+                .SetSocketServerConfigrator((socketServer) =>
+                {
+                    socketServer
+                        .AddListener(new ListenerConfig("Any", 9199, 100000, true))
+                        .SetServerBehavior(new TestServerBehavior())
+                        .SetServerConfig(new SocketServerWorkerConfig())
+                        ;
+                })
+                .SetSocketSessionConfigrator((socketSession) =>
+                {
+                    socketSession
+                        .SetSessionBehavior(new TestSessionBehavior())
+                        ;
+                });
 
-            EasySocketService service = new EasySocketService(config);
+            service.Start();
         }
     }
 }

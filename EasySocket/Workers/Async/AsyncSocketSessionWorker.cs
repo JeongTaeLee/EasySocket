@@ -6,14 +6,11 @@ namespace EasySocket.Workers.Async
 {
     public class AsyncSocketSessionWorker : BaseSocketSessionWorker
     {
-        public override void Send(ReadOnlyMemory<byte> sendMemory)
+        public AsyncSocketSessionWorker(ISocketServerWorker server)
+            : base(server)
         {
-            throw new NotImplementedException();
         }
-
-        public override ValueTask SendAsync(ReadOnlyMemory<byte> sendMemory)
-        {
-            throw new NotImplementedException();
-        }
+        
+           
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using EasySocket.Behaviors;
 
 namespace EasySocket.Workers
 {
@@ -7,7 +8,9 @@ namespace EasySocket.Workers
     {
         public ISocketServerWorker server { get; private set; } = null;
 
-        public virtual void Start(ISocketServerWorker server)
+        public ISessionBehavior behavior { get; private set; } = null;
+
+        public BaseSocketSessionWorker(ISocketServerWorker server)
         {
             if (server == null)
             {
@@ -17,7 +20,16 @@ namespace EasySocket.Workers
             this.server = server;
         }
 
-        public abstract void Send(ReadOnlyMemory<byte> sendMemory);
-        public abstract ValueTask SendAsync(ReadOnlyMemory<byte> sendMemory);
+        public ISocketSessionWorker SetSessionBehavior(ISessionBehavior behavior)
+        {
+            if (behavior == null)
+            {
+                throw new ArgumentNullException(nameof(behavior));
+            }
+
+            this.behavior = behavior;
+
+            return this;
+        }
     }
 }

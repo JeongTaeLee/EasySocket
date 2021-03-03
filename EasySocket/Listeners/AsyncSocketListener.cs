@@ -59,12 +59,12 @@ namespace EasySocket.Listeners
 
                     if (acceptedSocket == null)
                     {
-                        return;
+                        break;
                     }
 
                     if (_acceptLoopCanelToken.IsCancellationRequested)
                     {
-                        return;
+                        break;
                     }
 
                     accepted?.Invoke(this, acceptedSocket);               

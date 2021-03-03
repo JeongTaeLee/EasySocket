@@ -12,7 +12,7 @@ namespace EasySocket.Workers.Async
 
         protected override ISocketSessionWorker CreateSession()
         {
-            throw new System.Exception( );
+            return new AsyncSocketSessionWorker(this);
         }
     }
 }

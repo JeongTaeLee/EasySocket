@@ -7,13 +7,13 @@ using System.Buffers;
 
 namespace EasySocket.SocketProxys
 {
-    public class AsyncSocketSessionSocketProxy : BaseSocketSessionSocketProxy
+    public class AsyncSocketProxy : BaseSocketProxy
     {
         private CancellationTokenSource _receiveLoopCanelToken = null;
         private Memory<byte> recvBuffer;
         private int offset = 0;
 
-        public AsyncSocketSessionSocketProxy(Socket socket, Memory<byte> recvBuffer)
+        public AsyncSocketProxy(Socket socket, Memory<byte> recvBuffer)
             : base(socket)
         {
             this.recvBuffer = recvBuffer;

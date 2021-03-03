@@ -4,7 +4,7 @@ using EasySocket.Workers;
 
 namespace EasySocket.SocketProxys
 {
-    public abstract class BaseSocketSessionSocketProxy : ISocketSessionWorkerSocketProxy
+    public abstract class BaseSocketProxy : ISocketProxy
     {
         public Socket socket { get; private set; } = null;
 
@@ -14,7 +14,7 @@ namespace EasySocket.SocketProxys
         /// 
         /// </summary>
         /// <param name="socket">해당 객체가 관리하는 <see cref="System.Net.Sockets.Socket"/></param>
-        public BaseSocketSessionSocketProxy(Socket socket)
+        public BaseSocketProxy(Socket socket)
         {
             if (socket == null)
             {

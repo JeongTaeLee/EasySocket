@@ -10,10 +10,11 @@ namespace EasySocket.Workers
     {
         public ISocketServerWorkerConfig config { get; private set; } = null;
         public EasySocketService service { get; private set; } = null;
-
-        public IReadOnlyList<IListener> listeners { get; private set; } = null;
-
         public IServerBehavior behavior { get; private set; } = null;
+        public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
+
+        private List<ListenerConfig> _listenerConfigs = new List<ListenerConfig>();
+        private IReadOnlyList<IListener> _listeners = null;
 
         public void Start(EasySocketService service)
         {
@@ -25,6 +26,12 @@ namespace EasySocket.Workers
             this.service = service;
 
             StartListeners();
+        }
+
+        public ISocketServerWorker AddListener(ListenerConfig listenerConfig)
+        {
+            _listenerConfigs.Add(listenerConfig);
+            return this;
         }
 
         public virtual ISocketServerWorker SetServerBehavior(IServerBehavior behavior)
@@ -55,9 +62,7 @@ namespace EasySocket.Workers
         {
             var tempListeners = new List<IListener>();
 
-            var listenerConfigs = service.config.listenerConfigs;
-
-            for (int index = 0; index < listenerConfigs.Count; ++index)
+            for (int index = 0; index < _listenerConfigs.Count; ++index)
             {
                 var listenerConfig = listenerConfigs[index];
                 if (listenerConfig == null)
@@ -79,36 +84,69 @@ namespace EasySocket.Workers
                 tempListeners.Add(listener);
             }
 
-            listeners = tempListeners;
+            _listeners = tempListeners;
         }
 
         /// <summary>
-        /// <see cref="EasySocket.Listeners.IListener"/> 에서 새로운 소켓 수락 시 호출됩니다. 
+        /// <see cref="IListener"/> 에서 새로운 소켓 수락 시 호출됩니다. 
         /// </summary>
-        /// <param name="listener">수락된 <see cref="EasySocket.Listeners.IListener"/></param>
+        /// <param name="listener">수락된 <see cref="IListener"/></param>
         /// <param name="acceptedSocket">수락된 <see cref="System.Net.Sockets.Socket"/></param>
         protected virtual void OnSocketAcceptedFromListeners(IListener listener, Socket acceptedSocket)
         {
-            acceptedSocket.SendBufferSize = config.sendBufferSize;
-            acceptedSocket.ReceiveBufferSize = config.recvBufferSize;
+            ISocketSessionWorker session = null;
 
-            if (0 < config.sendTimeout)
+            try
             {
-                acceptedSocket.SendTimeout = config.sendTimeout;
-            }
+                acceptedSocket.SendBufferSize = config.sendBufferSize;
+                acceptedSocket.ReceiveBufferSize = config.recvBufferSize;
 
-            if (0 < config.recvTimeout)
+                if (0 < config.sendTimeout)
+                {
+                    acceptedSocket.SendTimeout = config.sendTimeout;
+                }
+
+                if (0 < config.recvTimeout)
+                {
+                    acceptedSocket.ReceiveTimeout = config.recvTimeout;
+                }
+
+                acceptedSocket.NoDelay = config.noDelay;
+
+                session = CreateSession();
+                if (session == null)
+                {
+                    return;
+                }
+
+                // TODO @jeongtae.lee : 이어 구현하기
+                service.sessionConfigrator.Invoke(session);
+            }
+            catch (Exception ex)
             {
-                acceptedSocket.ReceiveTimeout = config.recvTimeout;
+                behavior.OnError(ex);
             }
-
-            acceptedSocket.NoDelay = config.noDelay;
+            finally
+            {
+                // 세션을 생성하지 못하면 연결이 실패한 것으로 관리합니다.
+                if (session == null)
+                {
+                    try
+                    {
+                        acceptedSocket?.Shutdown(SocketShutdown.Both);
+                    }
+                    finally
+                    {
+                        acceptedSocket?.Close();
+                    }
+                }
+            }
         }
 
         /// <summary>
-        /// <see cref="EasySocket.Listeners.IListener"/> 에서 새로운 에러 발생 시 호출됩니다. 
+        /// <see cref="IListener"/> 에서 새로운 에러 발생 시 호출됩니다. 
         /// </summary>
-        /// <param name="listener">발생된 <see cref="EasySocket.Listeners.IListener"/></param>
+        /// <param name="listener">발생된 <see cref="IListener"/></param>
         /// <param name="ex">발생된 <see cref="System.Exception"/></param>
         protected virtual void OnErrorOccurredFromListeners(IListener listener, Exception ex)
         {
@@ -116,15 +154,16 @@ namespace EasySocket.Workers
         }
 
         /// <summary>
-        /// 해당 클래스를 상속한 클래스가 해당 함수를 재정의하여 <see cref="EasySocket.Listeners.IListener"/>를 생성 후 반환합니다.
+        /// 해당 클래스를 상속한 클래스가 해당 함수를 재정의하여 <see cref="IListener"/>를 생성 후 반환합니다.
         /// </summary>
-        /// <returns>생성된 <see cref="EasySocket.Listeners.IListener"/></returns>
+        /// <returns>생성된 <see cref="IListener"/></returns>
         protected abstract IListener CreateListener();
-                
+
         /// <summary>
-        /// 해당 클래스를 상속한 클래스가 해당 함수를 재정의하여 <see cref="EasySocket.Workers.ISocketSessionWorker"/>를 생성 후 반환합니다.
+        /// 해당 클래스를 상속한 클래스가 해당 함수를 재정의하여 <see cref="ISocketSessionWorker"/>를 생성 후 반환합니다.
         /// </summary>
-        /// <returns>생성된 <see cref="EasySocket.Workers.ISocketSessionWorker"/></returns>
+        /// <returns>생성된 <see cref="ISocketSessionWorker"/></returns>
         protected abstract ISocketSessionWorker CreateSession();
+
     }
 }
