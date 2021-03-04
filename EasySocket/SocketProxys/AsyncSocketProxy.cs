@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Net.Sockets;
-using EasySocket.Workers;
+using System.IO.Pipelines;
 using System.Buffers;
 
 namespace EasySocket.SocketProxys
@@ -10,38 +10,49 @@ namespace EasySocket.SocketProxys
     public class AsyncSocketProxy : BaseSocketProxy
     {
         private CancellationTokenSource _receiveLoopCanelToken = null;
-        private Memory<byte> recvBuffer;
-        private int offset = 0;
+        private Task receiveLoopTask = null;
 
-        public AsyncSocketProxy(Socket socket, Memory<byte> recvBuffer)
+        public AsyncSocketProxy(Socket socket)
             : base(socket)
         {
-            this.recvBuffer = recvBuffer;
+      
         }
 
         public override void Start()
         {
             _receiveLoopCanelToken = new CancellationTokenSource();
+
+            receiveLoopTask = ReceiveLoop();
         }
 
         public override void Stop()
         {
+            _receiveLoopCanelToken.Cancel();
             
+            socket.Close();
+
+            _receiveLoopCanelToken = null;
         }
 
         private async Task ReceiveLoop()
         {
-            while (!_receiveLoopCanelToken.IsCancellationRequested)
+            var networkStream = new NetworkStream(socket);
+            var reader = PipeReader.Create(networkStream);
+  
+            while (_receiveLoopCanelToken.IsCancellationRequested)
             {
-                int recvCount = await socket.ReceiveAsync(recvBuffer, SocketFlags.None);
+                ReadResult result = await reader.ReadAsync();
+                ReadOnlySequence<byte> buffer = result.Buffer;
 
-                var readonlySequence = new ReadOnlySequence<byte>(recvBuffer);
+                // TODO @jeongtae.lee : 수신 로직 구현.
+                int readLength = received.Invoke(ref buffer);
 
-                if (received == null)
+                reader.AdvanceTo(buffer.GetPosition(readLength, buffer.Start), buffer.End);
+                
+                if (result.IsCompleted)
                 {
-                    continue;
+                    break;
                 }
-
             }
         }
     }

@@ -6,7 +6,8 @@ using EasySocket.Listeners;
 
 namespace EasySocket.Workers
 {
-    public abstract class BaseSocketServerWorker : ISocketServerWorker
+    public abstract class BaseSocketServerWorker<TSession> : ISocketServerWorker
+        where TSession : BaseSocketSessionWorker
     {
         public ISocketServerWorkerConfig config { get; private set; } = null;
         public EasySocketService service { get; private set; } = null;
@@ -94,7 +95,7 @@ namespace EasySocket.Workers
         /// <param name="acceptedSocket">수락된 <see cref="System.Net.Sockets.Socket"/></param>
         protected virtual void OnSocketAcceptedFromListeners(IListener listener, Socket acceptedSocket)
         {
-            ISocketSessionWorker session = null;
+            TSession session = null;
 
             try
             {
@@ -113,14 +114,18 @@ namespace EasySocket.Workers
 
                 acceptedSocket.NoDelay = config.noDelay;
 
-                session = CreateSession();
-                if (session == null)
+                var tempSession = CreateSession(acceptedSocket);
+                if (tempSession == null)
                 {
                     return;
                 }
 
-                // TODO @jeongtae.lee : 이어 구현하기
-                service.sessionConfigrator.Invoke(session);
+                service.sessionConfigrator.Invoke(tempSession);
+
+                tempSession.Start();
+
+                // finally에서 오류 체크를 하기 위해 모든 작업이 성공적으로 끝난 후 대입해줍니다.
+                session = tempSession;
             }
             catch (Exception ex)
             {
@@ -163,7 +168,7 @@ namespace EasySocket.Workers
         /// 해당 클래스를 상속한 클래스가 해당 함수를 재정의하여 <see cref="ISocketSessionWorker"/>를 생성 후 반환합니다.
         /// </summary>
         /// <returns>생성된 <see cref="ISocketSessionWorker"/></returns>
-        protected abstract ISocketSessionWorker CreateSession();
+        protected abstract TSession CreateSession(Socket socket);
 
     }
 }

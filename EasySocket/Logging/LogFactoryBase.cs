@@ -61,6 +61,5 @@ namespace EasySocket.Logging
         /// <param name="name">The name.</param>
         /// <returns></returns>
         public abstract ILogger GetLogger(string name);
-        public abstract ILogger GetLogger<TType>();
     }
 }

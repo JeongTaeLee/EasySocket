@@ -19,10 +19,5 @@ namespace EasySocket.Logging
         {
             return new NLogLogger(NLog.LogManager.GetLogger(name));
         }
-
-        public override ILogger GetLogger<TType>()
-        {
-            return new NLogLogger(NLog.LogManager.GetCurrentClassLogger(typeof(TType)));
-        }
     }
 }
