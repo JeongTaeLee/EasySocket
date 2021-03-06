@@ -1,6 +1,5 @@
-using System;
-using System.Threading.Tasks;
 using EasySocket.Behaviors;
+using EasySocket.Protocols.Filters;
 
 namespace EasySocket.Workers
 {

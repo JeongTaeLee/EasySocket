@@ -3,20 +3,25 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using EasySocket.Behaviors;
 using EasySocket.Listeners;
+using EasySocket.Protocols.Filters.Factories;
 
 namespace EasySocket.Workers
 {
     public abstract class BaseSocketServerWorker<TSession> : ISocketServerWorker
         where TSession : BaseSocketSessionWorker
     {
-        public ISocketServerWorkerConfig config { get; private set; } = null;
+#region ISocketServerWorker Field 
+        public ISocketServerWorkerConfig config { get; private set; } = new SocketServerWorkerConfig();
         public EasySocketService service { get; private set; } = null;
-        public IServerBehavior behavior { get; private set; } = null;
         public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
+        public IServerBehavior behavior { get; private set; } = null;
+        public IMsgFilterFactory msgFilterFactory { get; private set; }
+        #endregion ISocketServerWorker Field
 
         private List<ListenerConfig> _listenerConfigs = new List<ListenerConfig>();
         private IReadOnlyList<IListener> _listeners = null;
 
+#region ISocketServerWorker Method
         public void Start(EasySocketService service)
         {
             if (service == null)
@@ -59,6 +64,19 @@ namespace EasySocket.Workers
             return this;
         }
 
+        public virtual ISocketServerWorker SetMsgFilterFactory(IMsgFilterFactory msgFilterFactory)
+        {
+            if (msgFilterFactory == null)
+            {
+                throw new ArgumentNullException(nameof(msgFilterFactory));
+            }
+
+            this.msgFilterFactory = msgFilterFactory;
+
+            return this;
+        }
+#endregion ISocketServerWorker Method
+
         private void StartListeners()
         {
             var tempListeners = new List<IListener>();
@@ -88,12 +106,7 @@ namespace EasySocket.Workers
             _listeners = tempListeners;
         }
 
-        /// <summary>
-        /// <see cref="IListener"/> 에서 새로운 소켓 수락 시 호출됩니다. 
-        /// </summary>
-        /// <param name="listener">수락된 <see cref="IListener"/></param>
-        /// <param name="acceptedSocket">수락된 <see cref="System.Net.Sockets.Socket"/></param>
-        protected virtual void OnSocketAcceptedFromListeners(IListener listener, Socket acceptedSocket)
+        protected void OnSocketAcceptedFromListeners(IListener listener, Socket acceptedSocket)
         {
             TSession session = null;
 
@@ -114,11 +127,13 @@ namespace EasySocket.Workers
 
                 acceptedSocket.NoDelay = config.noDelay;
 
-                var tempSession = CreateSession(acceptedSocket);
+                var tempSession = CreateSession();
                 if (tempSession == null)
                 {
                     return;
                 }
+
+                tempSession.Initialize(this, acceptedSocket);
 
                 service.sessionConfigrator.Invoke(tempSession);
 
@@ -148,27 +163,19 @@ namespace EasySocket.Workers
             }
         }
 
-        /// <summary>
-        /// <see cref="IListener"/> 에서 새로운 에러 발생 시 호출됩니다. 
-        /// </summary>
-        /// <param name="listener">발생된 <see cref="IListener"/></param>
-        /// <param name="ex">발생된 <see cref="System.Exception"/></param>
         protected virtual void OnErrorOccurredFromListeners(IListener listener, Exception ex)
         {
             behavior.OnError(ex);
         }
 
         /// <summary>
-        /// 해당 클래스를 상속한 클래스가 해당 함수를 재정의하여 <see cref="IListener"/>를 생성 후 반환합니다.
+        /// <see cref="ISocketSessionWorker"/>의 소켓 수락을 구현하는 <see cref="IListener"/>를 생성 후 반환합니다.
         /// </summary>
-        /// <returns>생성된 <see cref="IListener"/></returns>
         protected abstract IListener CreateListener();
 
         /// <summary>
-        /// 해당 클래스를 상속한 클래스가 해당 함수를 재정의하여 <see cref="ISocketSessionWorker"/>를 생성 후 반환합니다.
+        /// <see cref="ISocketSessionWorker"/>의 연결된 소켓을 관리하는 <see cref="ISocketSessionWorker"/>를 생성 후 반환합니다.
         /// </summary>
-        /// <returns>생성된 <see cref="ISocketSessionWorker"/></returns>
-        protected abstract TSession CreateSession(Socket socket);
-
+        protected abstract TSession CreateSession();
     }
 }

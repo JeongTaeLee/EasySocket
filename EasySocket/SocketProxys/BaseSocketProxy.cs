@@ -9,22 +9,27 @@ namespace EasySocket.SocketProxys
         public Socket socket { get; private set; } = null;
 
         public SessionSocketProxyReceiveHandler received { get; set; }
+        
+        public SessionSocketProxyErrorHandler error { get; set; }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="socket">해당 객체가 관리하는 <see cref="System.Net.Sockets.Socket"/></param>
-        public BaseSocketProxy(Socket socket)
+        public virtual void Initialize(Socket socket)
         {
             if (socket == null)
             {
                 throw new ArgumentNullException(nameof(socket));
             }
 
-            this.socket = socket;
+            this.socket = null;
         }
-        
-        public abstract void Start();
+
+        public virtual void Start()
+        {
+            if (socket == null)
+            {
+                throw new InvalidOperationException("Socket not set : Please check if the SocketProxy has been initialized.");
+            }
+        }
+
         public abstract void Stop();
     }
 }

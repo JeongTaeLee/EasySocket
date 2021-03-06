@@ -8,14 +8,12 @@ namespace EasySocket.Workers.Async
     {
         protected override IListener CreateListener()
         {
-            return new AsyncSocketListener(this);
+            return new AsyncSocketListener();
         }
 
-        protected override AsyncSocketSessionWorker CreateSession(Socket socket)
+        protected override AsyncSocketSessionWorker CreateSession()
         {
-            var socketProxy = new AsyncSocketProxy(socket);
-
-            return new AsyncSocketSessionWorker(this, socketProxy);
+            return new AsyncSocketSessionWorker();
         }
     }
 }

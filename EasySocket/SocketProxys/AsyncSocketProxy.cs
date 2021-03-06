@@ -12,14 +12,10 @@ namespace EasySocket.SocketProxys
         private CancellationTokenSource _receiveLoopCanelToken = null;
         private Task receiveLoopTask = null;
 
-        public AsyncSocketProxy(Socket socket)
-            : base(socket)
-        {
-      
-        }
-
         public override void Start()
         {
+            base.Start();
+            
             _receiveLoopCanelToken = new CancellationTokenSource();
 
             receiveLoopTask = ReceiveLoop();
@@ -41,17 +37,23 @@ namespace EasySocket.SocketProxys
   
             while (_receiveLoopCanelToken.IsCancellationRequested)
             {
-                ReadResult result = await reader.ReadAsync();
-                ReadOnlySequence<byte> buffer = result.Buffer;
-
-                // TODO @jeongtae.lee : 수신 로직 구현.
-                int readLength = received.Invoke(ref buffer);
-
-                reader.AdvanceTo(buffer.GetPosition(readLength, buffer.Start), buffer.End);
-                
-                if (result.IsCompleted)
+                try
                 {
-                    break;
+                    ReadResult result = await reader.ReadAsync();
+                    ReadOnlySequence<byte> buffer = result.Buffer;
+
+                    // TODO @jeongtae.lee : 수신 로직 구현.
+                    int readLength = received.Invoke(ref buffer);
+                    reader.AdvanceTo(buffer.GetPosition(readLength, buffer.Start), buffer.End);
+
+                    if (result.IsCompleted)
+                    {
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    error?.Invoke(ex);
                 }
             }
         }

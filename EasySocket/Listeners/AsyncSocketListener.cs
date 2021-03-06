@@ -14,11 +14,6 @@ namespace EasySocket.Listeners
         private Task _acceptLoopTask = null; 
         private CancellationTokenSource _acceptLoopCanelToken = null;
 
-        public AsyncSocketListener(ISocketServerWorker server)
-            :base(server)
-        {
-        }
-
         public override void Start(ListenerConfig config)
         {
             base.Start(config);

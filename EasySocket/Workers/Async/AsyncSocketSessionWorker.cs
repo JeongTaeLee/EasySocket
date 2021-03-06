@@ -7,9 +7,9 @@ namespace EasySocket.Workers.Async
 {
     public class AsyncSocketSessionWorker : BaseSocketSessionWorker
     {
-        public AsyncSocketSessionWorker(ISocketServerWorker server, AsyncSocketProxy socketProxy)
-            : base(server, socketProxy)
+        protected override ISocketProxy CreateSocketProxy()
         {
+            return new AsyncSocketProxy();
         }
     }
 }
