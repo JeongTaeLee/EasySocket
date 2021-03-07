@@ -1,4 +1,5 @@
 using EasySocket.Behaviors;
+using EasySocket.Logging;
 using EasySocket.Protocols.Filters;
 
 namespace EasySocket.Workers
@@ -15,7 +16,6 @@ namespace EasySocket.Workers
         /// </summary>
         ISessionBehavior behavior { get; }
 
-        
         /// <summary>
         /// <see cref="ISocketSessionWorker"/>의 이벤트를 처리하는 <see cref="ISessionBehavior"/>를 설정합니다. 
         /// </summary>

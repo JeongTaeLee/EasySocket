@@ -2,20 +2,38 @@
     "version": "0.2.0",
     "configurations": [
         {
-            // Use IntelliSense to find out which attributes exist for C# debugging
-            // Use hover for the description of the existing attributes
-            // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
-            "name": ".NET Core Launch (console)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/EasySocket.Test/bin/Debug/net5.0/EasySocket.Test.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/EasySocket.Test",
-            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
-            "console": "internalConsole",
-            "stopAtEntry": false
+            // EasySocket.Test
+            // 참고! https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+            
+            "type": "coreclr",  // 디버거 
+            "name": "EasySocket.Test(.NET Core Launch)", // 이름
+            "request": "launch", // 실행구성 (laucn, attach)
+            
+            "preLaunchTask": "build_all", // 디버그 시작 전 실행할 Task 이름(tasks.json)
+            "program": "${workspaceFolder}/EasySocket.Test/bin/Debug/net5.0/EasySocket.Test.dll", // 실행할 프로그램.
+            "args": [], // 디버그 인수.
+            "cwd": "${workspaceFolder}/EasySocket.Test", //의존성 및 기타 파일을 찾기위한 작업 디렉토리(dll 있는 폴더.)
+            "stopAtEntry": false, // 프로그램 실행 시 바로 중단.
+            
+            // 참고! https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "integratedTerminal", // 
+        },
+
+        {
+            // EasySocketTestConsole
+            // 참고! https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+            "type": "coreclr", // 디버거 
+            "name": "EasySocketTestConsole(.NET Core Launch)", // 이름
+            "request": "launch", // 실행구성 (laucn, attach)
+
+            "preLaunchTask": "build_all", // 디버그 시작 전 실행할 Task 이름(tasks.json)
+            "program": "${workspaceFolder}/EasySocketTestConsole/bin/Debug/net5.0/EasySocketTestConsole.dll", // 실행할 프로그램.
+            "args": [], // 디버그 인수.
+            "cwd": "${workspaceFolder}/EasySocketTestConsole", //의존성 및 기타 파일을 찾기위한 작업 디렉토리(dll 있는 폴더.)
+            "stopAtEntry": false, // 프로그램 실행 시 바로 중단.
+            
+            // 참고! https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "integratedTerminal", // 
         },
         {
             "name": ".NET Core Attach",

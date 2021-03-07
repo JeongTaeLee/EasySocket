@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Net.Sockets;
 using EasySocket.Behaviors;
 using EasySocket.SocketProxys;
+using EasySocket.Logging;
 
 namespace EasySocket.Workers
 {
@@ -14,7 +15,7 @@ namespace EasySocket.Workers
 #endregion
 
         private ISocketProxy socketProxy = null;
-
+        protected ILogger logger { get; private set; } = null;
 
 #region ISocketSessionWorker Method
         public ISocketSessionWorker SetSessionBehavior(ISessionBehavior behavior)
@@ -30,7 +31,7 @@ namespace EasySocket.Workers
         }
 #endregion ISocketSessionWorker Method
     
-        public void Initialize(ISocketServerWorker server, Socket socket)
+        public void Start(ISocketServerWorker server, Socket socket)
         {
             if (server == null)
             {
@@ -41,33 +42,20 @@ namespace EasySocket.Workers
             {
                 throw new ArgumentNullException(nameof(socket));
             }
-
+        
             this.server = server;
+            logger = server.service.loggerFactroy.GetLogger(GetType());
 
-            this.socketProxy = CreateSocketProxy();
-            this.socketProxy.Initialize(socket);
+            socketProxy = CreateSocketProxy();
+            socketProxy.received = OnReceivedFromSocketProxy;
+            socketProxy.error = OnErrorFromSocketProxy;
 
-            this.socketProxy.received = OnReceivedFromSocketProxy;
-        }
-
-        public void Start()
-        {
-            if (server == null)
-            {
-                throw new InvalidOperationException("Server not set : Please check if the session has been initialized.");
-            }
+            socketProxy.Start(socket, server.service.loggerFactroy.GetLogger(socketProxy.GetType()));
             
-            if (socketProxy == null)
+            if (behavior != null)
             {
-                throw new InvalidOperationException("SocketProxy not set : Please check if the session has been initialized.");
+                behavior.OnStarted();
             }
-
-            if (behavior == null)
-            {
-                throw new InvalidOperationException("SessionBehavior not set : Please call the \"SetSessionBehavior\" Method and set it up.");
-            }
-
-            socketProxy.Start();
         }
 
         private int OnReceivedFromSocketProxy(ref ReadOnlySequence<byte> sequence)
@@ -80,6 +68,11 @@ namespace EasySocket.Workers
             }
 
             return 0;
+        }
+
+        private void OnErrorFromSocketProxy(Exception ex)
+        {
+
         }
 
         /// <summary>

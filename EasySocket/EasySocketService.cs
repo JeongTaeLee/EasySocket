@@ -7,6 +7,7 @@ namespace EasySocket
     public sealed class EasySocketService
     {
         public ILoggerFactory loggerFactroy { get; private set; } = null;
+        public ILogger logger { get; private set; } = null;
 
         public Func<ISocketServerWorker> serverGenerator { get; private set; } = null;
         public Action<ISocketServerWorker> serverConfigrator { get; private set; } = null;
@@ -22,6 +23,12 @@ namespace EasySocket
             if (loggerFactroy == null)
             {
                 throw new InvalidOperationException("LoggerFactroy not set : Please call the \"SetLoggerFactroy\" Method and set it up.");
+            }
+
+            logger = loggerFactroy.GetLogger(GetType());
+            if (logger == null)
+            {
+                throw new ArgumentNullException("Unable to create logger.");
             }
 
             if (serverGenerator == null)

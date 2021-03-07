@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Threading;
 using EasySocket.Workers;
-
+using EasySocket.Logging;
 
 namespace EasySocket.Listeners
 {
@@ -14,9 +14,10 @@ namespace EasySocket.Listeners
         private Task _acceptLoopTask = null; 
         private CancellationTokenSource _acceptLoopCanelToken = null;
 
-        public override void Start(ListenerConfig config)
+#region BaseListener Method
+        public override void Start(ListenerConfig config, ILogger logger)
         {
-            base.Start(config);
+            base.Start(config, logger);
 
             _acceptLoopCanelToken = new CancellationTokenSource();
 
@@ -43,6 +44,7 @@ namespace EasySocket.Listeners
             _acceptLoopTask = null;
             _acceptLoopCanelToken = null;
         }
+#endregion
 
         private async Task AcceptLoop()
         {

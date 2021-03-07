@@ -1,32 +1,42 @@
 using System;
 using System.Net.Sockets;
-using EasySocket.Workers;
+using EasySocket.Logging;
 
 namespace EasySocket.SocketProxys
 {
     public abstract class BaseSocketProxy : ISocketProxy
     {
+#region ISocketProxy Field
         public Socket socket { get; private set; } = null;
-
         public SessionSocketProxyReceiveHandler received { get; set; }
-        
         public SessionSocketProxyErrorHandler error { get; set; }
+#endregion
 
-        public virtual void Initialize(Socket socket)
+        protected ILogger logger { get; private set; } = null;
+
+        public virtual void Start(Socket socket, ILogger logger)
         {
             if (socket == null)
             {
                 throw new ArgumentNullException(nameof(socket));
             }
 
-            this.socket = null;
-        }
-
-        public virtual void Start()
-        {
-            if (socket == null)
+            if (logger == null)
             {
-                throw new InvalidOperationException("Socket not set : Please check if the SocketProxy has been initialized.");
+                throw new ArgumentNullException(nameof(logger));
+            }
+
+            this.socket = socket;
+            this.logger = logger;
+
+            if (received == null)
+            {
+                logger.Warn("Received Handler is not set : Unable to receive events for socket receiving data.");
+            }
+
+            if (error == null)
+            {
+                logger.Warn("Error Handler is not set : Unable to receive events for error.");
             }
         }
 

@@ -4,7 +4,11 @@ using EasySocket.Workers;
 using EasySocket.Workers.Async;
 using EasySocket.Listeners;
 using EasySocket.Behaviors;
-using System.Net.Sockets;
+using EasySocket.Logging;
+using EasySocket.Protocols.Filters;
+using EasySocket.Protocols.Filters.Factories;
+using EasySocket.Protocols.MsgInfos;
+using System.Buffers;
 
 namespace EasySocketTestConsole
 {
@@ -15,15 +19,12 @@ namespace EasySocketTestConsole
             throw new NotImplementedException();
         }
 
-        public void OnSessionConnected()
+        public void OnSessionConnected(ISocketSessionWorker session)
         {
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// <see cref="">
-        /// </summary>
-        public void OnSessionDisconnected()
+        public void OnSessionDisconnected(ISocketSessionWorker session)
         {
             throw new NotImplementedException();
         }
@@ -42,16 +43,31 @@ namespace EasySocketTestConsole
         }
     }
 
+    class TestMsgFilter : IMsgFilter
+    {
+        public int Filter(out IMsgInfo msgInfo, ref SequenceReader<byte> sequence)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Reset()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
             var service = new EasySocketService()
+                .SetLoggerFactroy(new NLogLoggerFactory("NLog.config"))
                 .SetSocketServer<AsyncSocketServerWorker>()
                 .SetSocketServerConfigrator((socketServer) =>
                 {
                     socketServer
                         .AddListener(new ListenerConfig("Any", 9199, 100000, true))
+                        .SetMsgFilterFactory(new DefaultMsgFilterFactory<TestMsgFilter>())
                         .SetServerBehavior(new TestServerBehavior())
                         .SetServerConfig(new SocketServerWorkerConfig())
                         ;
@@ -64,6 +80,10 @@ namespace EasySocketTestConsole
                 });
 
             service.Start();
+
+            while (true)
+            {
+            }
         }
     }
 }

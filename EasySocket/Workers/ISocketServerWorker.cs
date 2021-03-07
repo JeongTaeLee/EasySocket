@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using EasySocket.Behaviors;
 using EasySocket.Listeners;
+using EasySocket.Logging;
 using EasySocket.Protocols.Filters;
 using EasySocket.Protocols.Filters.Factories;
 
@@ -24,6 +25,11 @@ namespace EasySocket.Workers
         EasySocketService service { get; }
 
         /// <summary>
+        /// 수신한 데이터를 필터링하는 <see cref="IMsgFilter"/>를 생성하는 <see cref="IMsgFilter"/> 입니다.
+        /// </summary>
+        IMsgFilterFactory msgFilterFactory { get; }
+
+        /// <summary>
         /// 해당 <see cref="ISocketServerWorker"/>에서 실행하는 여러개의 <see cref="IListener"/> 설정 객체인 <see cref="ListenerConfig"/> 입니다.
         /// </summary>
         IReadOnlyList<ListenerConfig> listenerConfigs { get; }
@@ -32,11 +38,6 @@ namespace EasySocket.Workers
         /// 해당 <see cref="ISocketServerWorker"/>의 이벤트를 처리하는 <see cref="IServerBehavior"/> 입니다. 
         /// </summary>
         IServerBehavior behavior { get; }
-
-        /// <summary>
-        /// 수신한 데이터를 필터링하는 <see cref="IMsgFilter"/>를 생성하는 <see cref="IMsgFilterFactory"/> 입니다.
-        /// </summary>
-        IMsgFilterFactory msgFilterFactory { get; }
 
         /// <summary>
         /// <see cref="ISocketServerWorker"/>를 초기화 후 시작합니다.
@@ -61,7 +62,7 @@ namespace EasySocket.Workers
         ISocketServerWorker SetServerConfig(ISocketServerWorkerConfig config);
 
         /// <summary>
-        /// 수신한 데이터를 필터링하는 <see cref="IMsgFilter"/>를 생성하는 <see cref="IMsgFilterFactory"/>를 설정합니다.
+        /// 수신한 데이터를 필터링하는 <see cref="Protocols.Filters.IMsgFilter"/>를 생성하는 <see cref="Protocols.Filters.Factories.IMsgFilter"/>를 설정합니다.
         /// </summary>
         ISocketServerWorker SetMsgFilterFactory(IMsgFilterFactory msgFilterFactory);
     }

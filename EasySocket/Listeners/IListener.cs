@@ -1,5 +1,6 @@
 using System;
 using System.Net.Sockets;
+using EasySocket.Logging;
 using EasySocket.Workers;
 
 namespace EasySocket.Listeners
@@ -28,7 +29,7 @@ namespace EasySocket.Listeners
         /// 리스너를 시작합니다.
         /// </summary>
         /// <param name="config">해당 리스너를 구성할 객체입니다.</param>   
-        void Start(ListenerConfig config);
+        void Start(ListenerConfig config, ILogger logger);
 
         /// <summary>
         /// 리스너를 종료합니다.

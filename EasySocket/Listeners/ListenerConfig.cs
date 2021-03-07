@@ -14,5 +14,10 @@ namespace EasySocket.Listeners
             this.backlog = backlog;
             this.listenerNoDelay = listenerNoDelay;
         }
+
+        public override string ToString()
+        {
+            return $"Ip({ip}) Port({port}) Backlog({backlog}) ListenerNoDelay({listenerNoDelay})";
+        }
     }
 }

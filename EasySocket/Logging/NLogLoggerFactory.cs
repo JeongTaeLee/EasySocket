@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace EasySocket.Logging
 {
     public class NLogLoggerFactory : LogFactoryBase
@@ -18,6 +20,11 @@ namespace EasySocket.Logging
         public override ILogger GetLogger(string name)
         {
             return new NLogLogger(NLog.LogManager.GetLogger(name));
+        }
+
+        public override ILogger GetLogger(Type type)
+        {
+            return new NLogLogger(NLog.LogManager.GetLogger(type.Name));
         }
     }
 }

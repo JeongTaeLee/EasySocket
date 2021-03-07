@@ -4,36 +4,39 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.IO.Pipelines;
 using System.Buffers;
+using EasySocket.Logging;
 
 namespace EasySocket.SocketProxys
 {
     public class AsyncSocketProxy : BaseSocketProxy
     {
         private CancellationTokenSource _receiveLoopCanelToken = null;
-        private Task receiveLoopTask = null;
+        private Task _receiveLoopTask = null;
+        private NetworkStream _networkStream = null;
 
-        public override void Start()
+#region BaseSocketProxy Method
+        public override void Start(Socket socket, ILogger logger)
         {
-            base.Start();
+            base.Start(socket, logger);
             
             _receiveLoopCanelToken = new CancellationTokenSource();
-
-            receiveLoopTask = ReceiveLoop();
+            _networkStream = new NetworkStream(socket);
+            _receiveLoopTask = ReceiveLoop();
         }
 
         public override void Stop()
         {
             _receiveLoopCanelToken.Cancel();
-            
-            socket.Close();
+
+            _networkStream.Close();
 
             _receiveLoopCanelToken = null;
         }
+#endregion
 
         private async Task ReceiveLoop()
         {
-            var networkStream = new NetworkStream(socket);
-            var reader = PipeReader.Create(networkStream);
+            var reader = PipeReader.Create(_networkStream);
   
             while (_receiveLoopCanelToken.IsCancellationRequested)
             {

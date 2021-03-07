@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using EasySocket.Behaviors;
 using EasySocket.Listeners;
+using EasySocket.Logging;
 using EasySocket.Protocols.Filters.Factories;
 
 namespace EasySocket.Workers
@@ -13,15 +14,17 @@ namespace EasySocket.Workers
 #region ISocketServerWorker Field 
         public ISocketServerWorkerConfig config { get; private set; } = new SocketServerWorkerConfig();
         public EasySocketService service { get; private set; } = null;
+        public IMsgFilterFactory msgFilterFactory { get; private set; } = null;
         public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
         public IServerBehavior behavior { get; private set; } = null;
-        public IMsgFilterFactory msgFilterFactory { get; private set; }
-        #endregion ISocketServerWorker Field
+#endregion ISocketServerWorker Field
 
         private List<ListenerConfig> _listenerConfigs = new List<ListenerConfig>();
         private IReadOnlyList<IListener> _listeners = null;
+        protected ILogger logger { get; private set; } = null;
 
 #region ISocketServerWorker Method
+
         public void Start(EasySocketService service)
         {
             if (service == null)
@@ -29,7 +32,23 @@ namespace EasySocket.Workers
                 throw new ArgumentNullException(nameof(service));
             }
 
+            if (0 >= _listenerConfigs.Count)
+            {
+                throw new InvalidOperationException("At least one ListenerConfig is not set : Please call the \"AddListener\" Method and set it up.");
+            }
+
+            if (msgFilterFactory == null)
+            {
+                throw new InvalidOperationException("MsgFilterFactroy not set: Please call the \"SetMsgFilterFactory\" Method and set it up.");
+            }
+   
             this.service = service;
+            this.logger = service.loggerFactroy.GetLogger(GetType());
+
+            if (behavior == null)
+            {
+                logger.Warn("Server Behavior is not set. : Unable to receive events for the server. Please call the \"SetServerBehavior\" Method and set it up.");
+            }
 
             StartListeners();
         }
@@ -97,10 +116,11 @@ namespace EasySocket.Workers
 
                 listener.accepted = OnSocketAcceptedFromListeners;
                 listener.error = OnErrorOccurredFromListeners;
-
-                listener.Start(listenerConfig);
+                listener.Start(listenerConfig, service.loggerFactroy.GetLogger(logger.GetType()));
 
                 tempListeners.Add(listener);
+
+                logger.DebugFormat("Started listener : {0}", listenerConfig.ToString());
             }
 
             _listeners = tempListeners;
@@ -127,24 +147,33 @@ namespace EasySocket.Workers
 
                 acceptedSocket.NoDelay = config.noDelay;
 
+                var msgFilter = msgFilterFactory.Get();
+                if (msgFilter == null)
+                {
+                    return;
+                }
+
                 var tempSession = CreateSession();
                 if (tempSession == null)
                 {
                     return;
                 }
 
-                tempSession.Initialize(this, acceptedSocket);
-
                 service.sessionConfigrator.Invoke(tempSession);
 
-                tempSession.Start();
+                if (behavior != null)
+                {
+                    behavior.OnSessionConnected(tempSession);
+                }
+
+                tempSession.Start(this, acceptedSocket);
 
                 // finally에서 오류 체크를 하기 위해 모든 작업이 성공적으로 끝난 후 대입해줍니다.
                 session = tempSession;
             }
             catch (Exception ex)
             {
-                behavior.OnError(ex);
+                behavior?.OnError(ex);
             }
             finally
             {
@@ -165,7 +194,7 @@ namespace EasySocket.Workers
 
         protected virtual void OnErrorOccurredFromListeners(IListener listener, Exception ex)
         {
-            behavior.OnError(ex);
+            behavior?.OnError(ex);
         }
 
         /// <summary>

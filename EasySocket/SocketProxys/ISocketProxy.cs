@@ -1,7 +1,7 @@
 using System;
 using System.Buffers;
 using System.Net.Sockets;
-using EasySocket.Workers;
+using EasySocket.Logging;
 
 namespace EasySocket.SocketProxys
 {
@@ -34,14 +34,9 @@ namespace EasySocket.SocketProxys
         SessionSocketProxyErrorHandler error { get; set; }
 
         /// <summary>
-        /// <see cref="ISocketProxy"/>를 초기화 합니다.
-        /// </summary>
-        void Initialize(Socket socket);
-
-        /// <summary>
         /// <see cref="ISocketProxy"/>를 시작합니다. 
         /// </summary>
-        void Start();
+        void Start(Socket socket, ILogger logger);
  
         /// <summary>
         /// <see cref="ISocketProxy"/>를 중지합니다.
