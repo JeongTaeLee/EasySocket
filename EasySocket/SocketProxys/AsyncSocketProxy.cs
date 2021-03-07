@@ -46,7 +46,7 @@ namespace EasySocket.SocketProxys
                     ReadOnlySequence<byte> buffer = result.Buffer;
 
                     // TODO @jeongtae.lee : 수신 로직 구현.
-                    int readLength = received.Invoke(ref buffer);
+                    long readLength = received.Invoke(ref buffer);
                     reader.AdvanceTo(buffer.GetPosition(readLength, buffer.Start), buffer.End);
 
                     if (result.IsCompleted)

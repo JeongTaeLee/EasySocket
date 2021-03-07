@@ -1,106 +1,106 @@
-﻿// using System.Buffers;
-// using EasySocket.Protocols.MsgInfos;
+﻿using System.Buffers;
+using EasySocket.Protocols.MsgInfos;
 
-// namespace EasySocket.Protocols.Filters
-// {
-//     ///<summary>
-//     /// Body 부분 사이즈를 고정된 사이즈의 헤더에 포함하는 Msg 필터
-//     /// Message 구조 = Header(width BodySize) + Body
-//     ///</summary>
-//     public abstract class FixedHeaderMsgFilter : IMsgFilter
-//     {
-//         /// <summary>
-//         /// 고정된 헤더 사이즈
-//         /// </summary>
-//         protected readonly int headerSize;
+namespace EasySocket.Protocols.Filters
+{
+    ///<summary>
+    /// Body 부분 사이즈를 고정된 사이즈의 헤더에 포함하는 Msg 필터
+    /// Message 구조 = Header(width BodySize) + Body
+    ///</summary>
+    public abstract class FixedHeaderMsgFilter : IMsgFilter
+    {
+        /// <summary>
+        /// 고정된 헤더 사이즈
+        /// </summary>
+        protected readonly int headerSize;
 
-//         /// <summary>
-//         /// 헤더에서 파싱한 Body 사이즈
-//         /// </summary>
-//         protected int bodySize { get; private set; } = 0;
+        /// <summary>
+        /// 헤더에서 파싱한 Body 사이즈
+        /// </summary>
+        protected int bodySize { get; private set; } = 0;
 
-//         /// <summary>
-//         /// 헤더가 파싱됬는지를 구분하는 플라그 (Ture : 파싱됨)
-//         /// </summary>
-//         protected bool parsedHeader { get; private set; } = false;
+        /// <summary>
+        /// 헤더가 파싱됬는지를 구분하는 플라그 (Ture : 파싱됨)
+        /// </summary>
+        protected bool parsedHeader { get; private set; } = false;
 
-//         protected FixedHeaderMsgFilter(int headerSize)
-//         {
-//             this.headerSize = headerSize;
-//         }
+        protected FixedHeaderMsgFilter(int headerSize)
+        {
+            this.headerSize = headerSize;
+        }
 
-//         public IMsgInfo Filter(ref SequenceReader<byte> reader)
-//         {
-//             if (!parsedHeader)
-//             {
-//                 if (headerSize > reader.Length)
-//                 {
-//                     return null;
-//                 }
+        public IMsgInfo Filter(ref SequenceReader<byte> reader)
+        {
+            if (!parsedHeader)
+            {
+                if (headerSize > reader.Length)
+                {
+                    return null;
+                }
 
-//                 var headerSeq = reader.Sequence.Slice(0, headerSize);
+                var headerSeq = reader.Sequence.Slice(0, headerSize);
                 
-//                 // 파싱한 만큼 포지션을 이동
-//                 reader.Advance(headerSize);
+                // 파싱한 만큼 포지션을 이동
+                reader.Advance(headerSize);
 
-//                 bodySize = ParseBodySizeFromHeader(ref headerSeq);
-//                 if (0 >= bodySize)
-//                 {
-//                     throw new ProtocolException("The body size cannot be smaller than 0.");
-//                 }
+                bodySize = ParseBodySizeFromHeader(ref headerSeq);
+                if (0 >= bodySize)
+                {
+                    throw new ProtocolException("The body size cannot be smaller than 0.");
+                }
 
-//                 try
-//                 {
-//                     // Body size 가 0이라면 헤더만 파싱함.
-//                     if (bodySize == 0)
-//                     {
-//                         return ParseMsgInfo(ref headerSeq, ref headerSeq);
-//                     }
-//                 }
-//                 finally
-//                 {
-//                     Reset();
-//                 }
+                try
+                {
+                    // Body size 가 0이라면 헤더만 파싱함.
+                    if (bodySize == 0)
+                    {
+                        return ParseMsgInfo(ref headerSeq, ref headerSeq);
+                    }
+                }
+                finally
+                {
+                    Reset();
+                }
 
-//                 parsedHeader = true;
-//             }
+                parsedHeader = true;
+            }
 
-//             if (bodySize > reader.Length - headerSize)
-//             {
-//                 return null;
-//             }
+            if (bodySize > reader.Length - headerSize)
+            {
+                return null;
+            }
 
-//             try
-//             {
-//                 var headerSeq = reader.Sequence.Slice(0, headerSize);
-//                 var bodySeq = reader.Sequence.Slice(headerSize, bodySize);
+            try
+            {
+                var headerSeq = reader.Sequence.Slice(0, headerSize);
+                var bodySeq = reader.Sequence.Slice(headerSize, bodySize);
 
-//                 // 파싱한 만큼 포지션을 이동
-//                 reader.Advance(bodySize);
+                // 파싱한 만큼 포지션을 이동
+                reader.Advance(bodySize);
                 
-//                 return ParseMsgInfo(ref headerSeq, ref bodySeq);
-//             }
-//             finally
-//             {
-//                 Reset();
-//             }
-//         }
+                return ParseMsgInfo(ref headerSeq, ref bodySeq);
+            }
+            finally
+            {
+                Reset();
+            }
+        }
 
-//         public void Reset()
-//         {
-//             bodySize = 0;
-//             parsedHeader = false;
-//         }
+        public void Reset()
+        {
+            bodySize = 0;
+            parsedHeader = false;
+        }
 
-//         ///<summary>
-//         /// Message Header 부분에서 body의 사이즈를 파싱합니다.
-//         ///</summary>
-//         protected abstract int ParseBodySizeFromHeader(ref ReadOnlySequence<byte> buffer);
+        ///<summary>
+        /// Message Header 부분에서 body의 사이즈를 파싱합니다.
+        ///</summary>
+        protected abstract int ParseBodySizeFromHeader(ref ReadOnlySequence<byte> buffer);
         
-//         ///<summary>
-//         /// Message Body 부분에서 IMsgInfo를 파싱합니다.
-//         ///</summary>
-//         protected abstract IMsgInfo ParseMsgInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq);
+        ///<summary>
+        /// Message Body 부분에서 IMsgInfo를 파싱합니다.
+        ///</summary>
+        protected abstract IMsgInfo ParseMsgInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq);
 
-//     }
-// }
+    }
+}

@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using EasySocket.Behaviors;
 using EasySocket.SocketProxys;
 using EasySocket.Logging;
+using EasySocket.Protocols.Filters;
 
 namespace EasySocket.Workers
 {
@@ -15,6 +16,8 @@ namespace EasySocket.Workers
 #endregion
 
         private ISocketProxy socketProxy = null;
+        private IMsgFilter msgFilter = null;
+
         protected ILogger logger { get; private set; } = null;
 
 #region ISocketSessionWorker Method
@@ -44,9 +47,15 @@ namespace EasySocket.Workers
             }
         
             this.server = server;
-            logger = server.service.loggerFactroy.GetLogger(GetType());
+            this.msgFilter = server.msgFilterFactory.Get();
+            this.logger = server.service.loggerFactroy.GetLogger(GetType());
 
             socketProxy = CreateSocketProxy();
+            if (socketProxy == null)
+            {
+                throw new InvalidOperationException("\"CreateSocketProxy\" Method returned null.");
+            }
+
             socketProxy.received = OnReceivedFromSocketProxy;
             socketProxy.error = OnErrorFromSocketProxy;
 
@@ -58,21 +67,37 @@ namespace EasySocket.Workers
             }
         }
 
-        private int OnReceivedFromSocketProxy(ref ReadOnlySequence<byte> sequence)
+        private long OnReceivedFromSocketProxy(ref ReadOnlySequence<byte> sequence)
         {
-            int readLength = 0;
-
-            while (sequence.Length > readLength)
+            try
             {
-                
-            }
+                var sequenceReader = new SequenceReader<byte>(sequence);
 
-            return 0;
+                while (sequence.Length > sequenceReader.Consumed)
+                {
+                    var msgInfo = msgFilter.Filter(ref sequenceReader);
+
+                    if (msgInfo == null)
+                    {
+                        break;
+                    }
+
+                    behavior?.OnReceived(msgInfo);
+                }
+
+                return (int)sequenceReader.Consumed;
+            }
+            catch (Exception ex)
+            {
+                behavior?.OnError(ex);
+
+                return (int)sequence.Length;
+            }
         }
 
         private void OnErrorFromSocketProxy(Exception ex)
         {
-
+            behavior?.OnError(ex);
         }
 
         /// <summary>

@@ -32,12 +32,21 @@ namespace EasySocketTestConsole
 
     class TestSessionBehavior : ISessionBehavior
     {
+        public void OnStarted()
+        {
+            throw new NotImplementedException();
+        }
         public void OnClosed()
         {
             throw new NotImplementedException();
         }
 
-        public void OnStarted()
+        public void OnReceived(IMsgInfo msg)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public void OnError(Exception ex)
         {
             throw new NotImplementedException();
         }
@@ -45,7 +54,7 @@ namespace EasySocketTestConsole
 
     class TestMsgFilter : IMsgFilter
     {
-        public int Filter(out IMsgInfo msgInfo, ref SequenceReader<byte> sequence)
+        public IMsgInfo Filter(ref SequenceReader<byte> sequence)
         {
             throw new NotImplementedException();
         }

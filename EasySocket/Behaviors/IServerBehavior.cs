@@ -21,7 +21,7 @@ namespace EasySocket.Behaviors
         void OnSessionDisconnected(ISocketSessionWorker session);
 
         /// <summary>
-        /// 서버 내부에서 오류 발생 시 호출됩니다.
+        /// <see cref="ISocketServerWorker"/> 내부에서 오류 발생 시 호출됩니다.
         /// </summary>
         void OnError(Exception ex);
     }

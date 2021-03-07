@@ -10,7 +10,7 @@ namespace EasySocket.SocketProxys
     /// </summary>
     /// <param name="receiveCount">받은 데이터 길이(<see cref="byte"/>)</param>
     /// <returns>파싱한 데이터 길이(<see cref="byte"/>)</returns>
-    public delegate int SessionSocketProxyReceiveHandler(ref ReadOnlySequence<byte> sequence);
+    public delegate long SessionSocketProxyReceiveHandler(ref ReadOnlySequence<byte> sequence);
     public delegate void SessionSocketProxyErrorHandler(Exception ex);
     /// <summary>
     /// <see cref="System.Net.Sockets.Socket"/>을 관리하는 클래스 입니다.

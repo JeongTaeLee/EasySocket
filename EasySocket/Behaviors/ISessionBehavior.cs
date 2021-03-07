@@ -1,3 +1,8 @@
+using System;
+using EasySocket.Workers;
+using EasySocket.Protocols.MsgInfos;
+using EasySocket.Protocols.Filters;
+
 namespace EasySocket.Behaviors
 {
     /// <summary>
@@ -17,6 +22,17 @@ namespace EasySocket.Behaviors
         /// Socket Close -> session close process 
         ///  -> IServerBehavior.OnSessionConnected -> Call! 
         /// </summary>
-        void OnClosed();     
+        void OnClosed();
+
+        /// <summary>
+        /// 데이터를 수신한 후 <see cref="IMsgFilter"/>에서 <see cref="IMsgInfo"/>로 변환 후 호출됩니다.
+        /// </summary>
+        /// <param name="msg">변환 된 <see cref="IMsgInfo"/> 입니다.</param>
+        void OnReceived(IMsgInfo msg);
+
+        /// <summary>
+        /// <see cref="ISocketSessionWorker"/> 내부에서 오류 발생 시 호출됩니다.
+        /// </summary>
+        void OnError(Exception ex);
     }
 }
