@@ -1,5 +1,6 @@
 using System;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using EasySocket.Logging;
 
 namespace EasySocket.SocketProxys
@@ -39,7 +40,12 @@ namespace EasySocket.SocketProxys
                 logger.Warn("Error Handler is not set : Unable to receive events for error.");
             }
         }
+        public abstract void Close();
 
-        public abstract void Stop();
+        public abstract ValueTask CloseAsync();
+
+        public abstract int Send(ReadOnlyMemory<byte> sendMemory);
+
+        public abstract ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory);
     }
 }

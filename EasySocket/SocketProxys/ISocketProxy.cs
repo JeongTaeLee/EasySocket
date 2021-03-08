@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using EasySocket.Logging;
 
 namespace EasySocket.SocketProxys
@@ -37,10 +38,25 @@ namespace EasySocket.SocketProxys
         /// <see cref="ISocketProxy"/>를 시작합니다. 
         /// </summary>
         void Start(Socket socket, ILogger logger);
- 
+
         /// <summary>
-        /// <see cref="ISocketProxy"/>를 중지합니다.
+        /// 동기 방식으로 <see cref="ISocketProxy"/>를 중지합니다.
         /// </summary>
-        void Stop();
+        void Close();
+
+        /// <summary>
+        /// 비동기 방식으로 <see cref="ISocketProxy"/>를 중지합니다.
+        /// </summary>
+        ValueTask CloseAsync();
+
+        /// <summary>
+        /// 동기 방식으로 데이터를 전송합니다.
+        /// </summary>
+        int Send(ReadOnlyMemory<byte> sendMemory);
+
+        /// <summary>
+        /// 비동기 방식으로 데이터를 전송합니다.
+        /// </summary>
+        ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory);
     }
 }

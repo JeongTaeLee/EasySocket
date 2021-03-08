@@ -10,27 +10,47 @@ namespace EasySocket.SocketProxys
 {
     public class AsyncSocketProxy : BaseSocketProxy
     {
-        private CancellationTokenSource _receiveLoopCanelToken = null;
-        private Task _receiveLoopTask = null;
+        private CancellationTokenSource _cancelToken = null;
         private NetworkStream _networkStream = null;
+        private Task _receiveLoopTask = null;
 
 #region BaseSocketProxy Method
         public override void Start(Socket socket, ILogger logger)
         {
             base.Start(socket, logger);
             
-            _receiveLoopCanelToken = new CancellationTokenSource();
+            _cancelToken = new CancellationTokenSource();
             _networkStream = new NetworkStream(socket);
             _receiveLoopTask = ReceiveLoop();
         }
 
-        public override void Stop()
+        public override void Close()
         {
-            _receiveLoopCanelToken.Cancel();
+            CloseAsync().GetAwaiter().GetResult();
+        }
 
+        public override async ValueTask CloseAsync()
+        {
+            _cancelToken.Cancel();
             _networkStream.Close();
 
-            _receiveLoopCanelToken = null;
+            await _receiveLoopTask;
+
+            _cancelToken = null;
+            _networkStream = null;
+            _receiveLoopTask = null;
+        }
+
+        public override int Send(ReadOnlyMemory<byte> sendMemory)
+        {
+            return socket.SendAsync(sendMemory, SocketFlags.None)
+                .GetAwaiter()
+                .GetResult();
+        }
+
+        public override async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
+        {
+            return await socket.SendAsync(sendMemory, SocketFlags.None);
         }
 #endregion
 
@@ -38,7 +58,7 @@ namespace EasySocket.SocketProxys
         {
             var reader = PipeReader.Create(_networkStream);
   
-            while (_receiveLoopCanelToken.IsCancellationRequested)
+            while (_cancelToken.IsCancellationRequested)
             {
                 try
                 {

@@ -1,6 +1,6 @@
+using System;
+using System.Threading.Tasks;
 using EasySocket.Behaviors;
-using EasySocket.Logging;
-using EasySocket.Protocols.Filters;
 
 namespace EasySocket.Workers
 {
@@ -21,5 +21,24 @@ namespace EasySocket.Workers
         /// </summary>
         ISocketSessionWorker SetSessionBehavior(ISessionBehavior behavior);
 
+        /// <summary>
+        /// 동기 방식으로 <see cref="ISocketSessionWorker"/>를 중지합니다.
+        /// </summary>
+        void Close();
+
+        /// <summary>
+        /// 비동기 방식으로 <see cref="ISocketSessionWorker"/>를 중지합니다.
+        /// </summary>
+        ValueTask CloseAsync();
+
+        /// <summary>
+        /// 동기 방식으로 데이터를 전송합니다.
+        /// </summary>
+        int Send(ReadOnlyMemory<byte> sendMemory);
+
+        /// <summary>
+        /// 비동기 방식으로 데이터를 전송합니다.
+        /// </summary>
+        ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory);
     }
 }

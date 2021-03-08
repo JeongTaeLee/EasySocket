@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using EasySocket.Behaviors;
 using EasySocket.SocketProxys;
 using EasySocket.Logging;
@@ -32,8 +33,29 @@ namespace EasySocket.Workers
 
             return this;
         }
+
+        public void Close()
+        {
+            CloseAsync().GetAwaiter().GetResult();
+        }
+
+        public virtual ValueTask CloseAsync()
+        {
+            return socketProxy.CloseAsync();
+        }
+
+        public int Send(ReadOnlyMemory<byte> sendMemory)
+        {
+            return socketProxy.Send(sendMemory);
+        }
+
+        public ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
+        {
+            return socketProxy.SendAsync(sendMemory);
+        }
+
 #endregion ISocketSessionWorker Method
-    
+
         public void Start(ISocketServerWorker server, Socket socket)
         {
             if (server == null)
@@ -66,7 +88,7 @@ namespace EasySocket.Workers
                 behavior.OnStarted();
             }
         }
-
+        
         private long OnReceivedFromSocketProxy(ref ReadOnlySequence<byte> sequence)
         {
             try

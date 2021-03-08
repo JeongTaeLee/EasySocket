@@ -132,6 +132,8 @@ namespace EasySocket.Workers
 
             try
             {
+                acceptedSocket.LingerState = new LingerOption(true, 0);
+
                 acceptedSocket.SendBufferSize = config.sendBufferSize;
                 acceptedSocket.ReceiveBufferSize = config.recvBufferSize;
 
@@ -180,14 +182,7 @@ namespace EasySocket.Workers
                 // 세션을 생성하지 못하면 연결이 실패한 것으로 관리합니다.
                 if (session == null)
                 {
-                    try
-                    {
-                        acceptedSocket?.Shutdown(SocketShutdown.Both);
-                    }
-                    finally
-                    {
-                        acceptedSocket?.Close();
-                    }
+                    acceptedSocket?.SafeClose();
                 }
             }
         }
