@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Threading;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using EasySocket.Behaviors;
@@ -16,12 +17,52 @@ namespace EasySocket.Workers
         public ISessionBehavior behavior { get; private set; } = null;
 #endregion
 
-        private ISocketProxy socketProxy = null;
-        private IMsgFilter msgFilter = null;
+        private ISocketProxy _socketProxy = null;
+        private IMsgFilter _msgFilter = null;
 
         protected ILogger logger { get; private set; } = null;
 
 #region ISocketSessionWorker Method
+        public void Close()
+        {
+            var socketProxy = _socketProxy;
+            if (socketProxy == null)
+            {
+                return;
+            }
+            
+            if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
+            {
+                socketProxy.Close();
+            }
+        }
+
+        public virtual ValueTask CloseAsync()
+        {
+            var socketProxy = _socketProxy;
+            if (socketProxy == null)
+            {
+                return ValueTask.CompletedTask;
+            }
+
+            if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
+            {
+                return _socketProxy.CloseAsync();
+            }
+
+            return ValueTask.CompletedTask;
+        }
+
+        public int Send(ReadOnlyMemory<byte> sendMemory)
+        {
+            return _socketProxy.Send(sendMemory);
+        }
+
+        public ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
+        {
+            return _socketProxy.SendAsync(sendMemory);
+        }
+
         public ISocketSessionWorker SetSessionBehavior(ISessionBehavior behavior)
         {
             if (behavior == null)
@@ -33,27 +74,6 @@ namespace EasySocket.Workers
 
             return this;
         }
-
-        public void Close()
-        {
-            CloseAsync().GetAwaiter().GetResult();
-        }
-
-        public virtual ValueTask CloseAsync()
-        {
-            return socketProxy.CloseAsync();
-        }
-
-        public int Send(ReadOnlyMemory<byte> sendMemory)
-        {
-            return socketProxy.Send(sendMemory);
-        }
-
-        public ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
-        {
-            return socketProxy.SendAsync(sendMemory);
-        }
-
 #endregion ISocketSessionWorker Method
 
         public void Start(ISocketServerWorker server, Socket socket)
@@ -69,19 +89,19 @@ namespace EasySocket.Workers
             }
         
             this.server = server;
-            this.msgFilter = server.msgFilterFactory.Get();
+            this._msgFilter = server.msgFilterFactory.Get();
             this.logger = server.service.loggerFactroy.GetLogger(GetType());
 
-            socketProxy = CreateSocketProxy();
-            if (socketProxy == null)
+            _socketProxy = CreateSocketProxy();
+            if (_socketProxy == null)
             {
                 throw new InvalidOperationException("\"CreateSocketProxy\" Method returned null.");
             }
 
-            socketProxy.received = OnReceivedFromSocketProxy;
-            socketProxy.error = OnErrorFromSocketProxy;
+            _socketProxy.received = OnReceivedFromSocketProxy;
+            _socketProxy.error = OnErrorFromSocketProxy;
 
-            socketProxy.Start(socket, server.service.loggerFactroy.GetLogger(socketProxy.GetType()));
+            _socketProxy.Start(socket, server.service.loggerFactroy.GetLogger(_socketProxy.GetType()));
             
             if (behavior != null)
             {
@@ -97,7 +117,7 @@ namespace EasySocket.Workers
 
                 while (sequence.Length > sequenceReader.Consumed)
                 {
-                    var msgInfo = msgFilter.Filter(ref sequenceReader);
+                    var msgInfo = _msgFilter.Filter(ref sequenceReader);
 
                     if (msgInfo == null)
                     {
