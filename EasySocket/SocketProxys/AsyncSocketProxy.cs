@@ -39,6 +39,7 @@ namespace EasySocket.SocketProxys
             _networkStream?.Close();
             
             _receiveTask.Wait();
+
             InternalClose();
         }
 
@@ -50,17 +51,6 @@ namespace EasySocket.SocketProxys
             await (_receiveTask ?? Task.CompletedTask);
             
             InternalClose();
-        }
-
-        private void InternalClose()
-        {
-            _sendLock = null;
-            _cancelTokenSource = null;
-
-            _networkStream = null;
-            _pipeReader = null;
-
-            _receiveTask = null;
         }
 
         public override int Send(ReadOnlyMemory<byte> sendMemory)
@@ -91,7 +81,18 @@ namespace EasySocket.SocketProxys
                 _sendLock.Release();
             }
         }
-#endregion
+        #endregion
+
+        private void InternalClose()
+        {
+            _sendLock = null;
+            _cancelTokenSource = null;
+
+            _networkStream = null;
+            _pipeReader = null;
+
+            _receiveTask = null;
+        }
 
         private async Task ReceiveLoop()
         {

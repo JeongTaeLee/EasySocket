@@ -6,32 +6,57 @@
             // 참고! https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
             
             "type": "coreclr",  // 디버거 
-            "name": "EasySocket.Test(.NET Core Launch)", // 이름
+            "name": "EasySocket(.NET Core Launch)", // 이름
             "request": "launch", // 실행구성 (laucn, attach)
             
-            "preLaunchTask": "build_all", // 디버그 시작 전 실행할 Task 이름(tasks.json)
-            "program": "${workspaceFolder}/EasySocket.Test/bin/Debug/net5.0/EasySocket.Test.dll", // 실행할 프로그램.
+            "preLaunchTask": "build_EasySocket", // 디버그 시작 전 실행할 Task 이름(tasks.json)
+            "program": "${workspaceFolder}/EasySocket/bin/Debug/net5.0/EasySocket.dll", // 실행할 프로그램.
             "args": [], // 디버그 인수.
-            "cwd": "${workspaceFolder}/EasySocket.Test", //의존성 및 기타 파일을 찾기위한 작업 디렉토리(dll 있는 폴더.)
+            "cwd": "${workspaceFolder}/EasySocket", //의존성 및 기타 파일을 찾기위한 작업 디렉토리(dll 있는 폴더.)
             "stopAtEntry": false, // 프로그램 실행 시 바로 중단.
             
             // 참고! https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "integratedTerminal", // 
         },
-
         {
-            // EasySocketTestConsole
+            // EasySocket.Test
             // 참고! https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
             "type": "coreclr", // 디버거 
-            "name": "EasySocketTestConsole(.NET Core Launch)", // 이름
+            "name": "EasySocket.Test(.NET Core Launch)", // 이름
             "request": "launch", // 실행구성 (laucn, attach)
-
-            "preLaunchTask": "build_all", // 디버그 시작 전 실행할 Task 이름(tasks.json)
-            "program": "${workspaceFolder}/EasySocketTestConsole/bin/Debug/net5.0/EasySocketTestConsole.dll", // 실행할 프로그램.
+            "preLaunchTask": "build_EasySocket.Test", // 디버그 시작 전 실행할 Task 이름(tasks.json)
+            "program": "${workspaceFolder}/EasySocket.Test/bin/Debug/net5.0/EasySocket.Test.dll", // 실행할 프로그램.
             "args": [], // 디버그 인수.
-            "cwd": "${workspaceFolder}/EasySocketTestConsole", //의존성 및 기타 파일을 찾기위한 작업 디렉토리(dll 있는 폴더.)
+            "cwd": "${workspaceFolder}/EasySocket.Test", //의존성 및 기타 파일을 찾기위한 작업 디렉토리(dll 있는 폴더.)
             "stopAtEntry": false, // 프로그램 실행 시 바로 중단.
-            
+            // 참고! https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "integratedTerminal", // 
+        },
+        {
+            // EasySocket.Test
+            // 참고! https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+            "type": "coreclr", // 디버거 
+            "name": "EasySocket_Samples_Echo.Server(.NET Core Launch)", // 이름
+            "request": "launch", // 실행구성 (laucn, attach)
+            "preLaunchTask": "build_Samples_Echo.Server", // 디버그 시작 전 실행할 Task 이름(tasks.json)
+            "program": "${workspaceFolder}/Samples/Echo.Server/bin/Debug/net5.0/Echo.Server.dll", // 실행할 프로그램.
+            "args": [], // 디버그 인수.
+            "cwd": "${workspaceFolder}/Samples/Echo.Server", //의존성 및 기타 파일을 찾기위한 작업 디렉토리(dll 있는 폴더.)
+            "stopAtEntry": false, // 프로그램 실행 시 바로 중단.
+            // 참고! https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "integratedTerminal", // 
+        },
+        {
+            // EasySocket.Test
+            // 참고! https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+            "type": "coreclr", // 디버거 
+            "name": "EasySocket_Samples_Echo.Client(.NET Core Launch)", // 이름
+            "request": "launch", // 실행구성 (laucn, attach)
+            "preLaunchTask": "build_Samples_Echo.Client", // 디버그 시작 전 실행할 Task 이름(tasks.json)
+            "program": "${workspaceFolder}/Samples/Echo.Client/bin/Debug/net5.0/Echo.Client.dll", // 실행할 프로그램.
+            "args": [], // 디버그 인수.
+            "cwd": "${workspaceFolder}/Samples/Echo.Client", //의존성 및 기타 파일을 찾기위한 작업 디렉토리(dll 있는 폴더.)
+            "stopAtEntry": false, // 프로그램 실행 시 바로 중단.
             // 참고! https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "integratedTerminal", // 
         },

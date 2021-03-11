@@ -89,6 +89,7 @@ namespace EasySocket.Workers
         }
 #endregion ISocketSessionWorker Method
 
+
         public void Start(ISocketServerWorker server, Socket socket)
         {
             if (server == null)
@@ -102,8 +103,18 @@ namespace EasySocket.Workers
             }
         
             this.server = server;
-            this._msgFilter = server.msgFilterFactory.Get();
-            this.logger = server.service.loggerFactroy.GetLogger(GetType());
+            
+            logger = server.service.loggerFactroy.GetLogger(GetType());
+            if (logger == null)
+            {
+                throw new InvalidOperationException("\"ISocketSessionWorker.loggerFactory\" returned null : Unable to get Logger.");
+            }
+
+            _msgFilter = server.msgFilterFactory.Get();
+            if (_msgFilter == null)
+            {
+                throw new InvalidOperationException("\"ISocketSessionWorker.msgFilterFactory\" returned null : Unable to get MsgFilter.");
+            }
 
             _socketProxy = CreateSocketProxy();
             if (_socketProxy == null)
@@ -113,7 +124,6 @@ namespace EasySocket.Workers
 
             _socketProxy.received = OnReceivedFromSocketProxy;
             _socketProxy.error = OnErrorFromSocketProxy;
-
             _socketProxy.Start(socket, server.service.loggerFactroy.GetLogger(_socketProxy.GetType()));
             
             if (behavior != null)
@@ -121,7 +131,6 @@ namespace EasySocket.Workers
                 behavior.OnStarted();
             }
         }
-        
         private long OnReceivedFromSocketProxy(ref ReadOnlySequence<byte> sequence)
         {
             try
