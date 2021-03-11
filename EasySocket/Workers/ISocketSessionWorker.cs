@@ -17,6 +17,11 @@ namespace EasySocket.Workers
         ISessionBehavior behavior { get; }
 
         /// <summary>
+        /// <see cref="ISocketSessionWorker"/>가 종료됨을 표시하는 Flag 입니다.
+        /// </summary>
+        bool isClosed { get; }
+
+        /// <summary>
         /// <see cref="ISocketSessionWorker"/>의 이벤트를 처리하는 <see cref="ISessionBehavior"/>를 설정합니다. 
         /// </summary>
         ISocketSessionWorker SetSessionBehavior(ISessionBehavior behavior);

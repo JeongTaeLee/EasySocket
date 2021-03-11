@@ -15,7 +15,8 @@ namespace EasySocket.Workers
 #region ISocketSessionWorker Field
         public ISocketServerWorker server { get; private set; } = null;
         public ISessionBehavior behavior { get; private set; } = null;
-#endregion
+        public bool isClosed { get; private set; } = false;
+        #endregion
 
         private ISocketProxy _socketProxy = null;
         private IMsgFilter _msgFilter = null;
@@ -34,33 +35,45 @@ namespace EasySocket.Workers
             if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
             {
                 socketProxy.Close();
+
+                isClosed = true;
             }
         }
 
-        public virtual ValueTask CloseAsync()
+        public async virtual ValueTask CloseAsync()
         {
             var socketProxy = _socketProxy;
             if (socketProxy == null)
             {
-                return ValueTask.CompletedTask;
+                return;
             }
 
             if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
             {
-                return _socketProxy.CloseAsync();
-            }
+                await _socketProxy.CloseAsync();
 
-            return ValueTask.CompletedTask;
+                isClosed = true;
+            }
         }
 
         public int Send(ReadOnlyMemory<byte> sendMemory)
         {
+            if (_socketProxy == null)
+            {
+                return -1;
+            }
+
             return _socketProxy.Send(sendMemory);
         }
 
-        public ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
+        public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
         {
-            return _socketProxy.SendAsync(sendMemory);
+            if (_socketProxy == null)
+            {
+                return -1;
+            }
+
+            return await _socketProxy.SendAsync(sendMemory);
         }
 
         public ISocketSessionWorker SetSessionBehavior(ISessionBehavior behavior)

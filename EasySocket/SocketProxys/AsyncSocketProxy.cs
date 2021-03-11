@@ -11,12 +11,11 @@ namespace EasySocket.SocketProxys
     public class AsyncSocketProxy : BaseSocketProxy
     {
         private SemaphoreSlim _sendLock = null;
-        private CancellationTokenSource _cancellationTokenSource = null;
+        private CancellationTokenSource _cancelTokenSource = null;
 
         private NetworkStream _networkStream = null;
         private PipeReader _pipeReader = null;
 
-        private Task _sendTask = null;
         private Task _receiveTask = null;
 
 
@@ -26,7 +25,7 @@ namespace EasySocket.SocketProxys
             base.Start(socket, logger);
 
             _sendLock = new SemaphoreSlim(0, 1);
-            _cancellationTokenSource = new CancellationTokenSource();
+            _cancelTokenSource = new CancellationTokenSource();
 
             _networkStream = new NetworkStream(socket);
             _pipeReader = PipeReader.Create(_networkStream, new StreamPipeReaderOptions());
@@ -36,23 +35,31 @@ namespace EasySocket.SocketProxys
 
         public override void Close()
         {
-            _networkStream.Close();
-
+            _cancelTokenSource?.Cancel();
+            _networkStream?.Close();
+            
             _receiveTask.Wait();
-
-            _sendLock = null;
-            _networkStream = null;
-            _receiveTask = null;
+            InternalClose();
         }
 
         public override async ValueTask CloseAsync()
         {
+            _cancelTokenSource?.Cancel();
             _networkStream.Close();
 
-            await _receiveTask;
+            await (_receiveTask ?? Task.CompletedTask);
+            
+            InternalClose();
+        }
 
+        private void InternalClose()
+        {
             _sendLock = null;
+            _cancelTokenSource = null;
+
             _networkStream = null;
+            _pipeReader = null;
+
             _receiveTask = null;
         }
 
@@ -92,7 +99,7 @@ namespace EasySocket.SocketProxys
             {
                 while (true)
                 {
-                    var result = await _pipeReader.ReadAsync(_cancellationTokenSource.Token);
+                    var result = await _pipeReader.ReadAsync(_cancelTokenSource.Token);
                     var buffer = result.Buffer;
 
                     long readLen = 0;
