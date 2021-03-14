@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Text;
 using EasySocket;
 using EasySocket.Behaviors;
 using EasySocket.Listeners;
@@ -14,7 +15,7 @@ namespace Echo.Server
 {
     class EchoServerBehavior : IServerBehavior
     {
-        private ILogger _logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
         public void OnError(Exception ex)
         {
@@ -34,7 +35,7 @@ namespace Echo.Server
 
     class EchoSessionBehavior : ISessionBehavior
     {
-        private ILogger _logger = LogManager.GetCurrentClassLogger();
+        private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
         public void OnStarted()
         {
@@ -53,26 +54,43 @@ namespace Echo.Server
 
         public void OnReceived(IMsgInfo msg)
         {
-           
+            var convertedMsg = msg as EchoMsgInfo;
+            if (convertedMsg == null)
+            {
+                return;
+            }
+
+            _logger.Info(convertedMsg);
         }
     }
 
-    class EchoFilter : FixedHeaderMsgFilter
+    class EchoMsgInfo : IMsgInfo
+    {
+        public string str { get; private set; } = string.Empty;
+
+        public EchoMsgInfo(string str)
+        {
+            this.str = str;
+        }
+
+    }
+
+    class EchoFilter : IMsgFilter
     {
         public EchoFilter()
-            : base(4)
         {
 
         }
 
-        protected override int ParseBodySizeFromHeader(ref ReadOnlySequence<byte> buffer)
+        public IMsgInfo Filter(ref SequenceReader<byte> sequence)
         {
-            return 0;
+            var buffer = sequence.TryRead(out byte bt);
+
+            return new EchoMsgInfo(Encoding.Default.GetString(sequence.Sequence.Slice(0, sequence.Length)));
         }
 
-        protected override IMsgInfo ParseMsgInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq)
+        public void Reset()
         {
-            return null;
         }
     }
 

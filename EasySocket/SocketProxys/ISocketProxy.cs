@@ -13,6 +13,7 @@ namespace EasySocket.SocketProxys
     /// <returns>파싱한 데이터 길이(<see cref="byte"/>)</returns>
     public delegate long SessionSocketProxyReceiveHandler(ref ReadOnlySequence<byte> sequence);
     public delegate void SessionSocketProxyErrorHandler(Exception ex);
+    public delegate void SessionSocketProxyCloseHandler();
     /// <summary>
     /// <see cref="System.Net.Sockets.Socket"/>을 관리하는 클래스 입니다.
     /// </summary>
@@ -33,6 +34,11 @@ namespace EasySocket.SocketProxys
         /// <see cref="ISocketProxy"/>에서 오류 발생 시 호출됩니다.
         /// </summary>
         SessionSocketProxyErrorHandler error { get; set; }
+
+        /// <summary>
+        /// <see cref="ISocketProxy"/> 에서 관리하는 소켓이 종료 요청을 보냈을 때 호출됩니다.
+        /// </summary>
+        SessionSocketProxyCloseHandler close { get; set; }
 
         /// <summary>
         /// <see cref="ISocketProxy"/>를 시작합니다. 

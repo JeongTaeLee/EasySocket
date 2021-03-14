@@ -11,6 +11,7 @@ namespace EasySocket.SocketProxys
         public Socket socket { get; private set; } = null;
         public SessionSocketProxyReceiveHandler received { get; set; }
         public SessionSocketProxyErrorHandler error { get; set; }
+        public SessionSocketProxyCloseHandler close { get; set; }
 #endregion
 
         protected ILogger logger { get; private set; } = null;
