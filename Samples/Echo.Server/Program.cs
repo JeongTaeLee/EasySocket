@@ -13,46 +13,46 @@ using NLog;
 
 namespace Echo.Server
 {
-    class EchoServerBehavior : IServerBehavior
+    internal class EchoServerBehavior : IServerBehavior
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
         public void OnError(Exception ex)
         {
-            _logger.Error(ex);
+            Console.WriteLine(ex);
         }
 
         public void OnSessionConnected(ISocketSessionWorker session)
         {
-            _logger.Info($"Connected Session : {session}");
+            Console.WriteLine($"Connected Session : {session}");
         }
 
         public void OnSessionDisconnected(ISocketSessionWorker session)
         {
-            _logger.Info($"Disconnected Session : {session}");
+            Console.WriteLine($"Disconnected Session : {session}");
         }
     };
 
-    class EchoSessionBehavior : ISessionBehavior
+    internal class EchoSessionBehavior : ISessionBehavior
     {
-        private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        public void OnStarted()
+        public void OnStarted(ISocketSessionWorker session)
         {
-            _logger.Info($"Started Session : {this}");
+            Console.WriteLine($"Started Session : {this}");
         }
 
-        public void OnClosed()
+        public void OnClosed(ISocketSessionWorker session)
         {
-            _logger.Info($"Closed  Session : {this}");
+            Console.WriteLine($"Closed  Session : {this}");
         }
 
-        public void OnError(Exception ex)
+        public void OnError(ISocketSessionWorker session, Exception ex)
         {
-            _logger.Error(ex);
+            Console.WriteLine(ex);
         }
 
-        public void OnReceived(IMsgInfo msg)
+        public void OnReceived(ISocketSessionWorker session, IMsgInfo msg)
         {
             var convertedMsg = msg as EchoMsgInfo;
             if (convertedMsg == null)
@@ -60,13 +60,13 @@ namespace Echo.Server
                 return;
             }
 
-            _logger.Info(convertedMsg);
+            Console.WriteLine(convertedMsg.str);
         }
     }
 
-    class EchoMsgInfo : IMsgInfo
+    internal class EchoMsgInfo : IMsgInfo
     {
-        public string str { get; private set; } = string.Empty;
+        public string str { get; private set; }
 
         public EchoMsgInfo(string str)
         {
@@ -75,18 +75,14 @@ namespace Echo.Server
 
     }
 
-    class EchoFilter : IMsgFilter
+    internal class EchoFilter : IMsgFilter
     {
-        public EchoFilter()
-        {
-
-        }
-
         public IMsgInfo Filter(ref SequenceReader<byte> sequence)
         {
-            var buffer = sequence.TryRead(out byte bt);
-
-            return new EchoMsgInfo(Encoding.Default.GetString(sequence.Sequence.Slice(0, sequence.Length)));
+            var buffer = sequence.Sequence.Slice(0, sequence.Length);
+            sequence.Advance(sequence.Length);
+            
+            return new EchoMsgInfo(Encoding.Default.GetString(buffer));
         }
 
         public void Reset()
@@ -94,9 +90,9 @@ namespace Echo.Server
         }
     }
 
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var loggerFactory = new EasySocket.Logging.NLogLoggerFactory("NLog.config");
 
@@ -123,7 +119,11 @@ namespace Echo.Server
 
             while (true)
             {
-
+                var inputStr = Console.ReadLine();
+                if (inputStr == "close")
+                {
+                    break;
+                }
             }
         }
     }

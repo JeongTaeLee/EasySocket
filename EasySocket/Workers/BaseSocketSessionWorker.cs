@@ -40,7 +40,7 @@ namespace EasySocket.Workers
             }
         }
 
-        public async virtual ValueTask CloseAsync()
+        public virtual async ValueTask CloseAsync()
         {
             var socketProxy = _socketProxy;
             if (socketProxy == null)
@@ -78,32 +78,21 @@ namespace EasySocket.Workers
 
         public ISocketSessionWorker SetSessionBehavior(ISessionBehavior behavior)
         {
-            if (behavior == null)
-            {
-                throw new ArgumentNullException(nameof(behavior));
-            }
-
-            this.behavior = behavior;
-
+            this.behavior = behavior ?? throw new ArgumentNullException(nameof(behavior));
+            
             return this;
         }
 #endregion ISocketSessionWorker Method
 
-
-        public void Start(ISocketServerWorker server, Socket socket)
+        public void Start(ISocketServerWorker srv, Socket sck)
         {
-            if (server == null)
+            if (sck == null)
             {
-                throw new ArgumentNullException(nameof(server));
+                throw new ArgumentNullException(nameof(sck));
             }
 
-            if (socket == null)
-            {
-                throw new ArgumentNullException(nameof(socket));
-            }
+            server = srv ?? throw new ArgumentNullException(nameof(srv));
         
-            this.server = server;
-            
             logger = server.service.loggerFactroy.GetLogger(GetType());
             if (logger == null)
             {
@@ -122,15 +111,18 @@ namespace EasySocket.Workers
                 throw new InvalidOperationException("\"CreateSocketProxy\" Method returned null.");
             }
 
-            _socketProxy.received = OnReceivedFromSocketProxy;
-            _socketProxy.error = OnErrorFromSocketProxy;
-            _socketProxy.Start(socket, server.service.loggerFactroy.GetLogger(_socketProxy.GetType()));
+            _socketProxy.onReceived = OnReceivedFromSocketProxy;
+            _socketProxy.onError = OnErrorFromSocketProxy;
+            _socketProxy.onClose = OnCloseFromSocketProxy;
+            _socketProxy.Start(sck, server.service.loggerFactroy.GetLogger(_socketProxy.GetType()));
             
-            if (behavior != null)
-            {
-                behavior.OnStarted();
-            }
+            behavior?.OnStarted(this);
         }
+        
+        private void OnCloseFromSocketProxy()
+        {
+        }
+
         private long OnReceivedFromSocketProxy(ref ReadOnlySequence<byte> sequence)
         {
             try
@@ -146,14 +138,14 @@ namespace EasySocket.Workers
                         break;
                     }
 
-                    behavior?.OnReceived(msgInfo);
+                    behavior?.OnReceived(this, msgInfo);
                 }
 
                 return (int)sequenceReader.Consumed;
             }
             catch (Exception ex)
             {
-                behavior?.OnError(ex);
+                behavior?.OnError(this, ex);
 
                 return (int)sequence.Length;
             }
@@ -161,7 +153,7 @@ namespace EasySocket.Workers
 
         private void OnErrorFromSocketProxy(Exception ex)
         {
-            behavior?.OnError(ex);
+            behavior?.OnError(this, ex);
         }
 
         /// <summary>

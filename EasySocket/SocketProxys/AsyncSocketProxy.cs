@@ -17,17 +17,16 @@ namespace EasySocket.SocketProxys
         private PipeReader _pipeReader = null;
 
         private Task _receiveTask = null;
-
-
+        
         #region BaseSocketProxy Method
-        public override void Start(Socket socket, ILogger logger)
+        public override void Start(Socket sck, ILogger lgr)
         {
-            base.Start(socket, logger);
+            base.Start(sck, lgr);
 
             _sendLock = new SemaphoreSlim(0, 1);
             _cancelTokenSource = new CancellationTokenSource();
 
-            _networkStream = new NetworkStream(socket);
+            _networkStream = new NetworkStream(sck);
             _pipeReader = PipeReader.Create(_networkStream, new StreamPipeReaderOptions());
 
             _receiveTask = ReceiveLoop();
@@ -102,39 +101,44 @@ namespace EasySocket.SocketProxys
                 {
                     var result = await _pipeReader.ReadAsync(_cancelTokenSource.Token);
                     var buffer = result.Buffer;
-
-                    long readLen = 0;
-
+                    
+                    var readLength = 0L;
+                    
                     try
                     {
                         if (result.IsCanceled)
                         {
-                            readLen = buffer.Length;
+                            readLength = buffer.Length;
                             break;
                         }
-
-                        readLen = received?.Invoke(ref buffer) ?? buffer.Length;
+                        
+                        if (0 < buffer.Length)
+                        {
+                            readLength = onReceived?.Invoke(ref buffer) ?? buffer.Length;
+                        }
 
                         if (result.IsCompleted)
                         {
-                            readLen = buffer.Length;
+                            readLength = buffer.Length;
                             break;
                         }
                     }
                     catch (Exception ex)
                     {
-                        readLen = buffer.Length;
-                        error?.Invoke(ex);
+                        readLength = buffer.Length;
+                        onError?.Invoke(ex);
                     }
                     finally
                     {
-                        _pipeReader.AdvanceTo(buffer.GetPosition(readLen));
+                        _pipeReader.AdvanceTo(buffer.GetPosition(readLength));
                     }
                 }
             }
             finally
             {
                 await _pipeReader.CompleteAsync();
+                
+                onClose?.Invoke();
             }
         }
     }

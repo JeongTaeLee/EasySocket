@@ -28,22 +28,22 @@ namespace EasySocket.SocketProxys
         /// <see cref="ISocketProxy"/>의 소켓에서 데이터를 받았을 때 호출되는 콜백입니다.
         /// </summary>
         /// <value></value>
-        SessionSocketProxyReceiveHandler received { get; set; }
+        SessionSocketProxyReceiveHandler onReceived { get; set; }
 
         /// <summary>
         /// <see cref="ISocketProxy"/>에서 오류 발생 시 호출됩니다.
         /// </summary>
-        SessionSocketProxyErrorHandler error { get; set; }
+        SessionSocketProxyErrorHandler onError { get; set; }
 
         /// <summary>
         /// <see cref="ISocketProxy"/> 에서 관리하는 소켓이 종료 요청을 보냈을 때 호출됩니다.
         /// </summary>
-        SessionSocketProxyCloseHandler close { get; set; }
+        SessionSocketProxyCloseHandler onClose { get; set; }
 
         /// <summary>
         /// <see cref="ISocketProxy"/>를 시작합니다. 
         /// </summary>
-        void Start(Socket socket, ILogger logger);
+        void Start(Socket sck, ILogger lgr);
 
         /// <summary>
         /// 동기 방식으로 <see cref="ISocketProxy"/>를 중지합니다.
