@@ -137,7 +137,6 @@ namespace EasySocket.SocketProxys
             finally
             {
                 await _pipeReader.CompleteAsync();
-                
                 onClose?.Invoke();
             }
         }

@@ -17,19 +17,19 @@ namespace Echo.Server
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        public void OnError(Exception ex)
-        {
-            Console.WriteLine(ex);
-        }
-
         public void OnSessionConnected(ISocketSessionWorker session)
         {
-            Console.WriteLine($"Connected Session : {session}");
+            _logger.Info($"Connected Session : {session}");
         }
 
         public void OnSessionDisconnected(ISocketSessionWorker session)
         {
-            Console.WriteLine($"Disconnected Session : {session}");
+            _logger.Info($"Disconnected Session : {session}");
+        }
+        
+        public void OnError(Exception ex)
+        {
+            _logger.Error(ex);
         }
     };
 
@@ -39,17 +39,17 @@ namespace Echo.Server
 
         public void OnStarted(ISocketSessionWorker session)
         {
-            Console.WriteLine($"Started Session : {this}");
+            _logger.Info($"Started Session : {this}");
         }
 
         public void OnClosed(ISocketSessionWorker session)
         {
-            Console.WriteLine($"Closed  Session : {this}");
+            _logger.Info($"Closed  Session : {this}");
         }
 
         public void OnError(ISocketSessionWorker session, Exception ex)
         {
-            Console.WriteLine(ex);
+            _logger.Error(ex);
         }
 
         public void OnReceived(ISocketSessionWorker session, IMsgInfo msg)
@@ -60,7 +60,7 @@ namespace Echo.Server
                 return;
             }
 
-            Console.WriteLine(convertedMsg.str);
+            _logger.Info(convertedMsg.str);
         }
     }
 

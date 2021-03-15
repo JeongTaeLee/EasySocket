@@ -10,19 +10,26 @@ using EasySocket.Protocols.Filters;
 
 namespace EasySocket.Workers
 {
+    public delegate void BaseSocketSessionCloseHandler(BaseSocketSessionWorker session);
+    
     public abstract class BaseSocketSessionWorker : ISocketSessionWorker
     {
 #region ISocketSessionWorker Field
         public ISocketServerWorker server { get; private set; } = null;
         public ISessionBehavior behavior { get; private set; } = null;
-        public bool isClosed { get; private set; } = false;
+
+        private int _isClosed = 0;
+        public bool isClosed => _isClosed == 1;
         #endregion
 
         private ISocketProxy _socketProxy = null;
         private IMsgFilter _msgFilter = null;
 
+        private BaseSocketSessionCloseHandler _onClose = null;
+        
         protected ILogger logger { get; private set; } = null;
 
+        
 #region ISocketSessionWorker Method
         public void Close()
         {
@@ -35,8 +42,7 @@ namespace EasySocket.Workers
             if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
             {
                 socketProxy.Close();
-
-                isClosed = true;
+                InternalClose();
             }
         }
 
@@ -51,8 +57,7 @@ namespace EasySocket.Workers
             if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
             {
                 await _socketProxy.CloseAsync();
-
-                isClosed = true;
+                InternalClose();
             }
         }
 
@@ -84,32 +89,33 @@ namespace EasySocket.Workers
         }
 #endregion ISocketSessionWorker Method
 
-        public void Start(ISocketServerWorker srv, Socket sck)
+        public void Start(Socket sck)
         {
             if (sck == null)
             {
                 throw new ArgumentNullException(nameof(sck));
             }
 
-            server = srv ?? throw new ArgumentNullException(nameof(srv));
-        
-            logger = server.service.loggerFactroy.GetLogger(GetType());
-            if (logger == null)
+            if (server == null)
             {
-                throw new InvalidOperationException("\"ISocketSessionWorker.loggerFactory\" returned null : Unable to get Logger.");
+                throw new InvalidOperationException("Server not set: Please call the \"SetSocketServer\" Method and set it up.");
+            }
+                        
+            if (_onClose == null)
+            {
+                throw new InvalidOperationException("CloseHandler not set: Please call the \"SetCloseHandler\" Method and set it up.");
             }
 
-            _msgFilter = server.msgFilterFactory.Get();
-            if (_msgFilter == null)
-            {
-                throw new InvalidOperationException("\"ISocketSessionWorker.msgFilterFactory\" returned null : Unable to get MsgFilter.");
-            }
+            logger = server.service.loggerFactroy.GetLogger(GetType()) ??
+                     throw new InvalidOperationException(
+                         "\"ISocketSessionWorker.loggerFactory\" returned null : Unable to get Logger.");
 
-            _socketProxy = CreateSocketProxy();
-            if (_socketProxy == null)
-            {
-                throw new InvalidOperationException("\"CreateSocketProxy\" Method returned null.");
-            }
+            _msgFilter = server.msgFilterFactory.Get() ??
+                         throw new InvalidOperationException(
+                             "\"ISocketSessionWorker.msgFilterFactory\" returned null : Unable to get MsgFilter.");
+
+            _socketProxy = CreateSocketProxy() ??
+                           throw new InvalidOperationException("\"CreateSocketProxy\" Method returned null.");
 
             _socketProxy.onReceived = OnReceivedFromSocketProxy;
             _socketProxy.onError = OnErrorFromSocketProxy;
@@ -118,9 +124,18 @@ namespace EasySocket.Workers
             
             behavior?.OnStarted(this);
         }
-        
+
+        private void InternalClose()
+        {
+            if (Interlocked.CompareExchange(ref _isClosed, 1, 0) == 0)
+            {
+                _onClose.Invoke(this);
+            }
+        }
+
         private void OnCloseFromSocketProxy()
         {
+            InternalClose();
         }
 
         private long OnReceivedFromSocketProxy(ref ReadOnlySequence<byte> sequence)
@@ -160,5 +175,23 @@ namespace EasySocket.Workers
         /// <see cref="ISocketSessionWorker"/>의 소켓 통신이 구현된 <see cref="ISocketProxy"/>를 생성 후 반환합니다.
         /// </summary>
         protected abstract ISocketProxy CreateSocketProxy();
+        
+        /// <summary>
+        /// <see cref="ISocketSessionWorker"/>를 소유하는 <see cref="ISocketServerWorker"/> 입니다.
+        /// </summary>
+        public BaseSocketSessionWorker SetSocketServer(ISocketServerWorker _srv)
+        {
+            server = _srv ?? throw new ArgumentNullException(nameof(_srv));
+            return this;
+        }
+        
+        /// <summary>
+        /// <see cref="ISocketSessionWorker"/>가 종료될 때 호출하는 콜백 함수인 <see cref="BaseSocketSessionCloseHandler"/>를 등록합니다.
+        /// </summary>
+        public BaseSocketSessionWorker SetCloseHandler(BaseSocketSessionCloseHandler onClose)
+        {
+            _onClose = onClose ?? throw new ArgumentNullException(nameof(onClose));
+            return this;
+        }
     }
 }

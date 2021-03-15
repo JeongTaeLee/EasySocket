@@ -21,6 +21,7 @@ namespace EasySocket.Workers
 
         private List<ListenerConfig> _listenerConfigs = new List<ListenerConfig>();
         private IReadOnlyList<IListener> _listeners = null;
+        
         protected ILogger logger { get; private set; } = null;
 
 #region ISocketServerWorker Method
@@ -161,15 +162,15 @@ namespace EasySocket.Workers
                     return;
                 }
 
+                tempSession.SetSocketServer(this)
+                    .SetCloseHandler(OnCloseFromSocketSession);
+                    
                 service.sessionConfigrator.Invoke(tempSession);
 
-                if (behavior != null)
-                {
-                    behavior.OnSessionConnected(tempSession);
-                }
+                behavior?.OnSessionConnected(tempSession);
 
-                tempSession.Start(this, acceptedSocket);
-
+                tempSession.Start(acceptedSocket);
+                
                 // finally에서 오류 체크를 하기 위해 모든 작업이 성공적으로 끝난 후 대입해줍니다.
                 session = tempSession;
             }
@@ -192,6 +193,12 @@ namespace EasySocket.Workers
             behavior?.OnError(ex);
         }
 
+        protected virtual void OnCloseFromSocketSession(BaseSocketSessionWorker session)
+        {
+            behavior?.OnSessionDisconnected(session);
+            session.behavior?.OnClosed(session);
+        }
+        
         /// <summary>
         /// <see cref="ISocketSessionWorker"/>의 소켓 수락을 구현하는 <see cref="IListener"/>를 생성 후 반환합니다.
         /// </summary>

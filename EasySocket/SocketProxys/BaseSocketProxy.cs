@@ -9,9 +9,9 @@ namespace EasySocket.SocketProxys
     {
 #region ISocketProxy Field
         public Socket socket { get; private set; } = null;
-        public SessionSocketProxyReceiveHandler onReceived { get; set; }
-        public SessionSocketProxyErrorHandler onError { get; set; }
-        public SessionSocketProxyCloseHandler onClose { get; set; }
+        public SocketProxyReceiveHandler onReceived { get; set; }
+        public SocketProxyErrorHandler onError { get; set; }
+        public SocketProxyCloseHandler onClose { get; set; }
 #endregion
         protected ILogger logger { get; private set; } = null;
 
