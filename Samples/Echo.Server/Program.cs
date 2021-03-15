@@ -52,7 +52,7 @@ namespace Echo.Server
             _logger.Error(ex);
         }
 
-        public void OnReceived(ISocketSessionWorker session, IMsgInfo msg)
+        public async void OnReceived(ISocketSessionWorker session, IMsgInfo msg)
         {
             var convertedMsg = msg as EchoMsgInfo;
             if (convertedMsg == null)
@@ -61,6 +61,12 @@ namespace Echo.Server
             }
 
             _logger.Info(convertedMsg.str);
+
+            var sendByte = Encoding.Default.GetBytes("Close");
+
+            await session.SendAsync(sendByte);
+
+            await session.CloseAsync();
         }
     }
 

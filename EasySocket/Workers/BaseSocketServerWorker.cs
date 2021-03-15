@@ -196,7 +196,6 @@ namespace EasySocket.Workers
         protected virtual void OnCloseFromSocketSession(BaseSocketSessionWorker session)
         {
             behavior?.OnSessionDisconnected(session);
-            session.behavior?.OnClosed(session);
         }
         
         /// <summary>

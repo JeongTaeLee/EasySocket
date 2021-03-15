@@ -56,7 +56,7 @@ namespace EasySocket.Workers
 
             if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
             {
-                await _socketProxy.CloseAsync();
+                await socketProxy.CloseAsync();
                 InternalClose();
             }
         }
@@ -129,6 +129,8 @@ namespace EasySocket.Workers
         {
             if (Interlocked.CompareExchange(ref _isClosed, 1, 0) == 0)
             {
+                behavior?.OnClosed(this);
+
                 _onClose.Invoke(this);
             }
         }

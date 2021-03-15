@@ -23,7 +23,7 @@ namespace EasySocket.SocketProxys
         {
             base.Start(sck, lgr);
 
-            _sendLock = new SemaphoreSlim(0, 1);
+            _sendLock = new SemaphoreSlim(1, 1);
             _cancelTokenSource = new CancellationTokenSource();
 
             _networkStream = new NetworkStream(sck);
@@ -35,19 +35,21 @@ namespace EasySocket.SocketProxys
         public override void Close()
         {
             _cancelTokenSource?.Cancel();
-            _networkStream?.Close();
             
             _receiveTask.Wait();
-
+            
+            _networkStream?.Close();
+            
             InternalClose();
         }
 
         public override async ValueTask CloseAsync()
         {
             _cancelTokenSource?.Cancel();
-            _networkStream.Close();
-
+            
             await (_receiveTask ?? Task.CompletedTask);
+
+            _networkStream?.Close();
             
             InternalClose();
         }
@@ -97,7 +99,7 @@ namespace EasySocket.SocketProxys
         {
             try
             {
-                while (true)
+                while (!_cancelTokenSource.IsCancellationRequested)
                 {
                     var result = await _pipeReader.ReadAsync(_cancelTokenSource.Token);
                     var buffer = result.Buffer;
