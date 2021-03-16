@@ -33,7 +33,7 @@ namespace Echo.Client
             var receiveTask = ProcessReceive(socket);
             var processReceive = ProcessSend(socket);
 
-            await Task.WhenAll(receiveTask, processReceive);
+            await receiveTask;
 
             socket.Close();
 
@@ -44,11 +44,14 @@ namespace Echo.Client
 
         static async Task ProcessSend(Socket socket)
         {
+            await Task.Yield();
+
             while (!cancelationToken.IsCancellationRequested)
             {
                 var inputStr = Console.ReadLine();
                 if (inputStr == "Close")
                 {
+                    socket.Close();
                     cancelationToken.Cancel();
                     break;
                 }
@@ -63,6 +66,7 @@ namespace Echo.Client
 
                 Console.WriteLine($"Sended({sendLength})");
             }
+
         }
         
         static async Task ProcessReceive(Socket socket)
@@ -101,7 +105,10 @@ namespace Echo.Client
                         pipeReader.AdvanceTo(buffer.GetPosition(readLength));
                     }
                 }
-
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
             }
 
             finally
@@ -111,11 +118,8 @@ namespace Echo.Client
                     cancelationToken.Cancel();
                 }
 
+                await pipeReader.CompleteAsync();
                 networkStream?.Close();
-
-                // 종료처리가 왔으면 인풋 종료.
-                IntPtr stdIn = GetStdHandle(StdHandle.Stdin);
-                CloseHandle(stdIn);
             }
         }
     }
