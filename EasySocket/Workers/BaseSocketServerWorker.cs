@@ -162,12 +162,17 @@ namespace EasySocket.Workers
                     return;
                 }
 
-                tempSession.SetSocketServer(this)
-                    .SetCloseHandler(OnCloseFromSocketSession);
-                    
-                service.sessionConfigrator.Invoke(tempSession);
+                service.sessionConfigrator.Invoke(tempSession
+                    .SetSocketServer(this)
+                    .SetCloseHandler(OnCloseFromSocketSession));
 
                 behavior?.OnSessionConnected(tempSession);
+
+                // 시작하기전 상태를 체크합니다 None 상태가 아니라면 비정상적인 상황입니다.
+                if (tempSession.state != ISocketSessionWorker.State.None)
+                {
+                    return;
+                }
 
                 tempSession.Start(acceptedSocket);
                 

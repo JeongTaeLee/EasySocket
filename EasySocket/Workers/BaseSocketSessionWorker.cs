@@ -18,21 +18,31 @@ namespace EasySocket.Workers
         public ISocketServerWorker server { get; private set; } = null;
         public ISessionBehavior behavior { get; private set; } = null;
 
-        private int _isClosed = 0;
-        public bool isClosed => _isClosed == 1;
-        #endregion
+        public ISocketSessionWorker.State state => (ISocketSessionWorker.State)_state;
+#endregion
 
         private ISocketProxy _socketProxy = null;
         private IMsgFilter _msgFilter = null;
-
         private BaseSocketSessionCloseHandler _onClose = null;
-        
-        protected ILogger logger { get; private set; } = null;
 
+        private int _state = (int)ISocketSessionWorker.State.None;
+
+        protected ILogger logger { get; private set; } = null;
         
 #region ISocketSessionWorker Method
         public void Close()
         {
+            int prevState = Interlocked.CompareExchange(ref _state, (int)ISocketSessionWorker.State.Closing, (int)ISocketSessionWorker.State.Running);
+            if (prevState != (int)ISocketSessionWorker.State.Running)
+            {
+                if (prevState == (int)ISocketSessionWorker.State.None)
+                {
+                    _onClose?.Invoke(this);
+                }
+
+                return;
+            }
+
             var socketProxy = _socketProxy;
             if (socketProxy == null)
             {
@@ -42,11 +52,23 @@ namespace EasySocket.Workers
             if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
             {
                 socketProxy.Close();
+                _state = (int)ISocketSessionWorker.State.Closed;
             }
         }
 
         public virtual async ValueTask CloseAsync()
         {
+            int prevState = Interlocked.CompareExchange(ref _state, (int)ISocketSessionWorker.State.Closing, (int)ISocketSessionWorker.State.Running);
+            if (prevState != (int)ISocketSessionWorker.State.Running)
+            {
+                if (prevState == (int)ISocketSessionWorker.State.None)
+                {
+                    _onClose?.Invoke(this);
+                }
+
+                return;
+            }
+
             var socketProxy = _socketProxy;
             if (socketProxy == null)
             {
@@ -56,12 +78,13 @@ namespace EasySocket.Workers
             if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
             {
                 await socketProxy.CloseAsync();
+                _state = (int)ISocketSessionWorker.State.Closed;
             }
         }
 
         public int Send(ReadOnlyMemory<byte> sendMemory)
         {
-            if (_socketProxy == null)
+            if (_state != (int)ISocketSessionWorker.State.Running)
             {
                 return -1;
             }
@@ -71,7 +94,7 @@ namespace EasySocket.Workers
 
         public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
         {
-            if (_socketProxy == null)
+            if (_state != (int)ISocketSessionWorker.State.Running)
             {
                 return -1;
             }
@@ -85,7 +108,7 @@ namespace EasySocket.Workers
             
             return this;
         }
-#endregion ISocketSessionWorker Method
+        #endregion ISocketSessionWorker Method
 
         public void Start(Socket sck)
         {
@@ -115,27 +138,25 @@ namespace EasySocket.Workers
             _socketProxy = CreateSocketProxy() ??
                            throw new InvalidOperationException("\"CreateSocketProxy\" Method returned null.");
 
+            int prevState = Interlocked.CompareExchange(ref _state, (int)ISocketSessionWorker.State.Running, (int)ISocketSessionWorker.State.None);
+            if (prevState != (int)ISocketSessionWorker.State.None)
+            {
+                throw new InvalidOperationException("ISocketSessionWorker state before startup is invalid.");
+            }
+
             _socketProxy.onReceived = OnReceivedFromSocketProxy;
             _socketProxy.onError = OnErrorFromSocketProxy;
             _socketProxy.onClose = OnCloseFromSocketProxy;
             _socketProxy.Start(sck, server.service.loggerFactroy.GetLogger(_socketProxy.GetType()));
-            
+
             behavior?.OnStarted(this);
-        }
-
-        private void InternalClose()
-        {
-            if (Interlocked.CompareExchange(ref _isClosed, 1, 0) == 0)
-            {
-                behavior?.OnClosed(this);
-
-                _onClose.Invoke(this);
-            }
         }
 
         private void OnCloseFromSocketProxy()
         {
-            InternalClose();
+            behavior?.OnClosed(this);
+
+            _onClose.Invoke(this);
         }
 
         private long OnReceivedFromSocketProxy(ref ReadOnlySequence<byte> sequence)

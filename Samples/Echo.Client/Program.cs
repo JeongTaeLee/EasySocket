@@ -4,11 +4,20 @@ using System.Net.Sockets;
 using System.IO.Pipelines;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace Echo.Client
 {
     class Program
     {
+        // P/Invoke:
+        private enum StdHandle { Stdin = -10, Stdout = -11, Stderr = -12 };
+        
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetStdHandle(StdHandle std);
+        [DllImport("kernel32.dll")]
+        private static extern bool CloseHandle(IntPtr hdl);
+
         static CancellationTokenSource cancelationToken = new CancellationTokenSource();
 
         static async Task Main(string[] args)
@@ -22,69 +31,92 @@ namespace Echo.Client
             Console.WriteLine("Connected");
 
             var receiveTask = ProcessReceive(socket);
+            var processReceive = ProcessSend(socket);
 
-            while (true)
+            await Task.WhenAll(receiveTask, processReceive);
+
+            socket.Close();
+
+            Console.WriteLine("Close");
+
+            await receiveTask;
+        }
+
+        static async Task ProcessSend(Socket socket)
+        {
+            while (!cancelationToken.IsCancellationRequested)
             {
                 var inputStr = Console.ReadLine();
                 if (inputStr == "Close")
+                {
+                    cancelationToken.Cancel();
+                    break;
+                }
+
+                if (cancelationToken.IsCancellationRequested)
                 {
                     break;
                 }
 
                 var sendByte = Encoding.Default.GetBytes(inputStr);
-                
                 var sendLength = await socket.SendAsync(sendByte, SocketFlags.None);
+
                 Console.WriteLine($"Sended({sendLength})");
             }
-
-            Console.WriteLine("Close");
-
-            cancelationToken.Cancel();
-            await receiveTask;
         }
-
+        
         static async Task ProcessReceive(Socket socket)
         {
             var networkStream = new NetworkStream(socket);
             var pipeReader = PipeReader.Create(networkStream);
 
-            while (cancelationToken.IsCancellationRequested)
+            try
             {
-                var result = await pipeReader.ReadAsync(cancelationToken.Token);
-                var buffer = result.Buffer;
 
-                long readLength = buffer.Length;
-
-                try
+                while (!cancelationToken.IsCancellationRequested)
                 {
-                    if (result.IsCanceled)
+
+                    var result = await pipeReader.ReadAsync(cancelationToken.Token);
+                    var buffer = result.Buffer;
+
+                    long readLength = buffer.Length;
+
+                    try
                     {
-                        break;
-                    }        
+                        if (result.IsCanceled)
+                        {
+                            break;
+                        }
 
-                    var receiveStr = Encoding.Default.GetString(buffer);
+                        var receiveStr = Encoding.Default.GetString(buffer);
+                        Console.WriteLine(receiveStr);
 
-                    Console.WriteLine(receiveStr);
-
-                    readLength = buffer.Length;
-
-                    if (result.IsCompleted)
+                        if (result.IsCompleted)
+                        {
+                            break;
+                        }
+                    }
+                    finally
                     {
-                        break;
+                        pipeReader.AdvanceTo(buffer.GetPosition(readLength));
                     }
                 }
-                finally
-                {
-                    pipeReader.AdvanceTo(buffer.GetPosition(readLength));
-                }
+
             }
 
-            networkStream.Close();
+            finally
+            {
+                if (!cancelationToken.IsCancellationRequested)
+                {
+                    cancelationToken.Cancel();
+                }
 
-            // while (true)
-            // {
-            //     await socket.ReceiveAsync()
-            // }
+                networkStream?.Close();
+
+                // 종료처리가 왔으면 인풋 종료.
+                IntPtr stdIn = GetStdHandle(StdHandle.Stdin);
+                CloseHandle(stdIn);
+            }
         }
     }
 }

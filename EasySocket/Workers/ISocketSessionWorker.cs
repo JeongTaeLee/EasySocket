@@ -6,6 +6,14 @@ namespace EasySocket.Workers
 {
     public interface ISocketSessionWorker
     {
+        public enum State
+        {
+            None = 0, // 시작 전.
+            Running, // 작동중
+            Closing, // 종료 처리 중
+            Closed,
+        }
+
         /// <summary>
         /// <see cref="ISocketSessionWorker"/>을 소유하는 <see cref="ISocketServerWorker"/> 입니다.
         /// </summary>
@@ -17,9 +25,9 @@ namespace EasySocket.Workers
         ISessionBehavior behavior { get; }
 
         /// <summary>
-        /// <see cref="ISocketSessionWorker"/>가 종료됨을 표시하는 Flag 입니다.
+        /// <see cref="ISocketSessionWorker"/>의 상태를 나타내는 Flag 입니다.
         /// </summary>
-        bool isClosed { get; }
+        State state { get; }
 
         /// <summary>
         /// <see cref="ISocketSessionWorker"/>의 이벤트를 처리하는 <see cref="ISessionBehavior"/>를 설정합니다. 

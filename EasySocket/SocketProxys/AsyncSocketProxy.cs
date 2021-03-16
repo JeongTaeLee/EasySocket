@@ -26,7 +26,8 @@ namespace EasySocket.SocketProxys
             _sendLock = new SemaphoreSlim(1, 1);
             _cancelTokenSource = new CancellationTokenSource();
 
-            _networkStream = new NetworkStream(sck);
+            // 두번째 인자인 ownsSocket이 true면 NetworkStream Close 시 소켓도 같이 Close 된다.
+            _networkStream = new NetworkStream(sck, true);
             _pipeReader = PipeReader.Create(_networkStream, new StreamPipeReaderOptions());
 
             _receiveTask = ReceiveLoop();
@@ -36,7 +37,7 @@ namespace EasySocket.SocketProxys
         {
             _cancelTokenSource?.Cancel();
             
-            _receiveTask.Wait();
+            _receiveTask?.Wait();
             
             _networkStream?.Close();
             
@@ -50,7 +51,7 @@ namespace EasySocket.SocketProxys
             await (_receiveTask ?? Task.CompletedTask);
 
             _networkStream?.Close();
-            
+
             InternalClose();
         }
 

@@ -54,6 +54,8 @@ namespace Echo.Server
 
         public async void OnReceived(ISocketSessionWorker session, IMsgInfo msg)
         {
+            var buffer = new byte[1048576];
+
             var convertedMsg = msg as EchoMsgInfo;
             if (convertedMsg == null)
             {
@@ -62,11 +64,14 @@ namespace Echo.Server
 
             _logger.Info(convertedMsg.str);
 
-            var sendByte = Encoding.Default.GetBytes("Close");
+            if (convertedMsg.str == "Bye")
+            {
+                session.CloseAsync();
+                return;
+            }
 
+            var sendByte = Encoding.Default.GetBytes(convertedMsg.str);
             await session.SendAsync(sendByte);
-
-            await session.CloseAsync();
         }
     }
 
