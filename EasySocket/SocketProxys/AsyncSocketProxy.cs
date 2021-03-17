@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.IO.Pipelines;
 using System.Buffers;
 using EasySocket.Logging;
+using System.IO;
 
 namespace EasySocket.SocketProxys
 {
@@ -13,7 +14,6 @@ namespace EasySocket.SocketProxys
         private SemaphoreSlim _sendLock = null;
         private CancellationTokenSource _cancelTokenSource = null;
 
-        private Socket _socket = null;
         private NetworkStream _networkStream = null;
         private PipeReader _pipeReader = null;
 
@@ -27,7 +27,6 @@ namespace EasySocket.SocketProxys
             _sendLock = new SemaphoreSlim(1, 1);
             _cancelTokenSource = new CancellationTokenSource();
 
-            _socket = sck;
             _networkStream = new NetworkStream(sck);
             _pipeReader = PipeReader.Create(_networkStream, new StreamPipeReaderOptions());
 
@@ -41,7 +40,6 @@ namespace EasySocket.SocketProxys
             _receiveTask?.Wait();
             
             _networkStream?.Close();
-            _socket?.SafeClose();
 
             InternalClose();
         }
@@ -53,8 +51,7 @@ namespace EasySocket.SocketProxys
             await (_receiveTask ?? Task.CompletedTask);
 
             _networkStream?.Close();
-            _socket?.SafeClose();
-
+            
             InternalClose();
         }
 
