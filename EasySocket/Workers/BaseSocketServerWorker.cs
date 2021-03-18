@@ -26,11 +26,11 @@ namespace EasySocket.Workers
 
 #region ISocketServerWorker Method
 
-        public void Start(EasySocketService service)
+        public void Start(EasySocketService srvc)
         {
-            if (service == null)
+            if (srvc == null)
             {
-                throw new ArgumentNullException(nameof(service));
+                throw new ArgumentNullException(nameof(srvc));
             }
 
             if (0 >= _listenerConfigs.Count)
@@ -43,8 +43,8 @@ namespace EasySocket.Workers
                 throw new InvalidOperationException("MsgFilterFactroy not set: Please call the \"SetMsgFilterFactory\" Method and set it up.");
             }
    
-            this.service = service;
-            this.logger = service.loggerFactroy.GetLogger(GetType());
+            service = srvc;
+            logger = srvc.loggerFactroy.GetLogger(GetType());
 
             if (behavior == null)
             {
@@ -54,44 +54,44 @@ namespace EasySocket.Workers
             StartListeners();
         }
 
-        public ISocketServerWorker AddListener(ListenerConfig listenerConfig)
+        public ISocketServerWorker AddListener(ListenerConfig lstnrCnfg)
         {
-            _listenerConfigs.Add(listenerConfig);
+            _listenerConfigs.Add(lstnrCnfg);
             return this;
         }
 
-        public virtual ISocketServerWorker SetServerBehavior(IServerBehavior behavior)
+        public virtual ISocketServerWorker SetServerBehavior(IServerBehavior bhvr)
         {
-            if (behavior == null)
+            if (bhvr == null)
             {
-                throw new ArgumentNullException(nameof(behavior));
+                throw new ArgumentNullException(nameof(bhvr));
             }
 
-            this.behavior = behavior;
-
-            return this;
-        }
-
-        public virtual ISocketServerWorker SetServerConfig(ISocketServerWorkerConfig config)
-        {
-            if (config == null)
-            {
-                throw new ArgumentNullException(nameof(config));
-            }
-
-            this.config = config;
+            behavior = bhvr;
 
             return this;
         }
 
-        public virtual ISocketServerWorker SetMsgFilterFactory(IMsgFilterFactory msgFilterFactory)
+        public virtual ISocketServerWorker SetServerConfig(ISocketServerWorkerConfig cnfg)
         {
-            if (msgFilterFactory == null)
+            if (cnfg == null)
             {
-                throw new ArgumentNullException(nameof(msgFilterFactory));
+                throw new ArgumentNullException(nameof(cnfg));
             }
 
-            this.msgFilterFactory = msgFilterFactory;
+            this.config = cnfg;
+
+            return this;
+        }
+
+        public virtual ISocketServerWorker SetMsgFilterFactory(IMsgFilterFactory msgFltrFctry)
+        {
+            if (msgFltrFctry == null)
+            {
+                throw new ArgumentNullException(nameof(msgFltrFctry));
+            }
+
+            msgFilterFactory = msgFltrFctry;
 
             return this;
         }
@@ -127,28 +127,28 @@ namespace EasySocket.Workers
             _listeners = tempListeners;
         }
 
-        protected void OnSocketAcceptedFromListeners(IListener listener, Socket acceptedSocket)
+        protected void OnSocketAcceptedFromListeners(IListener lstnr, Socket acptdSck)
         {
             TSession session = null;
 
             try
             {
-                acceptedSocket.LingerState = new LingerOption(true, 0);
+                acptdSck.LingerState = new LingerOption(true, 0);
 
-                acceptedSocket.SendBufferSize = config.sendBufferSize;
-                acceptedSocket.ReceiveBufferSize = config.recvBufferSize;
+                acptdSck.SendBufferSize = config.sendBufferSize;
+                acptdSck.ReceiveBufferSize = config.recvBufferSize;
 
                 if (0 < config.sendTimeout)
                 {
-                    acceptedSocket.SendTimeout = config.sendTimeout;
+                    acptdSck.SendTimeout = config.sendTimeout;
                 }
 
                 if (0 < config.recvTimeout)
                 {
-                    acceptedSocket.ReceiveTimeout = config.recvTimeout;
+                    acptdSck.ReceiveTimeout = config.recvTimeout;
                 }
 
-                acceptedSocket.NoDelay = config.noDelay;
+                acptdSck.NoDelay = config.noDelay;
 
                 var msgFilter = msgFilterFactory.Get();
                 if (msgFilter == null)
@@ -174,7 +174,7 @@ namespace EasySocket.Workers
                     return;
                 }
 
-                tempSession.Start(acceptedSocket);
+                tempSession.Start(acptdSck);
                 
                 // finally에서 오류 체크를 하기 위해 모든 작업이 성공적으로 끝난 후 대입해줍니다.
                 session = tempSession;
@@ -188,12 +188,12 @@ namespace EasySocket.Workers
                 // 세션을 생성하지 못하면 연결이 실패한 것으로 관리합니다.
                 if (session == null)
                 {
-                    acceptedSocket?.SafeClose();
+                    acptdSck?.SafeClose();
                 }
             }
         }
 
-        protected virtual void OnErrorOccurredFromListeners(IListener listener, Exception ex)
+        protected virtual void OnErrorOccurredFromListeners(IListener lstnr, Exception ex)
         {
             behavior?.OnError(ex);
         }

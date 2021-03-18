@@ -60,14 +60,14 @@ namespace EasySocket
         /// <summary>
         /// 해당 <see cref="EasySocketService"/>에서 사용하는 <see cref="ILoggerFactory"/>를 설정합니다.
         /// </summary>
-        public EasySocketService SetLoggerFactroy(ILoggerFactory loggerFactroy)
+        public EasySocketService SetLoggerFactroy(ILoggerFactory lgrFctry)
         {
-            if (loggerFactroy == null)
+            if (lgrFctry == null)
             {
-                throw new ArgumentNullException(nameof(loggerFactroy));
+                throw new ArgumentNullException(nameof(lgrFctry));
             }
 
-            this.loggerFactroy = loggerFactroy;
+            loggerFactroy = lgrFctry;
 
             return this;
         }
@@ -87,14 +87,14 @@ namespace EasySocket
         /// 해당 <see cref="EasySocketService"/>에서 실행할 <see cref="ISocketServerWorker"/>를 구성하는 메서드를 설정합니다.
         /// 설정된 메서드는 <see cref="ISocketServerWorker"/>가 생성된 후 단 한번 호출됩니다.
         /// </summary>
-        public EasySocketService SetSocketServerConfigrator(Action<ISocketServerWorker> serverConfigrator)
+        public EasySocketService SetSocketServerConfigrator(Action<ISocketServerWorker> srvCnfgr)
         {
-            if (serverConfigrator == null)
+            if (srvCnfgr == null)
             {
-                throw new ArgumentNullException(nameof(serverConfigrator));
+                throw new ArgumentNullException(nameof(srvCnfgr));
             }
 
-            this.serverConfigrator = serverConfigrator;
+            serverConfigrator = srvCnfgr;
 
             return this;
         }
@@ -103,14 +103,14 @@ namespace EasySocket
         /// <see cref="ISocketServerWorker"/>에서 새로운 세션이 연결되고 <see cref="ISocketSessionWorker"/>가 생성된 후 호출됩니다.
         /// 설정된 메서드는 새로운 <see cref="ISocketSessionWorker"/>가 생성될 때 각 한번 호출됩니다.
         /// </summary>
-        public EasySocketService SetSocketSessionConfigrator(Action<ISocketSessionWorker> sessionConfigrator)
+        public EasySocketService SetSocketSessionConfigrator(Action<ISocketSessionWorker> seinCnfgr)
         {
-            if (sessionConfigrator == null)
+            if (seinCnfgr == null)
             {
-                throw new ArgumentNullException(nameof(sessionConfigrator));
+                throw new ArgumentNullException(nameof(seinCnfgr));
             }
 
-            this.sessionConfigrator = sessionConfigrator;
+            sessionConfigrator = seinCnfgr;
 
             return this;
         }

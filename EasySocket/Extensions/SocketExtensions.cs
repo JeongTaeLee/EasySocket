@@ -4,20 +4,20 @@ namespace EasySocket
 {
     public static class SocketExtensions
     {
-        public static void SafeClose(this Socket socket)
+        public static void SafeClose(this Socket sckt)
         {
-            if (socket == null)
+            if (sckt == null)
             {
                 return;
             }
 
             try
             {
-                socket.Shutdown(SocketShutdown.Both);
+                sckt.Shutdown(SocketShutdown.Both);
             }
             finally
             {
-                socket.Close();
+                sckt.Close();
             }
         }
     }

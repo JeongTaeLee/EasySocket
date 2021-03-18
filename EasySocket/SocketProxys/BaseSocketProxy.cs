@@ -17,10 +17,10 @@ namespace EasySocket.SocketProxys
         protected ILogger logger { get; private set; } = null;
 
         #region ISocketProxy Method
-        public virtual void Start(Socket sck, ILogger lgr)
+        public virtual void Start(Socket sckt, ILogger lger)
         {
-            socket = sck ?? throw new ArgumentNullException(nameof(sck));
-            logger = lgr ?? throw new ArgumentNullException(nameof(lgr));
+            socket = sckt ?? throw new ArgumentNullException(nameof(sckt));
+            logger = lger ?? throw new ArgumentNullException(nameof(lger));
             
             if (onReceived == null)
             {
@@ -42,9 +42,9 @@ namespace EasySocket.SocketProxys
 
         public abstract ValueTask CloseAsync();
 
-        public abstract int Send(ReadOnlyMemory<byte> sendMemory);
+        public abstract int Send(ReadOnlyMemory<byte> sendMmry);
 
-        public abstract ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory);
+        public abstract ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMmry);
         #endregion
         
         protected virtual void InternalClose()

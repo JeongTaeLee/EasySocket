@@ -15,9 +15,9 @@ namespace EasySocket.Listeners
         private CancellationTokenSource _acceptLoopCanelToken = null;
 
 #region BaseListener Method
-        public override void Start(ListenerConfig config, ILogger logger)
+        public override void Start(ListenerConfig cnfg, ILogger lger)
         {
-            base.Start(config, logger);
+            base.Start(cnfg, lger);
 
             _acceptLoopCanelToken = new CancellationTokenSource();
 
@@ -26,7 +26,7 @@ namespace EasySocket.Listeners
             _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             _listenSocket.Bind(endPoint);
             _listenSocket.Listen(this.config.backlog);
-            _listenSocket.NoDelay = config.listenerNoDelay;
+            _listenSocket.NoDelay = cnfg.listenerNoDelay;
 
             _acceptLoopTask = AcceptLoop();
         }

@@ -22,14 +22,14 @@ namespace EasySocket.SocketProxys
         private int _isClose = 0;
 
         #region BaseSocketProxy Method
-        public override void Start(Socket sck, ILogger lgr)
+        public override void Start(Socket sckt, ILogger lger)
         {
-            base.Start(sck, lgr);
+            base.Start(sckt, lger);
 
             _sendLock = new SemaphoreSlim(1, 1);
             _cancelTokenSource = new CancellationTokenSource();
 
-            _networkStream = new NetworkStream(sck);
+            _networkStream = new NetworkStream(sckt);
             _pipeReader = PipeReader.Create(_networkStream, new StreamPipeReaderOptions());
 
             _receiveTask = ReceiveLoop();
@@ -61,13 +61,13 @@ namespace EasySocket.SocketProxys
             await InternalCloseAsync();
         }
 
-        public override int Send(ReadOnlyMemory<byte> sendMemory)
+        public override int Send(ReadOnlyMemory<byte> sendMmry)
         {
             try
             {
                 _sendLock.Wait();
 
-                return socket.SendAsync(sendMemory, SocketFlags.None)
+                return socket.SendAsync(sendMmry, SocketFlags.None)
                     .GetAwaiter()
                     .GetResult();
             }
@@ -77,12 +77,12 @@ namespace EasySocket.SocketProxys
             }
         }
 
-        public override async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
+        public override async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMmry)
         {
             try
             {
                 await _sendLock.WaitAsync();
-                return await socket.SendAsync(sendMemory, SocketFlags.None);
+                return await socket.SendAsync(sendMmry, SocketFlags.None);
             }
             finally
             {

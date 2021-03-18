@@ -14,34 +14,34 @@ namespace EasySocket.Listeners
 
         protected ILogger logger { get; private set; } = null;
 
-        public virtual void Start(ListenerConfig config, ILogger logger)
+        public virtual void Start(ListenerConfig cnfg, ILogger lger)
         {
-            if (config == null)
+            if (cnfg == null)
             {
-                throw new ArgumentNullException(nameof(config)); 
+                throw new ArgumentNullException(nameof(cnfg)); 
             }
 
-            if (logger == null)
+            if (lger == null)
             {
-                throw new ArgumentNullException(nameof(logger));
+                throw new ArgumentNullException(nameof(lger));
             }
 
-            if (string.IsNullOrEmpty(config.ip))
+            if (string.IsNullOrEmpty(cnfg.ip))
             {
-                throw new ArgumentNullException(nameof(config.ip));
+                throw new ArgumentNullException(nameof(cnfg.ip));
             }
 
-            if (0 > config.port || short.MaxValue < config.port)
+            if (0 > cnfg.port || short.MaxValue < cnfg.port)
             {
                 throw new ArgumentException("Invalid Port Range");
             }
   
-            this.config = config;
-            this.logger = logger;
+            config = cnfg;
+            logger = lger;
 
             if (accepted == null)
             {
-                this.logger.Warn("Accepted Handler is not set : Unable to receive events for socket accept");
+                logger.Warn("Accepted Handler is not set : Unable to receive events for socket accept");
             }
 
             if (error == null)
