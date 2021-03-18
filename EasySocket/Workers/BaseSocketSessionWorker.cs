@@ -155,7 +155,6 @@ namespace EasySocket.Workers
         private void OnCloseFromSocketProxy()
         {
             behavior?.OnClosed(this);
-
             _onClose.Invoke(this);
         }
 
@@ -193,11 +192,6 @@ namespace EasySocket.Workers
         }
 
         /// <summary>
-        /// <see cref="ISocketSessionWorker"/>의 소켓 통신이 구현된 <see cref="ISocketProxy"/>를 생성 후 반환합니다.
-        /// </summary>
-        protected abstract ISocketProxy CreateSocketProxy();
-        
-        /// <summary>
         /// <see cref="ISocketSessionWorker"/>를 소유하는 <see cref="ISocketServerWorker"/> 입니다.
         /// </summary>
         public BaseSocketSessionWorker SetSocketServer(ISocketServerWorker _srv)
@@ -214,5 +208,11 @@ namespace EasySocket.Workers
             _onClose = onClose ?? throw new ArgumentNullException(nameof(onClose));
             return this;
         }
+
+        /// <summary>
+        /// <see cref="ISocketSessionWorker"/>의 소켓 통신이 구현된 <see cref="ISocketProxy"/>를 생성 후 반환합니다.
+        /// </summary>
+        protected abstract ISocketProxy CreateSocketProxy();
+
     }
 }

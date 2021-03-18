@@ -18,7 +18,9 @@ namespace EasySocket.SocketProxys
         private PipeReader _pipeReader = null;
 
         private Task _receiveTask = null;
-        
+
+        private int _isClose = 0;
+
         #region BaseSocketProxy Method
         public override void Start(Socket sck, ILogger lgr)
         {
@@ -31,28 +33,32 @@ namespace EasySocket.SocketProxys
             _pipeReader = PipeReader.Create(_networkStream, new StreamPipeReaderOptions());
 
             _receiveTask = ReceiveLoop();
+
+            WaitClose();
         }
 
         public override void Close()
         {
             _cancelTokenSource?.Cancel();
-            
-            _receiveTask?.Wait();
-            
+            InternalCloseAsync().Wait();
+        }
+
+        protected override void InternalClose()
+        {
+            base.InternalClose();
+
             _networkStream?.Close();
 
-            InternalClose();
+            _networkStream = null;
+            _pipeReader = null;
+            _sendLock = null;
+            _cancelTokenSource = null;
         }
 
         public override async ValueTask CloseAsync()
         {
             _cancelTokenSource?.Cancel();
-            
-            await (_receiveTask ?? Task.CompletedTask);
-
-            _networkStream?.Close();
-            
-            InternalClose();
+            await InternalCloseAsync();
         }
 
         public override int Send(ReadOnlyMemory<byte> sendMemory)
@@ -85,15 +91,23 @@ namespace EasySocket.SocketProxys
         }
         #endregion
 
-        private void InternalClose()
+        private async void WaitClose()
         {
-            _sendLock = null;
-            _cancelTokenSource = null;
+            await InternalCloseAsync();
+        }
 
-            _networkStream = null;
-            _pipeReader = null;
+        private async Task InternalCloseAsync()
+        {
+            await _receiveTask;
 
-            _receiveTask = null;
+            if (Interlocked.CompareExchange(ref _isClose, 1, 0) != 0)
+            {
+                return;
+            }
+
+            onClose?.Invoke();
+
+            InternalClose();
         }
 
         private async Task ReceiveLoop()
@@ -109,15 +123,15 @@ namespace EasySocket.SocketProxys
                     
                     try
                     {
+                        if (0 < buffer.Length)
+                        {
+                            readLength = onReceived?.Invoke(ref buffer) ?? buffer.Length;
+                        }
+
                         if (result.IsCanceled)
                         {
                             readLength = buffer.Length;
                             break;
-                        }
-                        
-                        if (0 < buffer.Length)
-                        {
-                            readLength = onReceived?.Invoke(ref buffer) ?? buffer.Length;
                         }
 
                         if (result.IsCompleted)
@@ -130,6 +144,8 @@ namespace EasySocket.SocketProxys
                     {
                         readLength = buffer.Length;
                         onError?.Invoke(ex);
+
+                        break;
                     }
                     finally
                     {
@@ -137,11 +153,13 @@ namespace EasySocket.SocketProxys
                     }
                 }
             }
-            
+            catch (OperationCanceledException)
+            {
+                // cancel~
+            }
             finally
             {
                 await _pipeReader.CompleteAsync();
-                onClose?.Invoke();
             }
         }
     }

@@ -66,11 +66,12 @@ namespace Echo.Server
 
             if (convertedMsg.str == "Bye")
             {
-                session.CloseAsync();
+                await session.CloseAsync();
                 return;
             }
 
             var sendByte = Encoding.Default.GetBytes(convertedMsg.str);
+            
             await session.SendAsync(sendByte);
         }
     }
@@ -116,8 +117,12 @@ namespace Echo.Server
                         .AddListener(new ListenerConfig("Any", 9199, 100000, true))
                         .SetMsgFilterFactory(new DefaultMsgFilterFactory<EchoFilter>())
                         .SetServerBehavior(new EchoServerBehavior())
-                        .SetServerConfig(new SocketServerWorkerConfig())
-                        ;       
+                        .SetServerConfig(new SocketServerWorkerConfig
+                        {
+
+                        })
+                        ;
+                    ;       
                 })
                 .SetSocketSessionConfigrator((session) =>
                 {

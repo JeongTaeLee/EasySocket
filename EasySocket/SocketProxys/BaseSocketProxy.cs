@@ -7,14 +7,16 @@ namespace EasySocket.SocketProxys
 {
     public abstract class BaseSocketProxy : ISocketProxy
     {
-#region ISocketProxy Field
-        public Socket socket { get; private set; } = null;
+        #region ISocketProxy Field
+        public Socket socket { get; private set; }
         public SocketProxyReceiveHandler onReceived { get; set; }
         public SocketProxyErrorHandler onError { get; set; }
         public SocketProxyCloseHandler onClose { get; set; }
-#endregion
+        #endregion
+
         protected ILogger logger { get; private set; } = null;
 
+        #region ISocketProxy Method
         public virtual void Start(Socket sck, ILogger lgr)
         {
             socket = sck ?? throw new ArgumentNullException(nameof(sck));
@@ -35,6 +37,7 @@ namespace EasySocket.SocketProxys
                 logger.Warn("Close Handler is not set : Unable to receive events for close");
             }
         }
+        
         public abstract void Close();
 
         public abstract ValueTask CloseAsync();
@@ -42,5 +45,18 @@ namespace EasySocket.SocketProxys
         public abstract int Send(ReadOnlyMemory<byte> sendMemory);
 
         public abstract ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory);
+        #endregion
+        
+        protected virtual void InternalClose()
+        {
+            socket?.Close();
+
+            socket = null;
+            logger = null;
+
+            onReceived = null;
+            onError = null;
+            onClose = null;
+        }
     }
 }

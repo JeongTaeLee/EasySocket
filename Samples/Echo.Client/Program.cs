@@ -35,6 +35,8 @@ namespace Echo.Client
 
             await receiveTask;
 
+            //socket.Shutdown(SocketShutdown.Both);
+            socket.Close();
             socket.Close();
 
             Console.WriteLine("Close");
@@ -51,8 +53,7 @@ namespace Echo.Client
                 var inputStr = Console.ReadLine();
                 if (inputStr == "Close")
                 {
-                    socket.Close();
-                    cancelationToken.Cancel();
+                    cancelationToken?.Cancel();
                     break;
                 }
 
@@ -66,7 +67,6 @@ namespace Echo.Client
 
                 Console.WriteLine($"Sended({sendLength})");
             }
-
         }
         
         static async Task ProcessReceive(Socket socket)
@@ -106,11 +106,10 @@ namespace Echo.Client
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex);
-            }
 
+            }
             finally
             {
                 if (!cancelationToken.IsCancellationRequested)
