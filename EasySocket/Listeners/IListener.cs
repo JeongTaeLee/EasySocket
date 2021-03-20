@@ -1,7 +1,7 @@
 using System;
 using System.Net.Sockets;
 using EasySocket.Logging;
-using EasySocket.Workers;
+using EasySocket.Servers;
 
 namespace EasySocket.Listeners
 {

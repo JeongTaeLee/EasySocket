@@ -3,39 +3,40 @@ using System.Buffers;
 using System.Threading;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using EasySocket.Logging;
+using EasySocket.Servers;
 using EasySocket.Behaviors;
 using EasySocket.SocketProxys;
-using EasySocket.Logging;
 using EasySocket.Protocols.Filters;
 
-namespace EasySocket.Workers
+namespace EasySocket.Sessions
 {
-    public delegate void BaseSocketSessionCloseHandler(BaseSocketSessionWorker session);
+    public delegate void BaseSocketSessionCloseHandler(BaseSocketSession session);
     
-    public abstract class BaseSocketSessionWorker : ISocketSessionWorker
+    public abstract class BaseSocketSession : ISocketSession
     {
-#region ISocketSessionWorker Field
-        public ISocketServerWorker server { get; private set; } = null;
+#region ISocketSession Field
+        public ISocketServer server { get; private set; } = null;
         public ISessionBehavior behavior { get; private set; } = null;
 
-        public ISocketSessionWorker.State state => (ISocketSessionWorker.State)_state;
+        public ISocketSession.State state => (ISocketSession.State)_state;
 #endregion
 
         private ISocketProxy _socketProxy = null;
         private IMsgFilter _msgFilter = null;
         private BaseSocketSessionCloseHandler _onClose = null;
 
-        private int _state = (int)ISocketSessionWorker.State.None;
+        private int _state = (int)ISocketSession.State.None;
 
         protected ILogger logger { get; private set; } = null;
         
-#region ISocketSessionWorker Method
+#region ISocketSession Method
         public void Close()
         {
-            int prevState = Interlocked.CompareExchange(ref _state, (int)ISocketSessionWorker.State.Closing, (int)ISocketSessionWorker.State.Running);
-            if (prevState != (int)ISocketSessionWorker.State.Running)
+            int prevState = Interlocked.CompareExchange(ref _state, (int)ISocketSession.State.Closing, (int)ISocketSession.State.Running);
+            if (prevState != (int)ISocketSession.State.Running)
             {
-                if (prevState == (int)ISocketSessionWorker.State.None)
+                if (prevState == (int)ISocketSession.State.None)
                 {
                     _onClose?.Invoke(this);
                 }
@@ -52,16 +53,16 @@ namespace EasySocket.Workers
             if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
             {
                 socketProxy.Close();
-                _state = (int)ISocketSessionWorker.State.Closed;
+                _state = (int)ISocketSession.State.Closed;
             }
         }
 
         public virtual async ValueTask CloseAsync()
         {
-            int prevState = Interlocked.CompareExchange(ref _state, (int)ISocketSessionWorker.State.Closing, (int)ISocketSessionWorker.State.Running);
-            if (prevState != (int)ISocketSessionWorker.State.Running)
+            int prevState = Interlocked.CompareExchange(ref _state, (int)ISocketSession.State.Closing, (int)ISocketSession.State.Running);
+            if (prevState != (int)ISocketSession.State.Running)
             {
-                if (prevState == (int)ISocketSessionWorker.State.None)
+                if (prevState == (int)ISocketSession.State.None)
                 {
                     _onClose?.Invoke(this);
                 }
@@ -78,13 +79,13 @@ namespace EasySocket.Workers
             if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
             {
                 await socketProxy.CloseAsync();
-                _state = (int)ISocketSessionWorker.State.Closed;
+                _state = (int)ISocketSession.State.Closed;
             }
         }
 
         public int Send(ReadOnlyMemory<byte> sendMemory)
         {
-            if (_state != (int)ISocketSessionWorker.State.Running)
+            if (_state != (int)ISocketSession.State.Running)
             {
                 return -1;
             }
@@ -94,7 +95,7 @@ namespace EasySocket.Workers
 
         public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
         {
-            if (_state != (int)ISocketSessionWorker.State.Running)
+            if (_state != (int)ISocketSession.State.Running)
             {
                 return -1;
             }
@@ -102,13 +103,13 @@ namespace EasySocket.Workers
             return await _socketProxy.SendAsync(sendMemory);
         }
 
-        public ISocketSessionWorker SetSessionBehavior(ISessionBehavior behavior)
+        public ISocketSession SetSessionBehavior(ISessionBehavior behavior)
         {
             this.behavior = behavior ?? throw new ArgumentNullException(nameof(behavior));
             
             return this;
         }
-        #endregion ISocketSessionWorker Method
+        #endregion ISocketSession Method
 
         public void Start(Socket sck)
         {
@@ -129,19 +130,19 @@ namespace EasySocket.Workers
 
             logger = server.service.loggerFactroy.GetLogger(GetType()) ??
                      throw new InvalidOperationException(
-                         "\"ISocketSessionWorker.loggerFactory\" returned null : Unable to get Logger.");
+                         "\"ISocketSession.loggerFactory\" returned null : Unable to get Logger.");
 
             _msgFilter = server.msgFilterFactory.Get() ??
                          throw new InvalidOperationException(
-                             "\"ISocketSessionWorker.msgFilterFactory\" returned null : Unable to get MsgFilter.");
+                             "\"ISocketSession.msgFilterFactory\" returned null : Unable to get MsgFilter.");
 
             _socketProxy = CreateSocketProxy() ??
                            throw new InvalidOperationException("\"CreateSocketProxy\" Method returned null.");
 
-            int prevState = Interlocked.CompareExchange(ref _state, (int)ISocketSessionWorker.State.Running, (int)ISocketSessionWorker.State.None);
-            if (prevState != (int)ISocketSessionWorker.State.None)
+            int prevState = Interlocked.CompareExchange(ref _state, (int)ISocketSession.State.Running, (int)ISocketSession.State.None);
+            if (prevState != (int)ISocketSession.State.None)
             {
-                throw new InvalidOperationException("ISocketSessionWorker state before startup is invalid.");
+                throw new InvalidOperationException("ISocketSession state before startup is invalid.");
             }
 
             _socketProxy.onReceived = OnReceivedFromSocketProxy;
@@ -192,25 +193,25 @@ namespace EasySocket.Workers
         }
 
         /// <summary>
-        /// <see cref="ISocketSessionWorker"/>를 소유하는 <see cref="ISocketServerWorker"/> 입니다.
+        /// <see cref="ISocketSession"/>를 소유하는 <see cref="ISocketServer"/> 입니다.
         /// </summary>
-        public BaseSocketSessionWorker SetSocketServer(ISocketServerWorker _srv)
+        public BaseSocketSession SetSocketServer(ISocketServer _srv)
         {
             server = _srv ?? throw new ArgumentNullException(nameof(_srv));
             return this;
         }
         
         /// <summary>
-        /// <see cref="ISocketSessionWorker"/>가 종료될 때 호출하는 콜백 함수인 <see cref="BaseSocketSessionCloseHandler"/>를 등록합니다.
+        /// <see cref="ISocketSession"/>가 종료될 때 호출하는 콜백 함수인 <see cref="BaseSocketSessionCloseHandler"/>를 등록합니다.
         /// </summary>
-        public BaseSocketSessionWorker SetCloseHandler(BaseSocketSessionCloseHandler onClose)
+        public BaseSocketSession SetCloseHandler(BaseSocketSessionCloseHandler onClose)
         {
             _onClose = onClose ?? throw new ArgumentNullException(nameof(onClose));
             return this;
         }
 
         /// <summary>
-        /// <see cref="ISocketSessionWorker"/>의 소켓 통신이 구현된 <see cref="ISocketProxy"/>를 생성 후 반환합니다.
+        /// <see cref="ISocketSession"/>의 소켓 통신이 구현된 <see cref="ISocketProxy"/>를 생성 후 반환합니다.
         /// </summary>
         protected abstract ISocketProxy CreateSocketProxy();
 

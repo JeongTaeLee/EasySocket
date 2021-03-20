@@ -5,22 +5,22 @@ using EasySocket.Logging;
 using EasySocket.Protocols.Filters;
 using EasySocket.Protocols.Filters.Factories;
 
-namespace EasySocket.Workers
+namespace EasySocket.Servers
 {
     /// <summary>
     /// <see cref="IListener"/>를 작동시키고
     /// 연결 요청이 온 세션을 생성, 삭제, 관리하는 클래스입니다.
     /// </summary>
-    public interface ISocketServerWorker
+    public interface ISocketServer
     {
         /// <summary>
-        /// 해당 <see cref="ISocketServerWorker"/>의 설정 객체인 <see cref="ISocketServerWorkerConfig"/> 입니다.
+        /// 해당 <see cref="ISocketServer"/>의 설정 객체인 <see cref="ISocketServerConfig"/> 입니다.
         /// </summary>
         /// <value></value>
-        ISocketServerWorkerConfig config { get; }
+        ISocketServerConfig config { get; }
 
         /// <summary>
-        /// 해당 <see cref="ISocketServerWorker"/>를 소유하는 <see cref="EasySocketService"/> 입니다.
+        /// 해당 <see cref="ISocketServer"/>를 소유하는 <see cref="EasySocketService"/> 입니다.
         /// </summary>
         EasySocketService service { get; }
 
@@ -30,40 +30,40 @@ namespace EasySocket.Workers
         IMsgFilterFactory msgFilterFactory { get; }
 
         /// <summary>
-        /// 해당 <see cref="ISocketServerWorker"/>에서 실행하는 여러개의 <see cref="IListener"/> 설정 객체인 <see cref="ListenerConfig"/> 입니다.
+        /// 해당 <see cref="ISocketServer"/>에서 실행하는 여러개의 <see cref="IListener"/> 설정 객체인 <see cref="ListenerConfig"/> 입니다.
         /// </summary>
         IReadOnlyList<ListenerConfig> listenerConfigs { get; }
 
         /// <summary>
-        /// 해당 <see cref="ISocketServerWorker"/>의 이벤트를 처리하는 <see cref="IServerBehavior"/> 입니다. 
+        /// 해당 <see cref="ISocketServer"/>의 이벤트를 처리하는 <see cref="IServerBehavior"/> 입니다. 
         /// </summary>
         IServerBehavior behavior { get; }
 
         /// <summary>
-        /// <see cref="ISocketServerWorker"/>를 초기화 후 시작합니다.
+        /// <see cref="ISocketServer"/>를 초기화 후 시작합니다.
         /// </summary>
         /// <param name="services">해당 서버를 소유하는 <see cref="EasySocketService"/> 입니다.</param>
         void Start(EasySocketService services);
 
         /// <summary>
-        /// 해당 <see cref="ISocketServerWorker"/>에서 실행할 <see cref="IListener"/>의 설정 객체인 <see cref="ListenerConfig"/>를 추가합니다.
+        /// 해당 <see cref="ISocketServer"/>에서 실행할 <see cref="IListener"/>의 설정 객체인 <see cref="ListenerConfig"/>를 추가합니다.
         /// </summary>
         /// <param name="listener">생성할 <see cref="IListener"/>의 설적 객체인<see cref="ListenerConfig"/> 입니다.</param>
-        ISocketServerWorker AddListener(ListenerConfig listenerConfig);
+        ISocketServer AddListener(ListenerConfig listenerConfig);
 
         /// <summary>
-        /// 해당 <see cref="ISocketServerWorker"/>의 이벤트를 처리하는 <see cref="IServerBehavior"/>를 설정합니다. 
+        /// 해당 <see cref="ISocketServer"/>의 이벤트를 처리하는 <see cref="IServerBehavior"/>를 설정합니다. 
         /// </summary>
-        ISocketServerWorker SetServerBehavior(IServerBehavior behavior);
+        ISocketServer SetServerBehavior(IServerBehavior behavior);
 
         /// <summary>
-        /// 해당 <see cref="ISocketServerWorker"/>의 설정 객체인 <see cref="ISocketServerWorkerConfig"/>를 설정합니다.
+        /// 해당 <see cref="ISocketServer"/>의 설정 객체인 <see cref="ISocketServerConfig"/>를 설정합니다.
         /// </summary>
-        ISocketServerWorker SetServerConfig(ISocketServerWorkerConfig config);
+        ISocketServer SetServerConfig(ISocketServerConfig config);
 
         /// <summary>
         /// 수신한 데이터를 필터링하는 <see cref="Protocols.Filters.IMsgFilter"/>를 생성하는 <see cref="Protocols.Filters.Factories.IMsgFilter"/>를 설정합니다.
         /// </summary>
-        ISocketServerWorker SetMsgFilterFactory(IMsgFilterFactory msgFilterFactory);
+        ISocketServer SetMsgFilterFactory(IMsgFilterFactory msgFilterFactory);
     }
 }

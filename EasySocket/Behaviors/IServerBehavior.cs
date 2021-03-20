@@ -1,5 +1,5 @@
 using System;
-using EasySocket.Workers;
+using EasySocket.Sessions;
 
 namespace EasySocket.Behaviors
 {
@@ -12,16 +12,16 @@ namespace EasySocket.Behaviors
         /// 세션이 연결된 후 호출됩니다.
         /// Accepted -> Create and configation session -> Call!..
         /// </summary>
-        void OnSessionConnected(ISocketSessionWorker session);
+        void OnSessionConnected(ISocketSession session);
 
         /// <summary>
         /// 새션의 연결이 종료되었을 때 호출됩니다.
         /// Socket Close -> session close process -> Call!
         /// </summary>
-        void OnSessionDisconnected(ISocketSessionWorker session);
+        void OnSessionDisconnected(ISocketSession session);
 
         /// <summary>
-        /// <see cref="ISocketServerWorker"/> 내부에서 오류 발생 시 호출됩니다.
+        /// <see cref="ISocketServer"/> 내부에서 오류 발생 시 호출됩니다.
         /// </summary>
         void OnError(Exception ex);
     }

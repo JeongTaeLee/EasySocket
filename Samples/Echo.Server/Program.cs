@@ -7,8 +7,9 @@ using EasySocket.Listeners;
 using EasySocket.Protocols.Filters;
 using EasySocket.Protocols.Filters.Factories;
 using EasySocket.Protocols.MsgInfos;
-using EasySocket.Workers;
-using EasySocket.Workers.Async;
+using EasySocket.Servers;
+using EasySocket.Servers.Async;
+using EasySocket.Sessions;
 using NLog;
 
 namespace Echo.Server
@@ -17,12 +18,12 @@ namespace Echo.Server
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        public void OnSessionConnected(ISocketSessionWorker session)
+        public void OnSessionConnected(ISocketSession session)
         {
             _logger.Info($"Connected Session : {session}");
         }
 
-        public void OnSessionDisconnected(ISocketSessionWorker session)
+        public void OnSessionDisconnected(ISocketSession session)
         {
             _logger.Info($"Disconnected Session : {session}");
         }
@@ -37,22 +38,22 @@ namespace Echo.Server
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        public void OnStarted(ISocketSessionWorker session)
+        public void OnStarted(ISocketSession session)
         {
             _logger.Info($"Started Session : {this}");
         }
 
-        public void OnClosed(ISocketSessionWorker session)
+        public void OnClosed(ISocketSession session)
         {
             _logger.Info($"Closed  Session : {this}");
         }
 
-        public void OnError(ISocketSessionWorker session, Exception ex)
+        public void OnError(ISocketSession session, Exception ex)
         {
             _logger.Error(ex);
         }
 
-        public async void OnReceived(ISocketSessionWorker session, IMsgInfo msg)
+        public async void OnReceived(ISocketSession session, IMsgInfo msg)
         {
             var buffer = new byte[1048576];
 
@@ -110,14 +111,14 @@ namespace Echo.Server
 
             var service = new EasySocketService()
                 .SetLoggerFactroy(loggerFactory)
-                .SetSocketServer<AsyncSocketServerWorker>()
+                .SetSocketServer<AsyncSocketServer>()
                 .SetSocketServerConfigrator((server) =>
                 {
                     server
                         .AddListener(new ListenerConfig("Any", 9199, 100000, true))
                         .SetMsgFilterFactory(new DefaultMsgFilterFactory<EchoFilter>())
                         .SetServerBehavior(new EchoServerBehavior())
-                        .SetServerConfig(new SocketServerWorkerConfig
+                        .SetServerConfig(new SocketServerConfig
                         {
 
                         })

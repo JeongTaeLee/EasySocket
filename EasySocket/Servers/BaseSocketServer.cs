@@ -1,30 +1,31 @@
 using System;
 using System.Collections.Generic;
+using EasySocket.Logging;
 using System.Net.Sockets;
+using EasySocket.Sessions;
 using EasySocket.Behaviors;
 using EasySocket.Listeners;
-using EasySocket.Logging;
 using EasySocket.Protocols.Filters.Factories;
 
-namespace EasySocket.Workers
+namespace EasySocket.Servers
 {
-    public abstract class BaseSocketServerWorker<TSession> : ISocketServerWorker
-        where TSession : BaseSocketSessionWorker
+    public abstract class BaseSocketServer<TSession> : ISocketServer
+        where TSession : BaseSocketSession
     {
-#region ISocketServerWorker Field 
-        public ISocketServerWorkerConfig config { get; private set; } = new SocketServerWorkerConfig();
+#region ISocketServer Field 
+        public ISocketServerConfig config { get; private set; } = new SocketServerConfig();
         public EasySocketService service { get; private set; } = null;
         public IMsgFilterFactory msgFilterFactory { get; private set; } = null;
         public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
         public IServerBehavior behavior { get; private set; } = null;
-#endregion ISocketServerWorker Field
+#endregion ISocketServer Field
 
         private List<ListenerConfig> _listenerConfigs = new List<ListenerConfig>();
         private IReadOnlyList<IListener> _listeners = null;
         
         protected ILogger logger { get; private set; } = null;
 
-#region ISocketServerWorker Method
+#region ISocketServer Method
 
         public void Start(EasySocketService srvc)
         {
@@ -54,13 +55,13 @@ namespace EasySocket.Workers
             StartListeners();
         }
 
-        public ISocketServerWorker AddListener(ListenerConfig lstnrCnfg)
+        public ISocketServer AddListener(ListenerConfig lstnrCnfg)
         {
             _listenerConfigs.Add(lstnrCnfg);
             return this;
         }
 
-        public virtual ISocketServerWorker SetServerBehavior(IServerBehavior bhvr)
+        public virtual ISocketServer SetServerBehavior(IServerBehavior bhvr)
         {
             if (bhvr == null)
             {
@@ -72,7 +73,7 @@ namespace EasySocket.Workers
             return this;
         }
 
-        public virtual ISocketServerWorker SetServerConfig(ISocketServerWorkerConfig cnfg)
+        public virtual ISocketServer SetServerConfig(ISocketServerConfig cnfg)
         {
             if (cnfg == null)
             {
@@ -84,7 +85,7 @@ namespace EasySocket.Workers
             return this;
         }
 
-        public virtual ISocketServerWorker SetMsgFilterFactory(IMsgFilterFactory msgFltrFctry)
+        public virtual ISocketServer SetMsgFilterFactory(IMsgFilterFactory msgFltrFctry)
         {
             if (msgFltrFctry == null)
             {
@@ -95,7 +96,7 @@ namespace EasySocket.Workers
 
             return this;
         }
-#endregion ISocketServerWorker Method
+#endregion ISocketServer Method
 
         private void StartListeners()
         {
@@ -169,7 +170,7 @@ namespace EasySocket.Workers
                 behavior?.OnSessionConnected(tempSession);
 
                 // 시작하기전 상태를 체크합니다 None 상태가 아니라면 비정상적인 상황입니다.
-                if (tempSession.state != ISocketSessionWorker.State.None)
+                if (tempSession.state != ISocketSession.State.None)
                 {
                     return;
                 }
@@ -198,18 +199,18 @@ namespace EasySocket.Workers
             behavior?.OnError(ex);
         }
 
-        protected virtual void OnCloseFromSocketSession(BaseSocketSessionWorker session)
+        protected virtual void OnCloseFromSocketSession(BaseSocketSession session)
         {
             behavior?.OnSessionDisconnected(session);
         }
         
         /// <summary>
-        /// <see cref="ISocketSessionWorker"/>의 소켓 수락을 구현하는 <see cref="IListener"/>를 생성 후 반환합니다.
+        /// <see cref="ISocketSession"/>의 소켓 수락을 구현하는 <see cref="IListener"/>를 생성 후 반환합니다.
         /// </summary>
         protected abstract IListener CreateListener();
 
         /// <summary>
-        /// <see cref="ISocketSessionWorker"/>의 연결된 소켓을 관리하는 <see cref="ISocketSessionWorker"/>를 생성 후 반환합니다.
+        /// <see cref="ISocketSession"/>의 연결된 소켓을 관리하는 <see cref="ISocketSession"/>를 생성 후 반환합니다.
         /// </summary>
         protected abstract TSession CreateSession();
     }

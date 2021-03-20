@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
-using EasySocket.Workers;
+using EasySocket.Servers;
 using EasySocket.Logging;
 
 namespace EasySocket.Listeners

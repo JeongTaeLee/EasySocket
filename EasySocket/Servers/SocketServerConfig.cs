@@ -1,6 +1,6 @@
-namespace EasySocket.Workers
+namespace EasySocket.Servers
 {
-    public class SocketServerWorkerConfig : ISocketServerWorkerConfig
+    public class SocketServerConfig : ISocketServerConfig
     {
         public int recvBufferSize { get; private set; } = 1024 * 4;
         public int sendBufferSize { get; private set; } = 1024 * 4;

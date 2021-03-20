@@ -1,5 +1,6 @@
 using System;
-using EasySocket.Workers;
+using EasySocket.Servers;
+using EasySocket.Sessions;
 using EasySocket.Logging;
 
 namespace EasySocket
@@ -9,10 +10,10 @@ namespace EasySocket
         public ILoggerFactory loggerFactroy { get; private set; } = null;
         public ILogger logger { get; private set; } = null;
 
-        public Func<ISocketServerWorker> serverGenerator { get; private set; } = null;
-        public Action<ISocketServerWorker> serverConfigrator { get; private set; } = null;
-        public Action<ISocketSessionWorker> sessionConfigrator { get; private set; } = null;
-        public ISocketServerWorker server { get; private set; } = null;
+        public Func<ISocketServer> serverGenerator { get; private set; } = null;
+        public Action<ISocketServer> serverConfigrator { get; private set; } = null;
+        public Action<ISocketSession> sessionConfigrator { get; private set; } = null;
+        public ISocketServer server { get; private set; } = null;
 
         public EasySocketService()
         {
@@ -73,21 +74,21 @@ namespace EasySocket
         }
 
         /// <summary>
-        /// 해당 <see cref="EasySocketService"/>에서 실행할 <see cref="ISocketServerWorker"/>를 설정합니다.
-        /// 설정된 <see cref="ISocketServerWorker"/>는 <see cref="EasySocketService.Start"/>에서 생성됩니다.
+        /// 해당 <see cref="EasySocketService"/>에서 실행할 <see cref="ISocketServer"/>를 설정합니다.
+        /// 설정된 <see cref="ISocketServer"/>는 <see cref="EasySocketService.Start"/>에서 생성됩니다.
         /// </summary>
         public EasySocketService SetSocketServer<TSocketServer>()
-            where TSocketServer : class, ISocketServerWorker, new()
+            where TSocketServer : class, ISocketServer, new()
         {
             serverGenerator = () => { return new TSocketServer(); };
             return this;
         }
 
         /// <summary>
-        /// 해당 <see cref="EasySocketService"/>에서 실행할 <see cref="ISocketServerWorker"/>를 구성하는 메서드를 설정합니다.
-        /// 설정된 메서드는 <see cref="ISocketServerWorker"/>가 생성된 후 단 한번 호출됩니다.
+        /// 해당 <see cref="EasySocketService"/>에서 실행할 <see cref="ISocketServer"/>를 구성하는 메서드를 설정합니다.
+        /// 설정된 메서드는 <see cref="ISocketServer"/>가 생성된 후 단 한번 호출됩니다.
         /// </summary>
-        public EasySocketService SetSocketServerConfigrator(Action<ISocketServerWorker> srvCnfgr)
+        public EasySocketService SetSocketServerConfigrator(Action<ISocketServer> srvCnfgr)
         {
             if (srvCnfgr == null)
             {
@@ -100,10 +101,10 @@ namespace EasySocket
         }
 
         /// <summary>
-        /// <see cref="ISocketServerWorker"/>에서 새로운 세션이 연결되고 <see cref="ISocketSessionWorker"/>가 생성된 후 호출됩니다.
-        /// 설정된 메서드는 새로운 <see cref="ISocketSessionWorker"/>가 생성될 때 각 한번 호출됩니다.
+        /// <see cref="ISocketServer"/>에서 새로운 세션이 연결되고 <see cref="ISocketSession"/>가 생성된 후 호출됩니다.
+        /// 설정된 메서드는 새로운 <see cref="ISocketSession"/>가 생성될 때 각 한번 호출됩니다.
         /// </summary>
-        public EasySocketService SetSocketSessionConfigrator(Action<ISocketSessionWorker> seinCnfgr)
+        public EasySocketService SetSocketSessionConfigrator(Action<ISocketSession> seinCnfgr)
         {
             if (seinCnfgr == null)
             {

@@ -1,6 +1,6 @@
 using System;
 using EasySocket.Logging;
-using EasySocket.Workers;
+using EasySocket.Servers;
 
 namespace EasySocket.Listeners
 {
