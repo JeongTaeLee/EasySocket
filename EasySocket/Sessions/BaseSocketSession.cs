@@ -52,12 +52,12 @@ namespace EasySocket.Sessions
             
             if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
             {
-                socketProxy.Close();
+                socketProxy.Stop();
                 _state = (int)ISocketSession.State.Closed;
             }
         }
 
-        public virtual async ValueTask CloseAsync()
+        public virtual async Task StopAsync()
         {
             int prevState = Interlocked.CompareExchange(ref _state, (int)ISocketSession.State.Closing, (int)ISocketSession.State.Running);
             if (prevState != (int)ISocketSession.State.Running)
@@ -78,7 +78,7 @@ namespace EasySocket.Sessions
 
             if (Interlocked.CompareExchange(ref this._socketProxy, null, socketProxy) == socketProxy)
             {
-                await socketProxy.CloseAsync();
+                await socketProxy.StopAsync();
                 _state = (int)ISocketSession.State.Closed;
             }
         }

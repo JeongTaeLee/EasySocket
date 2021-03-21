@@ -6,26 +6,32 @@ using EasySocket.Sessions;
 using EasySocket.Behaviors;
 using EasySocket.Listeners;
 using EasySocket.Protocols.Filters.Factories;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace EasySocket.Servers
 {
     public abstract class BaseSocketServer<TSession> : ISocketServer
         where TSession : BaseSocketSession
     {
-#region ISocketServer Field 
+        #region ISocketServer Field 
         public ISocketServerConfig config { get; private set; } = new SocketServerConfig();
         public EasySocketService service { get; private set; } = null;
         public IMsgFilterFactory msgFilterFactory { get; private set; } = null;
         public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
         public IServerBehavior behavior { get; private set; } = null;
-#endregion ISocketServer Field
+        public ISocketServer.State state => (ISocketServer.State)_state;
+        #endregion ISocketServer Field
 
         private List<ListenerConfig> _listenerConfigs = new List<ListenerConfig>();
         private IReadOnlyList<IListener> _listeners = null;
-        
+
+        private int _state = (int)ISocketServer.State.None;
+
         protected ILogger logger { get; private set; } = null;
 
-#region ISocketServer Method
+
+        #region ISocketServer Method
 
         public void Start(EasySocketService srvc)
         {
@@ -53,6 +59,28 @@ namespace EasySocket.Servers
             }
 
             StartListeners();
+
+            _state = (int)ISocketServer.State.Running;
+        }
+
+        public void Stop()
+        {
+            if (_state != (int)ISocketServer.State.Running)
+            {
+                throw new InvalidOperationException("The server did not start.");
+            }
+
+            StopListenersAsync().Wait();
+        }
+
+        public async Task StopAsync()
+        {
+            if (_state != (int)ISocketServer.State.Running)
+            {
+                throw new InvalidOperationException("The server did not start.");
+            }
+
+            await StopListenersAsync();
         }
 
         public ISocketServer AddListener(ListenerConfig lstnrCnfg)
@@ -96,7 +124,7 @@ namespace EasySocket.Servers
 
             return this;
         }
-#endregion ISocketServer Method
+        #endregion ISocketServer Method
 
         private void StartListeners()
         {
@@ -126,6 +154,35 @@ namespace EasySocket.Servers
             }
 
             _listeners = tempListeners;
+        }
+
+        private async Task StopListenersAsync()
+        {
+            if (_listeners == null)
+            {
+                throw new InvalidOperationException("Listeners list is not set");
+            }
+
+            List<Task> tasks = new List<Task>();
+
+            for (int listenerIndex = 0; listenerIndex < _listeners.Count; ++listenerIndex)
+            {
+                tasks.Add(StopListenerByIndexAsync(listenerIndex));
+            }
+
+            _listeners = null;
+
+            await Task.WhenAll(tasks);
+        }
+
+        private async Task StopListenerByIndexAsync(int index)
+        {
+            var config = _listenerConfigs[index];
+            var listener = _listeners[index];
+
+            await listener.StopAsync();
+
+            logger.DebugFormat("Stop listener : {0}", config.ToString());
         }
 
         protected void OnSocketAcceptedFromListeners(IListener lstnr, Socket acptdSck)
@@ -213,5 +270,6 @@ namespace EasySocket.Servers
         /// <see cref="ISocketSession"/>의 연결된 소켓을 관리하는 <see cref="ISocketSession"/>를 생성 후 반환합니다.
         /// </summary>
         protected abstract TSession CreateSession();
+
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using EasySocket.Logging;
 using EasySocket.Servers;
 
@@ -50,12 +51,7 @@ namespace EasySocket.Listeners
             }
         }
 
-        public virtual void Close()
-        {
-            config = null;
-            accepted = null;
-            error = null;
-        }
-
+        public abstract void Stop();
+        public abstract Task StopAsync();
     }
 }

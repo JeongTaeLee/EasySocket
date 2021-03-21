@@ -2,6 +2,7 @@ using System;
 using EasySocket.Servers;
 using EasySocket.Sessions;
 using EasySocket.Logging;
+using System.Threading.Tasks;
 
 namespace EasySocket
 {
@@ -56,6 +57,26 @@ namespace EasySocket
             serverConfigrator.Invoke(server);
 
             server.Start(this);
+        }
+
+        public void Stop()
+        {
+            if (server == null)
+            {
+                throw new InvalidOperationException("Server is not set : The server did not start.");
+            }
+
+            server.Stop();
+        }
+
+        public async Task StopAsync()
+        {
+            if (server == null)
+            {
+                throw new InvalidOperationException("Server is not set : The server did not start.");
+            }
+
+            await server.StopAsync();
         }
 
         /// <summary>

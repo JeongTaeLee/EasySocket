@@ -38,16 +38,19 @@ namespace EasySocket.SocketProxys
             }
         }
         
-        public abstract void Close();
+        public abstract void Stop();
 
-        public abstract ValueTask CloseAsync();
+        public abstract Task StopAsync();
 
         public abstract int Send(ReadOnlyMemory<byte> sendMmry);
 
         public abstract ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMmry);
         #endregion
         
-        protected virtual void InternalClose()
+        /// <summary>
+        /// 모든 종료 처리가 완료된 후 호출되야하는 함수입니다.
+        /// </summary>
+        protected virtual void OnStop()
         {
             socket?.Close();
 

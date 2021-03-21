@@ -67,7 +67,7 @@ namespace Echo.Server
 
             if (convertedMsg.str == "Bye")
             {
-                await session.CloseAsync();
+                await session.StopAsync();
                 return;
             }
 
@@ -115,7 +115,7 @@ namespace Echo.Server
                 .SetSocketServerConfigrator((server) =>
                 {
                     server
-                        .AddListener(new ListenerConfig("Any", 9199, 100000, true))
+                        .AddListener(new ListenerConfig("Any", 9199, 100000))
                         .SetMsgFilterFactory(new DefaultMsgFilterFactory<EchoFilter>())
                         .SetServerBehavior(new EchoServerBehavior())
                         .SetServerConfig(new SocketServerConfig
@@ -142,6 +142,8 @@ namespace Echo.Server
                     break;
                 }
             }
+
+            service.Stop();
         }
     }
 }

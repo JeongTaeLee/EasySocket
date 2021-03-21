@@ -34,18 +34,24 @@ namespace EasySocket.SocketProxys
 
             _receiveTask = ReceiveLoop();
 
-            WaitClose();
+            WaitStopAsyncWrapper();
         }
 
-        public override void Close()
+        public override void Stop()
         {
             _cancelTokenSource?.Cancel();
-            InternalCloseAsync().Wait();
+            WaitStopAsync().Wait();
         }
 
-        protected override void InternalClose()
+        public override async Task StopAsync()
         {
-            base.InternalClose();
+            _cancelTokenSource?.Cancel();
+            await WaitStopAsync();
+        }
+
+        protected override void OnStop()
+        {
+            base.OnStop();
 
             _networkStream?.Close();
 
@@ -53,12 +59,6 @@ namespace EasySocket.SocketProxys
             _pipeReader = null;
             _sendLock = null;
             _cancelTokenSource = null;
-        }
-
-        public override async ValueTask CloseAsync()
-        {
-            _cancelTokenSource?.Cancel();
-            await InternalCloseAsync();
         }
 
         public override int Send(ReadOnlyMemory<byte> sendMmry)
@@ -91,12 +91,12 @@ namespace EasySocket.SocketProxys
         }
         #endregion
 
-        private async void WaitClose()
+        private async void WaitStopAsyncWrapper()
         {
-            await InternalCloseAsync();
+            await WaitStopAsync();
         }
 
-        private async Task InternalCloseAsync()
+        private async Task WaitStopAsync()
         {
             await _receiveTask;
 
@@ -107,7 +107,7 @@ namespace EasySocket.SocketProxys
 
             onClose?.Invoke();
 
-            InternalClose();
+            OnStop();
         }
 
         private async Task ReceiveLoop()

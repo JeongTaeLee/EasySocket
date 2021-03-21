@@ -48,12 +48,12 @@ namespace EasySocket.SocketProxys
         /// <summary>
         /// 동기 방식으로 <see cref="ISocketProxy"/>를 중지합니다.
         /// </summary>
-        void Close();
+        void Stop();
 
         /// <summary>
         /// 비동기 방식으로 <see cref="ISocketProxy"/>를 중지합니다.
         /// </summary>
-        ValueTask CloseAsync();
+        Task StopAsync();
 
         /// <summary>
         /// 동기 방식으로 데이터를 전송합니다.

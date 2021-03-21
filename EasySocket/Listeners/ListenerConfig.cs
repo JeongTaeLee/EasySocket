@@ -5,19 +5,17 @@ namespace EasySocket.Listeners
         public readonly string ip;
         public readonly int port;
         public readonly int backlog;
-        public readonly bool listenerNoDelay;
 
-        public ListenerConfig(string ip, int port, int backlog, bool listenerNoDelay)
+        public ListenerConfig(string ip, int port, int backlog)
         {
             this.ip = ip;
             this.port = port;
             this.backlog = backlog;
-            this.listenerNoDelay = listenerNoDelay;
         }
 
         public override string ToString()
         {
-            return $"Ip({ip}) Port({port}) Backlog({backlog}) ListenerNoDelay({listenerNoDelay})";
+            return $"Ip({ip}) Port({port}) Backlog({backlog})";
         }
     }
 }
