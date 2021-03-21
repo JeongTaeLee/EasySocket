@@ -68,21 +68,25 @@ namespace EasySocket.Listeners
                         break;
                     }
 
-                    if (acceptedSocket == null)
-                    {
-                        break;
-                    }
-
                     accepted?.Invoke(this, acceptedSocket);
-                }
-                catch (SocketException ex)
-                {
-                    error?.Invoke(this, ex);
                 }
                 catch (ObjectDisposedException ex)
                 {
-                    error?.Invoke(this, ex);
+                    // 종료된 소켓으로 다시 Accepte 호출 할 때.
                     break;
+                }
+                catch (SocketException ex)
+                {
+                    // 소켓 종료, .. 오류에서 제외할 코드 있으면 추가하기
+                    if (ex.ErrorCode == 89)
+                        break;
+
+                    error?.Invoke(this, ex);
+                }
+                catch (Exception ex)
+                {
+                    // 예측하지 못한 오류.
+                    error?.Invoke(this, ex);
                 }
             }
         }
