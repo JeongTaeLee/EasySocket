@@ -37,7 +37,7 @@ namespace EasySocket.Sessions
         /// <summary>
         /// 동기 방식으로 <see cref="ISocketSession"/>를 중지합니다.
         /// </summary>
-        void Close();
+        void Stop();
 
         /// <summary>
         /// 비동기 방식으로 <see cref="ISocketSession"/>를 중지합니다.

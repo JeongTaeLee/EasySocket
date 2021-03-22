@@ -31,7 +31,7 @@ namespace EasySocket.Sessions
         protected ILogger logger { get; private set; } = null;
         
 #region ISocketSession Method
-        public void Close()
+        public void Stop()
         {
             int prevState = Interlocked.CompareExchange(ref _state, (int)ISocketSession.State.Closing, (int)ISocketSession.State.Running);
             if (prevState != (int)ISocketSession.State.Running)
