@@ -1,8 +1,8 @@
 ﻿
 using System.Buffers;
-using EasySocket.Protocols.MsgInfos;
+using EasySocket.Common.Protocols.MsgInfos;
 
-namespace EasySocket.Protocols.Filters
+namespace EasySocket.Common.Protocols.MsgFilters
 {
     /// <summary>
     /// 네트워크에서 받은 데이터를 사용자가 정의한 MsgInfo로 변환하는 클래스

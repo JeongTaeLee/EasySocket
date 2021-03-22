@@ -1,7 +1,7 @@
 ﻿using System.Buffers;
-using EasySocket.Protocols.MsgInfos;
+using EasySocket.Common.Protocols.MsgInfos;
 
-namespace EasySocket.Protocols.Filters
+namespace EasySocket.Common.Protocols.MsgFilters
 {
     ///<summary>
     /// Body 부분 사이즈를 고정된 사이즈의 헤더에 포함하는 Msg 필터

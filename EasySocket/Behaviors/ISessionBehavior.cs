@@ -1,7 +1,7 @@
 using System;
 using EasySocket.Sessions;
-using EasySocket.Protocols.MsgInfos;
-using EasySocket.Protocols.Filters;
+using EasySocket.Common.Protocols.MsgInfos;
+using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Behaviors
 {

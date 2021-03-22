@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using EasySocket.Behaviors;
 using EasySocket.Listeners;
-using EasySocket.Protocols.Filters;
-using EasySocket.Protocols.Filters.Factories;
+using EasySocket.Common.Protocols.MsgFilters;
+using EasySocket.Common.Protocols.MsgFilters.Factories;
 
 namespace EasySocket.Servers
 {

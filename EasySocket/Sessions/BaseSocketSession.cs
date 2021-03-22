@@ -7,7 +7,7 @@ using EasySocket.Logging;
 using EasySocket.Servers;
 using EasySocket.Behaviors;
 using EasySocket.SocketProxys;
-using EasySocket.Protocols.Filters;
+using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Sessions
 {

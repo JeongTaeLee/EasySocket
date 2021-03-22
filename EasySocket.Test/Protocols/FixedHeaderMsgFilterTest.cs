@@ -3,8 +3,6 @@ using System.Text;
 using System.Buffers;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using EasySocket.Protocols.Filters;
-using EasySocket.Protocols.MsgInfos;
 
 namespace EasySocket.Test
 {

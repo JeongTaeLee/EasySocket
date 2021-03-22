@@ -1,6 +1,6 @@
 using System.Net.Sockets;
 
-namespace EasySocket
+namespace EasySocket.Common.Extensions
 {
     public static class SocketExtensions
     {

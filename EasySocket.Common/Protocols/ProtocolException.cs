@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EasySocket.Protocols
+namespace EasySocket.Common.Protocols
 {
     public class ProtocolException : Exception
     {

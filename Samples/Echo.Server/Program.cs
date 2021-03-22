@@ -2,14 +2,14 @@
 using System.Buffers;
 using System.Text;
 using EasySocket;
-using EasySocket.Behaviors;
-using EasySocket.Listeners;
-using EasySocket.Protocols.Filters;
-using EasySocket.Protocols.Filters.Factories;
-using EasySocket.Protocols.MsgInfos;
 using EasySocket.Servers;
-using EasySocket.Servers.Async;
 using EasySocket.Sessions;
+using EasySocket.Listeners;
+using EasySocket.Behaviors;
+using EasySocket.Servers.Async;
+using EasySocket.Common.Protocols.MsgInfos;
+using EasySocket.Common.Protocols.MsgFilters;
+using EasySocket.Common.Protocols.MsgFilters.Factories;
 using NLog;
 
 namespace Echo.Server

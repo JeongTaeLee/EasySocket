@@ -1,4 +1,4 @@
-﻿// namespace EasySocket.Protocols.MsgInfos
+﻿// namespace EasySocket.Common.Protocols.MsgInfos
 // {
 //     public class StringMsgInfo : IMsgInfo
 //     {
