@@ -95,8 +95,7 @@ namespace EasySocket.Client
                     catch (Exception ex)
                     {
                         readLength = buffer.Length;
-                        onError?.Invoke(this, ex);
-
+                        OnError(ex);
                         break;
                     }
                     finally
@@ -108,6 +107,10 @@ namespace EasySocket.Client
             catch (OperationCanceledException)
             {
                 // cancel~
+            }
+            catch (Exception ex)
+            {
+                OnError(ex);
             }
             finally
             {

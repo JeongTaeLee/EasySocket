@@ -1,15 +1,41 @@
 ﻿using System;
 using System.Text;
+using System.Buffers;
 using System.Net.Sockets;
 using System.IO.Pipelines;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Runtime.InteropServices;
+using EasySocket.Client;
+using EasySocket.Common.Protocols.MsgFilters;
 
 namespace Echo.Client
 {
     class Program
     {
+        class TestClientBehavior : IClientBehavior
+        {
+            public void OnStarted(IClient client)
+            {
+                Console.WriteLine("Started");
+            }
+
+            public void OnStoped(IClient client)
+            {
+                Console.WriteLine("Stoped");
+            }
+            
+            public void OnReceived(IClient client, IMsgFilter msgFilter)
+            {
+                Console.WriteLine("Received");
+            }
+
+            public void OnError(IClient client, Exception ex)
+            {
+                Console.WriteLine("Error");
+            }
+        }
+
         // P/Invoke:
         private enum StdHandle { Stdin = -10, Stdout = -11, Stderr = -12 };
         
@@ -20,28 +46,46 @@ namespace Echo.Client
 
         static CancellationTokenSource cancelationToken = new CancellationTokenSource();
 
+        static AsyncSocketClient socketClient = null;
+
         static async Task Main(string[] args)
         {
-            Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            socketClient = new AsyncSocketClient();
 
-            Console.WriteLine("Start Connect");
 
-            await socket.ConnectAsync("127.0.0.1", 9199);
+            socketClient
+                .SetSocketClientConfig(new SocketClientConfig("127.0.0.1", 9199))
+                .SetClientBehavior(new TestClientBehavior())
+                .Start();
 
-            Console.WriteLine("Connected");
 
-            var receiveTask = ProcessReceive(socket);
-            var processReceive = ProcessSend(socket);
+            while (true)
+            {
+                var input = Console.ReadLine();
 
-            await receiveTask;
+                if (input == "close")
+                {
+                    break;
+                }
+            }
 
-            //socket.Shutdown(SocketShutdown.Both);
-            socket.Close();
-            socket.Close();
+            await socketClient.StopAsync();
+        }
 
-            Console.WriteLine("Close");
+        static void OnError(IClient client, Exception ex)
+        {
+            Console.WriteLine("OnError");
+        }
 
-            await receiveTask;
+        static long OnReceived(IClient client, ref ReadOnlySequence<byte> sequence)
+        {
+            Console.WriteLine("OnReceived");
+            return sequence.Length;
+        }
+
+        static void OnStop(IClient client)
+        {
+            Console.WriteLine("OnStop");
         }
 
         static async Task ProcessSend(Socket socket)

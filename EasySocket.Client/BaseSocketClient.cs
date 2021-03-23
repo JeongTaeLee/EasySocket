@@ -4,19 +4,20 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Client
 {
-    public abstract class BaseSocketClient<TSocketClient> : ISocketClient
-        where TSocketClient : class
+    public abstract class BaseSocketClient<TSocketClient> : ISocketClient<TSocketClient>
+        where TSocketClient : class, ISocketClient<TSocketClient>
     {
-        public Socket socket { get; private set; } = null;
-        public SocketClientConfig config { get; private set; } = null;
-        public ClientErrorHandler onError { get; set; } = null;
-        public ClientReceiveHandler onReceived { get; set; } = null;
+        public bool isClose => (_isClose == 1);
+        public IClientBehavior behavior { get; private set; } = null;
 
         private int _isClose = 0;
-        public bool isClose => (_isClose == 1);
+        public Socket socket { get; private set; } = null;
+        public SocketClientConfig config { get; private set; } = null;
+
 
         public void Start()
         {
@@ -50,8 +51,9 @@ namespace EasySocket.Client
             }
 
             await socket.ConnectAsync(ParseAddress(config.ip), config.port);
-
             await InternalStart();
+
+            behavior?.OnStarted(this as TSocketClient);
         }
 
         public void Stop()
@@ -74,10 +76,24 @@ namespace EasySocket.Client
             throw new NotImplementedException();
         }
 
-        public TSocketClient SetSocketClientConfig(SocketClientConfig sckCnfg)
+        public TSocketClient SetSocketClientConfig(SocketClientConfig cnfg)
         {
-            config = sckCnfg ?? throw new ArgumentNullException(nameof(sckCnfg));
+            config = cnfg ?? throw new ArgumentNullException(nameof(cnfg));
             return this as TSocketClient;
+        }
+
+        public TSocketClient SetClientBehavior(IClientBehavior bhvr)
+        {
+            behavior = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
+            return this as TSocketClient;
+        }
+
+        /// <summary>
+        /// 내부에서 에러 발생 시 호출되는 함수입니다. 해당 함수 호출 후 <see cref="IClientBehavior.OnError(IClient, Exception)"/> 가 호출됩니다.
+        /// </summary>
+        protected virtual void OnError(Exception ex)
+        {
+            behavior?.OnError(this as TSocketClient, ex);
         }
 
         /// <summary>
@@ -96,11 +112,21 @@ namespace EasySocket.Client
             }
 
             await InternalStop();
+
+            behavior?.OnStoped(this as TSocketClient);
         }
 
+        /// <summary>
+        /// 내부에서 읽기 이벤트 발생 시 호출되는 메서드 입니다. 파생 클래스에서 호출 후 <see cref="IMsgFilter"/>에서 데이터를 변환 후
+        /// <see cref="IClientBehavior.OnReceived(IClient, IMsgFilter)"/> 호출 됩니다.
+        /// </summary>
         protected virtual long OnRead(ref ReadOnlySequence<byte> sequence)
         {
-            return onReceived?.Invoke(this, ref sequence) ?? sequence.Length;
+            var readLength = sequence.Length;
+
+            behavior?.OnReceived(this as TSocketClient, null);
+
+            return readLength;
         }
 
         /// <summary>
@@ -128,5 +154,6 @@ namespace EasySocket.Client
 
             return IPAddress.Parse(strIp);
         }
+
     }
 }

@@ -4,16 +4,17 @@ using System.Threading.Tasks;
 
 namespace EasySocket.Client
 {
-    public delegate void ClientErrorHandler(IClient client, Exception ex);
-    public delegate int ClientReceiveHandler(IClient client, ref ReadOnlySequence<byte> sequence);
+    public interface IClient<TClient> : IClient
+        where TClient : class, IClient<TClient>
+    {
+        TClient SetClientBehavior(IClientBehavior bhvr);
+    }
 
     public interface IClient
     {
-        ClientErrorHandler onError { get; set; }
-        ClientReceiveHandler onReceived { get; set; }
-
         bool isClose { get; }
-
+        IClientBehavior behavior { get; }
+ 
         void Stop();
         Task StopAsync();
 
