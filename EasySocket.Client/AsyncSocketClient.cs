@@ -1,8 +1,9 @@
+using System;
 using System.Net.Sockets;
 using System.IO.Pipelines;
 using System.Threading.Tasks;
 using System.Threading;
-using System;
+using EasySocket.Common.Extensions;
 
 namespace EasySocket.Client
 {
@@ -12,7 +13,6 @@ namespace EasySocket.Client
         private NetworkStream _networkStream = null;
         private PipeReader _pipeReader = null;
         private Task _readTask = null;
-        private int _isClose = 0;
 
         protected override Socket CreateSocket(SocketClientConfig sckCnfg)
         {
@@ -38,7 +38,16 @@ namespace EasySocket.Client
 
         protected override async Task InternalStop()
         {
-            await WaitStopAsync();
+            _cancellation?.Cancel();
+
+            await (_readTask ?? Task.CompletedTask);
+
+            _networkStream?.Close();
+
+            _cancellation = null;
+            _networkStream = null;
+            _pipeReader = null;
+            _readTask = null;
         }
 
         private async void WaitStopAsyncWrapper()
@@ -48,14 +57,9 @@ namespace EasySocket.Client
 
         private async Task WaitStopAsync()
         {
-            await _readTask;
+            await _readTask.ConfigureAwait(false);
 
-            if (Interlocked.CompareExchange(ref _isClose, 1, 0) != 0)
-            {
-                return;
-            }
-
-            _networkStream.Close();
+            OnStop().DoNotWait();
         }
 
         private async Task ReadAsync()

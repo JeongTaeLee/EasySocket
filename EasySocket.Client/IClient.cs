@@ -12,6 +12,8 @@ namespace EasySocket.Client
         ClientErrorHandler onError { get; set; }
         ClientReceiveHandler onReceived { get; set; }
 
+        bool isClose { get; }
+
         void Stop();
         Task StopAsync();
 
