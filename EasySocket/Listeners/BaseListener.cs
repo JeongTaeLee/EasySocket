@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using EasySocket.Logging;
-using EasySocket.Servers;
+using EasySocket.Common.Logging;
 
 namespace EasySocket.Listeners
 {

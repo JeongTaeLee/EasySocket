@@ -3,10 +3,10 @@ using System.Buffers;
 using System.Threading;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using EasySocket.Logging;
 using EasySocket.Servers;
 using EasySocket.Behaviors;
 using EasySocket.SocketProxys;
+using EasySocket.Common.Logging;
 using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Sessions

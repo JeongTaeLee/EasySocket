@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EasySocket.Logging
+namespace EasySocket.Common.Logging
 {
     public interface ILogger
     {

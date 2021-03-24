@@ -1,5 +1,5 @@
 ﻿
-namespace EasySocket.Logging
+namespace EasySocket.Common.Logging
 {
     public interface ILoggerProvider
     {

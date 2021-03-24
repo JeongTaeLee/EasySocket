@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 
-namespace EasySocket.Logging
+namespace EasySocket.Common.Logging
 {
     public abstract class LogFactoryBase : ILoggerFactory
     {

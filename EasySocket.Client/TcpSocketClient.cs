@@ -7,7 +7,7 @@ using EasySocket.Common.Extensions;
 
 namespace EasySocket.Client
 {
-    public class AsyncSocketClient : BaseSocketClient<AsyncSocketClient>
+    public class TcpSocketClient : BaseSocketClient<TcpSocketClient>
     {
         private CancellationTokenSource _cancellation;
         private NetworkStream _networkStream = null;
@@ -48,6 +48,16 @@ namespace EasySocket.Client
             _networkStream = null;
             _pipeReader = null;
             _readTask = null;
+        }
+
+        protected override int InternalSendSync(ReadOnlyMemory<byte> sendMemory)
+        {
+            return socket.SendAsync(sendMemory, SocketFlags.None).GetAwaiter().GetResult();
+        }
+
+        protected override ValueTask<int> InternalSendAsync(ReadOnlyMemory<byte> sendMemory)
+        {
+            return socket.SendAsync(sendMemory, SocketFlags.None);
         }
 
         private async void WaitStopAsyncWrapper()
@@ -117,6 +127,5 @@ namespace EasySocket.Client
                 await _pipeReader.CompleteAsync();
             }        
         }
-
     }
 }

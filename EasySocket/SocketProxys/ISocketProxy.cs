@@ -2,7 +2,7 @@ using System;
 using System.Buffers;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using EasySocket.Logging;
+using EasySocket.Common.Logging;
 
 namespace EasySocket.SocketProxys
 {

@@ -1,20 +1,29 @@
 using System;
-using System.Buffers;
 using System.Threading.Tasks;
+using EasySocket.Common.Logging;
+using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Client
 {
-    public interface IClient<TClient> : IClient
-        where TClient : class, IClient<TClient>
-    {
-        TClient SetClientBehavior(IClientBehavior bhvr);
-    }
-
     public interface IClient
     {
-        bool isClose { get; }
+        public enum State
+        {
+            None = 0,
+            Starting,
+            Running,
+            Stopping,
+            Stopped,
+        }
+
+        State state { get; }
+        IMsgFilter msgFilter { get; }
         IClientBehavior behavior { get; }
- 
+        ILoggerFactory loggerFactroy { get; }
+
+        void Start();
+        Task StartAsync();
+
         void Stop();
         Task StopAsync();
 

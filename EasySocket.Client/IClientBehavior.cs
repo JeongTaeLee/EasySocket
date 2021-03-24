@@ -1,5 +1,5 @@
 using System;
-using EasySocket.Common.Protocols.MsgFilters;
+using EasySocket.Common.Protocols.MsgInfos;
 
 namespace EasySocket.Client
 {
@@ -7,7 +7,7 @@ namespace EasySocket.Client
     {
         void OnStarted(IClient client);
         void OnStoped(IClient client);
-        void OnReceived(IClient client, IMsgFilter msgFilter);
+        void OnReceived(IClient client, IMsgInfo msgFilter);
         void OnError(IClient client, Exception ex);
     }
 }

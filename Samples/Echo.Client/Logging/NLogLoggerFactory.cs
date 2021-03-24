@@ -1,7 +1,6 @@
 ﻿using System;
-using EasySocket.Common.Logging;
 
-namespace EasySocket.Logging
+namespace EasySocket.Common.Logging
 {
     public class NLogLoggerFactory : LogFactoryBase
     {

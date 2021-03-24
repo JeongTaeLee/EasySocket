@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Runtime.InteropServices;
 using EasySocket.Client;
+using EasySocket.Common.Protocols.MsgInfos;
 using EasySocket.Common.Protocols.MsgFilters;
+using EasySocket.Common.Logging;
 
 namespace Echo.Client
 {
@@ -25,14 +27,41 @@ namespace Echo.Client
                 Console.WriteLine("Stoped");
             }
             
-            public void OnReceived(IClient client, IMsgFilter msgFilter)
+            public void OnReceived(IClient client, IMsgInfo msgInfo)
             {
-                Console.WriteLine("Received");
+                var convertInfo = msgInfo as EchoMsgInfo;
+
+                Console.WriteLine($"Received : {convertInfo.str}");
             }
 
             public void OnError(IClient client, Exception ex)
             {
                 Console.WriteLine("Error");
+            }
+        }
+        
+        internal class EchoMsgInfo : IMsgInfo
+        {
+            public string str { get; private set; }
+
+            public EchoMsgInfo(string str)
+            {
+                this.str = str;
+            }
+        }
+
+        internal class EchoFilter : IMsgFilter
+        {
+            public IMsgInfo Filter(ref SequenceReader<byte> sequence)
+            {
+                var buffer = sequence.Sequence.Slice(0, sequence.Length);
+                sequence.Advance(sequence.Length);
+
+                return new EchoMsgInfo(Encoding.Default.GetString(buffer));
+            }
+
+            public void Reset()
+            {
             }
         }
 
@@ -46,20 +75,20 @@ namespace Echo.Client
 
         static CancellationTokenSource cancelationToken = new CancellationTokenSource();
 
-        static AsyncSocketClient socketClient = null;
+        static TcpSocketClient socketClient = null;
 
         static async Task Main(string[] args)
         {
-            socketClient = new AsyncSocketClient();
-
-
+            socketClient = new TcpSocketClient();
             socketClient
+                .SetLoggerFactory(new NLogLoggerFactory("./NLog.config"))
+                .SetMsgFilter(new EchoFilter())
                 .SetSocketClientConfig(new SocketClientConfig("127.0.0.1", 9199))
                 .SetClientBehavior(new TestClientBehavior())
                 .Start();
 
 
-            while (true)
+            while (socketClient.state == IClient.State.Running)
             {
                 var input = Console.ReadLine();
 
@@ -67,6 +96,9 @@ namespace Echo.Client
                 {
                     break;
                 }
+
+                socketClient.Send(Encoding.Default.GetBytes(input));
+                Console.WriteLine($"Sended : {input}");
             }
 
             await socketClient.StopAsync();

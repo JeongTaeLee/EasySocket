@@ -2,14 +2,10 @@ using System.Net.Sockets;
 
 namespace EasySocket.Client
 {
-    public interface ISocketClient<TSocketClient> : IClient<TSocketClient>
+    public interface ISocketClient<TSocketClient> : IClient
         where TSocketClient : class, ISocketClient<TSocketClient>
     {
-        Socket socket { get; }
         SocketClientConfig config { get; }
-
-        void Start();
-
-        public TSocketClient SetSocketClientConfig(SocketClientConfig cnfg);
+        Socket socket { get; }
     }
 }

@@ -3,9 +3,7 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
-using EasySocket.Servers;
-using EasySocket.Logging;
-
+using EasySocket.Common.Logging;
 namespace EasySocket.Listeners
 {
     public class AsyncSocketListener : BaseListener
