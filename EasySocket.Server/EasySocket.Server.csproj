@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+      <PackageReference Include="NLog" Version="4.7.8" />
+      <PackageReference Include="System.IO.Pipelines" Version="5.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EasySocket.Common\EasySocket.Common.csproj" />
+  </ItemGroup>
+</Project>

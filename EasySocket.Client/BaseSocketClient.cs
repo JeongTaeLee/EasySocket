@@ -38,11 +38,6 @@ namespace EasySocket.Client
                 throw new InvalidOperationException("MsgFilter not set: Please call the \"SetMsgFilter\" Method and set it up.");
             }
 
-            if (behavior == null)
-            {
-                _logger.Warn("Client Behavior is not set. : Unable to receive events for the client. Please call the \"SetClientBehavior\" Method and set it up.");
-            }
-
             if (loggerFactroy == null)
             {
                 throw new InvalidOperationException("ILoggerFactory not set: Please call the \"SetLoggerFactory\" Method and set it up.");
@@ -57,6 +52,11 @@ namespace EasySocket.Client
             if (config == null)
             {
                 throw new InvalidOperationException("SocketClientConfig is not set : Please call the \"SetSocketClientConfig\" Method and set it up.");
+            }
+
+            if (behavior == null)
+            {
+                _logger.Warn("Client Behavior is not set. : Unable to receive events for the client. Please call the \"SetClientBehavior\" Method and set it up.");
             }
 
             _sendSemaphore = new SemaphoreSlim(1, 1);
@@ -88,11 +88,6 @@ namespace EasySocket.Client
                 throw new InvalidOperationException("MsgFilter not set: Please call the \"SetMsgFilter\" Method and set it up.");
             }
 
-            if (behavior == null)
-            {
-                _logger.Warn("Client Behavior is not set. : Unable to receive events for the client. Please call the \"SetClientBehavior\" Method and set it up.");
-            }
-
             if (loggerFactroy == null)
             {
                 throw new InvalidOperationException("ILoggerFactory not set: Please call the \"SetLoggerFactory\" Method and set it up.");
@@ -107,6 +102,11 @@ namespace EasySocket.Client
             if (config == null)
             {
                 throw new InvalidOperationException("SocketClientConfig is not set : Please call the \"SetSocketClientConfig\" Method and set it up.");
+            }
+
+            if (behavior == null)
+            {
+                _logger.Warn("Client Behavior is not set. : Unable to receive events for the client. Please call the \"SetClientBehavior\" Method and set it up.");
             }
 
             socket = CreateSocket(config);
