@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Sockets;
 
 namespace EasySocket.Common.Extensions
@@ -19,6 +20,16 @@ namespace EasySocket.Common.Extensions
             {
                 sckt.Close();
             }
+        }
+
+        public static IPAddress ToIPAddress(this string strIp)
+        {
+            if (strIp == "Any")
+            {
+                return IPAddress.Any;
+            }
+
+            return IPAddress.Parse(strIp);
         }
     }
 }

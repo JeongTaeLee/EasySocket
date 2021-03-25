@@ -21,9 +21,6 @@ namespace EasySocket.Client
         IClientBehavior behavior { get; }
         ILoggerFactory loggerFactroy { get; }
 
-        void Start();
-        Task StartAsync();
-
         void Stop();
         Task StopAsync();
 

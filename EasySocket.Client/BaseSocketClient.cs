@@ -4,9 +4,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using EasySocket.Common.Logging;
+using EasySocket.Common.Extensions;
 using EasySocket.Common.Protocols.MsgInfos;
 using EasySocket.Common.Protocols.MsgFilters;
-using EasySocket.Common.Logging;
 
 namespace EasySocket.Client
 {
@@ -244,8 +245,6 @@ namespace EasySocket.Client
         {
             try
             {
-                throw new Exception("Test");
-
                 var sequenceReader = new SequenceReader<byte>(sequence);
 
                 while (sequence.Length > sequenceReader.Consumed)
@@ -266,7 +265,7 @@ namespace EasySocket.Client
             {
                 behavior?.OnError(this, ex);
 
-                OnStop();
+                OnStop().DoNotWait();
 
                 return (int)sequence.Length;
             }

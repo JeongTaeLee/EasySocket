@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using EasySocket.Servers;
 using EasySocket.Sessions;
 using EasySocket.Common.Logging;
+using System.Net.Sockets;
 
 namespace EasySocket
 {
