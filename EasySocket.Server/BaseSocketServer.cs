@@ -166,15 +166,6 @@ namespace EasySocket.Server
                 {
                     return;
                 }
-
-                // TODO
-
-                // 시작하기전 상태를 체크합니다 None 상태가 아니라면 비정상적인 상황입니다.
-                if (tempSession.state != ISession.State.None)
-                {
-                    return;
-                }
-
                 tempSession.StartAsync(acptdSck).GetAwaiter().GetResult();
 
                 // finally에서 오류 체크를 하기 위해 모든 작업이 성공적으로 끝난 후 대입해줍니다.
