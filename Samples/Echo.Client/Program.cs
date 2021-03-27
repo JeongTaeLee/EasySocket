@@ -90,7 +90,7 @@ namespace Echo.Client
                     break;
                 }
 
-                socketClient.Send(Encoding.Default.GetBytes(input));
+                await socketClient.SendAsync(Encoding.Default.GetBytes(input));
                 Console.WriteLine($"Sended : {input}");
             }
 

@@ -5,26 +5,24 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using EasySocket.Common.Logging;
 using EasySocket.Common.Protocols.MsgFilters;
+using EasySocket.Common.Extensions;
 
 namespace EasySocket.Server
 {
-    public delegate void SocketSessionStopHandler<TSession>(TSession session) where TSession : BaseSocketSession<TSession>;
-
     public abstract class BaseSocketSession<TSession> : ISession<TSession>
         where TSession : BaseSocketSession<TSession>
     {
         
         public ISession.State state => (ISession.State)_state;
-        public IMsgFilter msgFilter { get; private set; } = null;
         public ISessionBehavior behavior { get; private set; } = null;
-        public ILogger logger { get; private set; } = null;
 
-        private SemaphoreSlim _sendLock = null;
         private int _state = (int)IServer.State.None;
+        private SemaphoreSlim _sendLock = null;
+        private IMsgFilter _msgFilter  = null;
+        private SessionStopHandler<TSession> _onStop = null;
 
         protected Socket socket { get; private set; } = null;
-
-        public SocketSessionStopHandler<TSession> onStop { get; set; } = null;
+        protected ILogger logger { get; private set; } = null;
 
         public async ValueTask StartAsync(Socket sck)
         {
@@ -34,25 +32,30 @@ namespace EasySocket.Server
                 throw new InvalidOperationException($"The session has an invalid initial state. : Session state is {(ISession.State)prevState}");
             }
 
-            if (msgFilter == null)
+            if (_msgFilter == null)
             {
-                throw new InvalidOperationException($"MsgFilter is not set : Please call the \"SetMsgFilter\" Method and set it up.");
+                throw ExceptionExtensions.MemberNotSetIOE("MsgFilter", "SetMsgFilter");
+            }
+
+            if (_onStop == null)
+            {
+                throw ExceptionExtensions.MemberNotSetIOE("OnStop Callback", "SetOnStop");
             }
 
             if (logger == null)
             {
-                throw new InvalidOperationException("Logger is not set : Please call the \"SetLogger\" Method and set it up.");
+                throw ExceptionExtensions.MemberNotSetIOE("Logger", "SetLogger");
             }
 
             if (behavior == null)
             {
-                logger.Warn("Session Behavior is not set. : Unable to receive events for the session. Please call the \"SetSessionBehavior\" Method and set it up.");
+                logger.MemberNotSetWarn("Session Behavior", "SetSessionBehavior");
             }
 
+            socket = sck ?? throw new ArgumentNullException(nameof(sck));
+            
             _sendLock = new SemaphoreSlim(1, 1);
-
-            socket = sck;
-
+            
             await ProcessStart();
 
             _state = (int)ISession.State.Running;
@@ -86,13 +89,19 @@ namespace EasySocket.Server
 
         public TSession SetMsgFilter(IMsgFilter msgfltr)
         {
-            msgFilter = msgfltr ?? throw new ArgumentNullException(nameof(msgfltr));
+            _msgFilter = msgfltr ?? throw new ArgumentNullException(nameof(msgfltr));
             return this as TSession;
         }
 
         public TSession SetLogger(ILogger lgr)
         {
             logger = lgr ?? throw new ArgumentNullException(nameof(lgr));
+            return this as TSession;
+        }
+
+        public TSession SetOnStop(SessionStopHandler<TSession> ssnStopHandler)
+        {
+            _onStop = ssnStopHandler ?? throw new ArgumentNullException(nameof(ssnStopHandler));
             return this as TSession;
         }
 
@@ -110,7 +119,7 @@ namespace EasySocket.Server
 
                 while (sequence.Length > sequenceReader.Consumed)
                 {
-                    var msgInfo = msgFilter.Filter(ref sequenceReader);
+                    var msgInfo = _msgFilter.Filter(ref sequenceReader);
 
                     if (msgInfo == null)
                     {
@@ -147,7 +156,7 @@ namespace EasySocket.Server
             await ProcessStop();
 
             // 종료 콜백 실행
-            onStop?.Invoke(this as TSession);
+            _onStop?.Invoke(this as TSession);
 
             // 변수 초기화.
             _sendLock = null;

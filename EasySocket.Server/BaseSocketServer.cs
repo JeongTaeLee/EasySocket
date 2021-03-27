@@ -32,43 +32,54 @@ namespace EasySocket.Server
 
         public async Task StartAsync()
         {
-            int prevState = Interlocked.CompareExchange(ref _state, (int)IServer.State.Starting, (int)IServer.State.None);
-            if (prevState != (int)IServer.State.None)
+            try
             {
-                throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(IServer.State)prevState}");
-            }
 
-            if (msgFilterFactory == null)
+                int prevState = Interlocked.CompareExchange(ref _state, (int)IServer.State.Starting, (int)IServer.State.None);
+                if (prevState != (int)IServer.State.None)
+                {
+                    throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(IServer.State)prevState}");
+                }
+
+                if (msgFilterFactory == null)
+                {
+                    throw ExceptionExtensions.MemberNotSetIOE("MsgFilterFactory", "SetMsgFilterFactory");
+                }
+
+                if (loggerFactory == null)
+                {
+                    throw ExceptionExtensions.MemberNotSetIOE("LoggerFactory", "SetLoggerFactory");
+                }
+
+                logger = loggerFactory.GetLogger(GetType());
+                if (logger == null)
+                {
+                    throw new InvalidOperationException("Unable to get logger from LoggerFactory");
+                }
+
+                if (behavior == null)
+                {
+                    logger.MemberNotSetWarn("Server Behavior", "SetServerBehavior");
+                }
+
+                if (sessionConfigrator == null)
+                {
+                    logger.MemberNotSetWarn("Session Configrator", "SetSessionConfigrator");
+                }
+
+                await InternalStart();
+
+                await StartListenersAsync().ConfigureAwait(false);
+
+                _state = (int)IServer.State.Running;
+            }
+            finally
             {
-                throw new InvalidOperationException("MsgFilterFactory is not set : Please call the \"SetMsgFilterFactory\" Method and set it up.");
+                if (_state != (int)IServer.State.Running)
+                {
+                    _state = (int)IServer.State.None;
+                }
             }
-
-            if (loggerFactory == null)
-            {
-                throw new InvalidOperationException("LoggerFactory is not set : Please call the \"SetLoggerFactory\" Method and set it up.");
-            }
-
-            logger = loggerFactory.GetLogger(GetType());
-            if (logger == null)
-            {
-                throw new InvalidOperationException("Unable to get logger from LoggerFactory");
-            }
-
-            if (behavior == null)
-            {
-                logger.Warn("Server Behavior is not set. : Unable to receive events for the server. Please call the \"SetServerBehavior\" Method and set it up.");
-            }
-
-            if (sessionConfigrator == null)
-            {
-                logger.Warn("SocketSession Configrator not set : Please call the \"SetSocketSessionConfigrator\" Method and set it up");
-            }
-
-            await InternalStart();
-
-            await StartListenersAsync().ConfigureAwait(false);
-
-            _state = (int)IServer.State.Running;
         }
 
         public async Task StopAsync()
@@ -154,7 +165,7 @@ namespace EasySocket.Server
             await Task.WhenAll(tasks);
         }
 
-        protected virtual ValueTask OnSocketAcceptedFromListeners(IListener listener, Socket acptdSck)
+        protected virtual async ValueTask OnSocketAcceptedFromListeners(IListener listener, Socket acptdSck)
         {
             TSession session = null;
 
@@ -193,18 +204,14 @@ namespace EasySocket.Server
                     .SetMsgFilter(msgFilterFactory.Get())
                     .SetLogger(loggerFactory.GetLogger(typeof(TSession))));
 
-                tempSession.StartAsync(acptdSck).GetAwaiter().GetResult();
+                await tempSession.StartAsync(acptdSck).ConfigureAwait(false);
 
                 // finally에서 오류 체크를 하기 위해 모든 작업이 성공적으로 끝난 후 대입해줍니다.
                 session = tempSession;
-
-                return ValueTask.CompletedTask;
             }
             catch (Exception ex)
             {
                 behavior?.OnError(this, ex);
-
-                return ValueTask.CompletedTask;
             }
             finally
             {

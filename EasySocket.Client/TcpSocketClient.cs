@@ -50,12 +50,7 @@ namespace EasySocket.Client
             _readTask = null;
         }
 
-        protected override int InternalSendSync(ReadOnlyMemory<byte> sendMemory)
-        {
-            return socket.SendAsync(sendMemory, SocketFlags.None).GetAwaiter().GetResult();
-        }
-
-        protected override ValueTask<int> InternalSendAsync(ReadOnlyMemory<byte> sendMemory)
+        protected override ValueTask<int> InternalSend(ReadOnlyMemory<byte> sendMemory)
         {
             return socket.SendAsync(sendMemory, SocketFlags.None);
         }

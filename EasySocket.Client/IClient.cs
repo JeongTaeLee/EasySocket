@@ -21,10 +21,7 @@ namespace EasySocket.Client
         IClientBehavior behavior { get; }
         ILoggerFactory loggerFactroy { get; }
 
-        void Stop();
         Task StopAsync();
-
-        int Send(ReadOnlyMemory<byte> sendMemory);
         ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory);
     }
 }

@@ -5,11 +5,15 @@ using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Server
 {
+
+    public delegate void SessionStopHandler<TSession>(TSession session) where TSession : ISession<TSession>;
+
     public interface ISession<TSession> : ISession
         where TSession : ISession<TSession>
     {
         TSession SetMsgFilter(IMsgFilter msgfltr);
         TSession SetLogger(ILogger logger);
+        TSession SetOnStop(SessionStopHandler<TSession> onClose);
     }
 
     public interface ISession
@@ -24,9 +28,7 @@ namespace EasySocket.Server
         }
 
         State state { get; }
-        IMsgFilter msgFilter { get; }
         ISessionBehavior behavior { get; }
-        ILogger logger { get; }
 
         ValueTask StopAsync();
         ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry);

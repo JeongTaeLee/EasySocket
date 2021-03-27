@@ -25,57 +25,6 @@ namespace EasySocket.Client
         private int _state = (int)IClient.State.None;
         protected ILogger _logger = null;
 
-
-        public void Start()
-        {
-            int prevState = Interlocked.CompareExchange(ref _state, (int)IClient.State.Starting, (int)IClient.State.None);
-            if (prevState != (int)IClient.State.None)
-            {
-                throw new InvalidOperationException($"The client is in an invalid state. : Initial state cannot be \"{(IClient.State)prevState}\"");
-            }
-
-            if (msgFilter == null)
-            {
-                throw new InvalidOperationException("MsgFilter not set: Please call the \"SetMsgFilter\" Method and set it up.");
-            }
-
-            if (loggerFactroy == null)
-            {
-                throw new InvalidOperationException("ILoggerFactory not set: Please call the \"SetLoggerFactory\" Method and set it up.");
-            }
-
-            _logger = loggerFactroy.GetLogger(GetType());
-            if (_logger == null)
-            {
-                throw new InvalidOperationException("Unable to create logger from LoggerFactory.");
-            }
-
-            if (config == null)
-            {
-                throw new InvalidOperationException("SocketClientConfig is not set : Please call the \"SetSocketClientConfig\" Method and set it up.");
-            }
-
-            if (behavior == null)
-            {
-                _logger.Warn("Client Behavior is not set. : Unable to receive events for the client. Please call the \"SetClientBehavior\" Method and set it up.");
-            }
-
-            _sendSemaphore = new SemaphoreSlim(1, 1);
-
-            socket = CreateSocket(config);
-            if (socket == null)
-            {
-                throw new InvalidOperationException("Unable to create socket.");
-            }
-
-            socket.ConnectAsync(ParseAddress(config.ip), config.port).Wait();            
-            InternalStart().Wait();
-
-            behavior?.OnStarted(this as TSocketClient);
-
-            _state = (int)IClient.State.Running;
-        }
-
         public async Task StartAsync()
         {
             int prevState = Interlocked.CompareExchange(ref _state, (int)IClient.State.Starting, (int)IClient.State.None);
@@ -86,12 +35,17 @@ namespace EasySocket.Client
 
             if (msgFilter == null)
             {
-                throw new InvalidOperationException("MsgFilter not set: Please call the \"SetMsgFilter\" Method and set it up.");
+                throw ExceptionExtensions.MemberNotSetIOE("MsgFilter", "SetMsgFilter");
             }
 
             if (loggerFactroy == null)
             {
-                throw new InvalidOperationException("ILoggerFactory not set: Please call the \"SetLoggerFactory\" Method and set it up.");
+                throw ExceptionExtensions.MemberNotSetIOE("LoggerFactory", "SetLoggerFactory");
+            }
+
+            if (config == null)
+            {
+                throw ExceptionExtensions.MemberNotSetIOE("SocketClientConfig", "SetSocketClientConfig");
             }
 
             _logger = loggerFactroy.GetLogger(GetType());
@@ -100,14 +54,9 @@ namespace EasySocket.Client
                 throw new InvalidOperationException("Unable to create logger from LoggerFactory.");
             }
 
-            if (config == null)
-            {
-                throw new InvalidOperationException("SocketClientConfig is not set : Please call the \"SetSocketClientConfig\" Method and set it up.");
-            }
-
             if (behavior == null)
             {
-                _logger.Warn("Client Behavior is not set. : Unable to receive events for the client. Please call the \"SetClientBehavior\" Method and set it up.");
+                _logger.MemberNotSetWarn("Client Behavior", "SetClientBehavior");
             }
 
             socket = CreateSocket(config);
@@ -118,7 +67,7 @@ namespace EasySocket.Client
 
             _sendSemaphore = new SemaphoreSlim(1, 1);
 
-            await socket.ConnectAsync(ParseAddress(config.ip), config.port);
+            await socket.ConnectAsync(config.ip.ToIPAddress(), config.port);
             await InternalStart();
 
             _state = (int)IClient.State.Running;
@@ -126,33 +75,9 @@ namespace EasySocket.Client
             behavior?.OnStarted(this as TSocketClient);
         }
 
-        public void Stop()
-        {
-            OnStop().Wait();
-        }
-
         public async Task StopAsync()
         {
             await OnStop();
-        }
-
-        public int Send(ReadOnlyMemory<byte> sendMemory)
-        {
-            if (_state != (int)IClient.State.Running)
-            {
-                return -1;
-            }
-
-            try
-            {
-                _sendSemaphore.Wait();
-
-                return InternalSendSync(sendMemory);
-            }
-            finally
-            {
-                _sendSemaphore.Release();
-            }
         }
 
         public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
@@ -166,7 +91,7 @@ namespace EasySocket.Client
             {
                 await _sendSemaphore.WaitAsync();
 
-                return await InternalSendAsync(sendMemory);
+                return await InternalSend(sendMemory);
             }
             finally
             {
@@ -286,18 +211,6 @@ namespace EasySocket.Client
         /// 해당 메서드는 파생 클래스에서 따로 호출되지 않는 이상 종료될 때 단 한번 호출을 보장합니다. 
         /// </summary>
         protected abstract Task InternalStop();
-        protected abstract int InternalSendSync(ReadOnlyMemory<byte> sendMemory);
-        protected abstract ValueTask<int> InternalSendAsync(ReadOnlyMemory<byte> sendMemory);
-
-        protected IPAddress ParseAddress(string strIp)
-        {
-            if (strIp == "Any")
-            {
-                return IPAddress.Any;
-            }
-
-            return IPAddress.Parse(strIp);
-        }
-
+        protected abstract ValueTask<int> InternalSend(ReadOnlyMemory<byte> sendMemory);
     }
 }
