@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Buffers;
 using System.Text;
-using EasySocket;
-using EasySocket.Servers;
-using EasySocket.Sessions;
-using EasySocket.Listeners;
-using EasySocket.Behaviors;
-using EasySocket.Servers.Async;
 using EasySocket.Common.Protocols.MsgInfos;
 using EasySocket.Common.Protocols.MsgFilters;
 using EasySocket.Common.Protocols.MsgFilters.Factories;
 using NLog;
+using EasySocket.Server;
+using System.Threading.Tasks;
+using EasySocket.Server.Listeners;
 
 namespace Echo.Server
 {
@@ -18,46 +15,40 @@ namespace Echo.Server
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        public void OnSessionConnected(ISocketSession session)
+        public void OnSessionConnected(IServer session)
         {
             _logger.Info($"Connected Session : {session}");
         }
 
-        public void OnSessionDisconnected(ISocketSession session)
+        public void OnSessionDisconnected(IServer session)
         {
             _logger.Info($"Disconnected Session : {session}");
         }
-        
-        public void OnError(Exception ex)
+
+        public void OnError(IServer session, Exception ex)
         {
             _logger.Error(ex);
         }
-    };
-
+    }
     internal class EchoSessionBehavior : ISessionBehavior
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        public void OnStarted(ISocketSession session)
+        public void OnStarted(ISession ssn)
         {
             _logger.Info($"Started Session : {this}");
         }
 
-        public void OnClosed(ISocketSession session)
+        public void OnStopped(ISession ssn)
         {
             _logger.Info($"Closed  Session : {this}");
         }
 
-        public void OnError(ISocketSession session, Exception ex)
-        {
-            _logger.Error(ex);
-        }
-
-        public async void OnReceived(ISocketSession session, IMsgInfo msg)
+        public async void OnReceived(ISession ssn, IMsgInfo msgInfo)
         {
             var buffer = new byte[1048576];
 
-            var convertedMsg = msg as EchoMsgInfo;
+            var convertedMsg = msgInfo as EchoMsgInfo;
             if (convertedMsg == null)
             {
                 return;
@@ -67,13 +58,18 @@ namespace Echo.Server
 
             if (convertedMsg.str == "Bye")
             {
-                await session.StopAsync();
+                await ssn.StopAsync();
                 return;
             }
 
             var sendByte = Encoding.Default.GetBytes(convertedMsg.str);
-            
-            await session.SendAsync(sendByte);
+
+            await ssn.SendAsync(sendByte);
+        }
+
+        public void OnError(ISession ssn, Exception ex)
+        {
+            _logger.Error(ex);
         }
     }
 
@@ -105,34 +101,21 @@ namespace Echo.Server
 
     internal static class Program
     {
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
-            var loggerFactory = new EasySocket.Logging.NLogLoggerFactory("NLog.config");
+            var loggerFactory = new Echo.Server.Logging.NLogLoggerFactory("NLog.config");
 
-            var service = new EasySocketService()
-                .SetLoggerFactroy(loggerFactory)
-                .SetSocketServer<AsyncSocketServer>()
-                .SetSocketServerConfigrator((server) =>
+            var server = new TcpSocketServer()
+                .AddListener(new ListenerConfig("127.0.0.1", 9199, 1000))
+                .SetMsgFilterFactory(new DefaultMsgFilterFactory<EchoFilter>())
+                .SetServerBehavior(new EchoServerBehavior())
+                .SetSessionConfigrator(ssn =>
                 {
-                    server
-                        .AddListener(new ListenerConfig("Any", 9199, 100000))
-                        .SetMsgFilterFactory(new DefaultMsgFilterFactory<EchoFilter>())
-                        .SetServerBehavior(new EchoServerBehavior())
-                        .SetServerConfig(new SocketServerConfig
-                        {
-
-                        })
-                        ;
-                    ;       
+                    ssn.SetSessionBehavior(new EchoSessionBehavior());
                 })
-                .SetSocketSessionConfigrator((session) =>
-                {
-                    session
-                        .SetSessionBehavior(new EchoSessionBehavior())
-                        ;
-                });
+                .SetLoggerFactroy(loggerFactory);
 
-            service.Start();
+            await server.StartAsync();
 
             while (true)
             {
@@ -143,7 +126,7 @@ namespace Echo.Server
                 }
             }
 
-            service.Stop();
+            await server.StopAsync();
         }
     }
 }

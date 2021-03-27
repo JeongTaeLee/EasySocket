@@ -34,6 +34,21 @@ namespace EasySocket.Server
                 throw new InvalidOperationException($"The session has an invalid initial state. : Session state is {(ISession.State)prevState}");
             }
 
+            if (msgFilter == null)
+            {
+                throw new InvalidOperationException($"MsgFilter is not set : Please call the \"SetMsgFilter\" Method and set it up.");
+            }
+
+            if (logger == null)
+            {
+                throw new InvalidOperationException("Logger is not set : Please call the \"SetLogger\" Method and set it up.");
+            }
+
+            if (behavior == null)
+            {
+                logger.Warn("Session Behavior is not set. : Unable to receive events for the session. Please call the \"SetSessionBehavior\" Method and set it up.");
+            }
+
             _sendLock = new SemaphoreSlim(1, 1);
 
             socket = sck;
@@ -41,6 +56,8 @@ namespace EasySocket.Server
             await ProcessStart();
 
             _state = (int)ISession.State.Running;
+
+            behavior?.OnStarted(this);
         }
 
         public async ValueTask StopAsync()
@@ -73,28 +90,43 @@ namespace EasySocket.Server
             return this as TSession;
         }
 
-        public TSession SetSessionBehavior(ISessionBehavior bhvr)
-        {
-            behavior = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
-            return this as TSession;
-        }
-
         public TSession SetLogger(ILogger lgr)
         {
             logger = lgr ?? throw new ArgumentNullException(nameof(lgr));
             return this as TSession;
         }
 
-        protected virtual long OnReceive(ReadOnlySequence<byte> sequence)
+        public ISession SetSessionBehavior(ISessionBehavior bhvr)
+        {
+            behavior = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
+            return this as TSession;
+        }
+
+        protected virtual long OnReceive(ref ReadOnlySequence<byte> sequence)
         {
             try
             {
-                return 0;
+                var sequenceReader = new SequenceReader<byte>(sequence);
+
+                while (sequence.Length > sequenceReader.Consumed)
+                {
+                    var msgInfo = msgFilter.Filter(ref sequenceReader);
+
+                    if (msgInfo == null)
+                    {
+                        break;
+                    }
+
+                    behavior?.OnReceived(this, msgInfo);
+                }
+
+                return (int)sequenceReader.Consumed;
             }
             catch (Exception ex)
             {
-                OnError(ex);
-                return sequence.Length;
+                behavior?.OnError(this, ex);
+
+                return (int)sequence.Length;
             }
         }
 

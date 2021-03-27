@@ -68,7 +68,7 @@ namespace EasySocket.Server
                     {
                         if (0 < buffer.Length)
                         {
-                            readLength = OnReceive(buffer);
+                            readLength = OnReceive(ref buffer);
                         }
 
                         if (result.IsCanceled)

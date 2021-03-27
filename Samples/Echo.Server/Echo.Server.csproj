@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\EasySocket\EasySocket.csproj" />
+    <ProjectReference Include="..\..\EasySocket.Server\EasySocket.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>

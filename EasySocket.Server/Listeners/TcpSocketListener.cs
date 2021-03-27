@@ -52,7 +52,7 @@ namespace EasySocket.Server.Listeners
 
                     OnAccept(acceptedSocket);
                 }
-                catch (ObjectDisposedException ex)
+                catch (ObjectDisposedException)
                 {
                     // 종료된 소켓으로 다시 Accepte 호출 할 때.
                     break;

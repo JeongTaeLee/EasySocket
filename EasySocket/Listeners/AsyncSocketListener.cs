@@ -68,7 +68,7 @@ namespace EasySocket.Listeners
 
                     accepted?.Invoke(this, acceptedSocket);
                 }
-                catch (ObjectDisposedException ex)
+                catch (ObjectDisposedException)
                 {
                     // 종료된 소켓으로 다시 Accepte 호출 할 때.
                     break;

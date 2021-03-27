@@ -10,6 +10,7 @@ using EasySocket.Client;
 using EasySocket.Common.Protocols.MsgInfos;
 using EasySocket.Common.Protocols.MsgFilters;
 using EasySocket.Common.Logging;
+using Echo.Client.Logging;
 
 namespace Echo.Client
 {

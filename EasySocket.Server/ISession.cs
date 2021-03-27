@@ -8,7 +8,6 @@ namespace EasySocket.Server
     public interface ISession<TSession> : ISession
         where TSession : ISession<TSession>
     {
-        TSession SetSessionBehavior(ISessionBehavior bhvr);
         TSession SetMsgFilter(IMsgFilter msgfltr);
         TSession SetLogger(ILogger logger);
     }
@@ -31,5 +30,7 @@ namespace EasySocket.Server
 
         ValueTask StopAsync();
         ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry);
+
+        ISession SetSessionBehavior(ISessionBehavior bhvr);
     }
 }

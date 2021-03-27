@@ -1,7 +1,7 @@
 ﻿using System;
 using EasySocket.Common.Logging;
 
-namespace Echo.Client.Logging
+namespace Echo.Server.Logging
 {
     public class NLogLoggerFactory : LogFactoryBase
     {

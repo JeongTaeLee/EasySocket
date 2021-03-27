@@ -10,23 +10,25 @@ using EasySocket.Common.Protocols.MsgFilters.Factories;
 
 namespace EasySocket.Server
 {
-    public abstract class BaseSocketServer<TSocketServer, TSocketSession> : IServer<TSocketServer>
-        where TSocketServer : BaseSocketServer<TSocketServer, TSocketSession>
-        where TSocketSession : BaseSocketSession<TSocketSession>
+    public abstract class BaseSocketServer<TSocketServer, TSession> : IServer<TSocketServer>
+        where TSocketServer : BaseSocketServer<TSocketServer, TSession>
+        where TSession : BaseSocketSession<TSession>
     {
         public IServer.State state => (IServer.State)_state;
         public IMsgFilterFactory msgFilterFactory { get; private set; } = null;
         public IServerBehavior behavior { get; private set; } = null;
         public ILoggerFactory loggerFactory { get; private set; } = null;
+        public Action<ISession> sessionConfigrator { get; private set; } = null;
 
         private int _state = (int)IServer.State.None;
         private List<ListenerConfig> _listenerConfigs = new List<ListenerConfig>();
         private List<IListener> _listeners = new List<IListener>();
 
-        protected SocketServerConfig config { get; private set; } = null;
         protected ILogger logger { get; private set; } = null;
 
+        public SocketServerConfig config { get; private set; } = new SocketServerConfig();
         public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
+
 
         public async Task StartAsync()
         {
@@ -57,6 +59,13 @@ namespace EasySocket.Server
                 logger.Warn("Server Behavior is not set. : Unable to receive events for the server. Please call the \"SetServerBehavior\" Method and set it up.");
             }
 
+            if (sessionConfigrator == null)
+            {
+                logger.Warn("SocketSession Configrator not set : Please call the \"SetSocketSessionConfigrator\" Method and set it up");
+            }
+
+            await InternalStart();
+
             await StartListenersAsync().ConfigureAwait(false);
 
             _state = (int)IServer.State.Running;
@@ -69,6 +78,8 @@ namespace EasySocket.Server
             {
                 throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(IServer.State)prevState}");
             }
+
+            await InternalStop();
 
             await StopListenersAsync().ConfigureAwait(false);
 
@@ -87,9 +98,20 @@ namespace EasySocket.Server
             return this as TSocketServer;
         }
 
+        public TSocketServer SetSessionConfigrator(Action<ISession> ssnCnfgr)
+        {
+            sessionConfigrator = ssnCnfgr ?? throw new ArgumentNullException(nameof(ssnCnfgr));
+            return this as TSocketServer;
+        }
+
         public TSocketServer SetLoggerFactroy(ILoggerFactory lgrFctr)
         {
             loggerFactory = lgrFctr ?? throw new ArgumentNullException(nameof(lgrFctr));
+            return this as TSocketServer;
+        }
+        public TSocketServer AddListener(ListenerConfig lstnrCnfg)
+        {
+            _listenerConfigs.Add(lstnrCnfg);
             return this as TSocketServer;
         }
 
@@ -107,7 +129,7 @@ namespace EasySocket.Server
                 listener.onAccept = OnSocketAcceptedFromListeners;
                 listener.onError = OnErrorOccurredFromListeners;
 
-                tasks.Add(listener.StartAsync(listenerConfig));
+                tasks.Add(listener.StartAsync(listenerConfig, loggerFactory.GetLogger(listener.GetType())));
 
                 logger.DebugFormat("Started listener : {0}", listenerConfig.ToString());
             }
@@ -132,9 +154,9 @@ namespace EasySocket.Server
             await Task.WhenAll(tasks);
         }
 
-        protected virtual void OnSocketAcceptedFromListeners(IListener listener, Socket acptdSck)
+        protected virtual ValueTask OnSocketAcceptedFromListeners(IListener listener, Socket acptdSck)
         {
-            TSocketSession session = null;
+            TSession session = null;
 
             try
             {
@@ -158,22 +180,31 @@ namespace EasySocket.Server
                 var msgFilter = msgFilterFactory.Get();
                 if (msgFilter == null)
                 {
-                    return;
+                    throw new Exception("MsgFilterFactory.Get retunred null");
                 }
 
                 var tempSession = CreateSession();
                 if (tempSession == null)
                 {
-                    return;
+                    throw new Exception("CreateSession retunred null");
                 }
+
+                sessionConfigrator?.Invoke(tempSession
+                    .SetMsgFilter(msgFilterFactory.Get())
+                    .SetLogger(loggerFactory.GetLogger(typeof(TSession))));
+
                 tempSession.StartAsync(acptdSck).GetAwaiter().GetResult();
 
                 // finally에서 오류 체크를 하기 위해 모든 작업이 성공적으로 끝난 후 대입해줍니다.
                 session = tempSession;
+
+                return ValueTask.CompletedTask;
             }
             catch (Exception ex)
             {
                 behavior?.OnError(this, ex);
+
+                return ValueTask.CompletedTask;
             }
             finally
             {
@@ -187,12 +218,13 @@ namespace EasySocket.Server
 
         protected virtual void OnErrorOccurredFromListeners(IListener listener, Exception ex)
         {
-
+            behavior?.OnError(this, ex);
         }
 
         protected abstract ValueTask InternalStart();
         protected abstract ValueTask InternalStop();
-        protected abstract TSocketSession CreateSession();
+        protected abstract TSession CreateSession();
         protected abstract IListener CreateListener();
+
     }
 }
