@@ -15,14 +15,14 @@ namespace EasySocket.Server
             return new TcpSocketSession();
         }
 
-        protected override ValueTask InternalStart()
+        protected override ValueTask ProcessStart()
         {
-            return ValueTask.CompletedTask;
+            return new ValueTask();
         }
 
-        protected override ValueTask InternalStop()
+        protected override ValueTask ProcessStop()
         {
-            return ValueTask.CompletedTask;
+            return new ValueTask();
         }
     }
 }

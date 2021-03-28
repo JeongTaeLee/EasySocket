@@ -67,7 +67,7 @@ namespace EasySocket.Server
                     logger.MemberNotSetWarn("Session Configrator", "SetSessionConfigrator");
                 }
 
-                await InternalStart();
+                await ProcessStart();
 
                 await StartListenersAsync().ConfigureAwait(false);
 
@@ -90,7 +90,7 @@ namespace EasySocket.Server
                 throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(IServer.State)prevState}");
             }
 
-            await InternalStop();
+            await ProcessStop();
 
             await StopListenersAsync().ConfigureAwait(false);
 
@@ -201,6 +201,7 @@ namespace EasySocket.Server
                 }
 
                 sessionConfigrator?.Invoke(tempSession
+                    .SetOnStop(OnSessionStopFromSession)
                     .SetMsgFilter(msgFilterFactory.Get())
                     .SetLogger(loggerFactory.GetLogger(typeof(TSession))));
 
@@ -220,6 +221,10 @@ namespace EasySocket.Server
                 {
                     acptdSck?.SafeClose();
                 }
+                else
+                {
+                    behavior?.OnSessionConnected(this, session);
+                }
             }
         }
 
@@ -228,8 +233,13 @@ namespace EasySocket.Server
             behavior?.OnError(this, ex);
         }
 
-        protected abstract ValueTask InternalStart();
-        protected abstract ValueTask InternalStop();
+        protected virtual void OnSessionStopFromSession(TSession session)
+        {
+            behavior?.OnSessionDisconnected(this, session);
+        }
+
+        protected abstract ValueTask ProcessStart();
+        protected abstract ValueTask ProcessStop();
         protected abstract TSession CreateSession();
         protected abstract IListener CreateListener();
 

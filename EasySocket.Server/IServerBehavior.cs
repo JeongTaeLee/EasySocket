@@ -4,10 +4,10 @@ namespace EasySocket.Server
 {
     public interface IServerBehavior
     {
-        void OnSessionConnected(IServer session);
+        void OnSessionConnected(IServer server, ISession ssn);
 
-        void OnSessionDisconnected(IServer session);
+        void OnSessionDisconnected(IServer server, ISession ssn);
 
-        void OnError(IServer session, Exception ex);
+        void OnError(IServer server, Exception ex);
     }
 }

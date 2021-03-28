@@ -13,7 +13,7 @@ namespace EasySocket.Server.Listeners
         private CancellationTokenSource _cancellationToken = null;
         private Task _acceptLoopTask = null;
         
-        protected override ValueTask InternalStart()
+        protected override ValueTask ProcessStart()
         {
             IPEndPoint endPoint = new IPEndPoint(config.ip.ToIPAddress(), config.port);
 
@@ -24,10 +24,10 @@ namespace EasySocket.Server.Listeners
             _cancellationToken = new CancellationTokenSource();
             _acceptLoopTask = AcceptLoop(_cancellationToken.Token);
 
-            return ValueTask.CompletedTask;
+            return new ValueTask();
         }
 
-        protected override async ValueTask InternalStop()
+        protected override async ValueTask ProcessStop()
         {
             _cancellationToken?.Cancel();
             

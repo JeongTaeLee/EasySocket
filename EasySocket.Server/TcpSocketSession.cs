@@ -26,7 +26,7 @@ namespace EasySocket.Server
 
             WaitingForAbort();
 
-            return ValueTask.CompletedTask;
+            return new ValueTask();
         }
 
         protected override async ValueTask ProcessStop()

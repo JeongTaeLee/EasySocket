@@ -99,7 +99,7 @@ namespace EasySocket.Server
             return this as TSession;
         }
 
-        public TSession SetOnStop(SessionStopHandler<TSession> ssnStopHandler)
+        public TSession SetOnStop( SessionStopHandler<TSession> ssnStopHandler)
         {
             _onStop = ssnStopHandler ?? throw new ArgumentNullException(nameof(ssnStopHandler));
             return this as TSession;
@@ -155,9 +155,6 @@ namespace EasySocket.Server
             // 내부 종료
             await ProcessStop();
 
-            // 종료 콜백 실행
-            _onStop?.Invoke(this as TSession);
-
             // 변수 초기화.
             _sendLock = null;
             socket = null;
@@ -167,6 +164,9 @@ namespace EasySocket.Server
 
             // Behavior 종료 콜백 실행.
             behavior?.OnStopped(this);
+
+            // 완전 종료 콜백 실행
+            _onStop?.Invoke(this as TSession);
         }
 
         protected abstract ValueTask ProcessStart();

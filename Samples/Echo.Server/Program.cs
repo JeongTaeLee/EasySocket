@@ -15,17 +15,17 @@ namespace Echo.Server
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        public void OnSessionConnected(IServer session)
+        public void OnSessionConnected(IServer server, ISession ssn)
         {
-            _logger.Info($"Connected Session : {session}");
+            _logger.Info($"Connected Session : {ssn}");
         }
 
-        public void OnSessionDisconnected(IServer session)
+        public void OnSessionDisconnected(IServer server, ISession ssn)
         {
-            _logger.Info($"Disconnected Session : {session}");
+            _logger.Info($"Disconnected Session : {ssn}");
         }
 
-        public void OnError(IServer session, Exception ex)
+        public void OnError(IServer server, Exception ex)
         {
             _logger.Error(ex);
         }

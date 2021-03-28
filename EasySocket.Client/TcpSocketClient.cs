@@ -23,7 +23,7 @@ namespace EasySocket.Client
             };
         }
 
-        protected override Task InternalStart()
+        protected override Task ProcessStart()
         {
             _cancellation = new CancellationTokenSource();
             _networkStream = new NetworkStream(this.socket);
@@ -36,7 +36,7 @@ namespace EasySocket.Client
             return Task.FromResult(true);
         }
 
-        protected override async Task InternalStop()
+        protected override async Task ProcessStop()
         {
             _cancellation?.Cancel();
 
@@ -50,7 +50,7 @@ namespace EasySocket.Client
             _readTask = null;
         }
 
-        protected override ValueTask<int> InternalSend(ReadOnlyMemory<byte> sendMemory)
+        protected override ValueTask<int> ProcessSend(ReadOnlyMemory<byte> sendMemory)
         {
             return socket.SendAsync(sendMemory, SocketFlags.None);
         }

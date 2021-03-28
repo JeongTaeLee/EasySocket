@@ -68,7 +68,7 @@ namespace EasySocket.Client
             _sendSemaphore = new SemaphoreSlim(1, 1);
 
             await socket.ConnectAsync(config.ip.ToIPAddress(), config.port);
-            await InternalStart();
+            await ProcessStart();
 
             _state = (int)IClient.State.Running;
 
@@ -91,7 +91,7 @@ namespace EasySocket.Client
             {
                 await _sendSemaphore.WaitAsync();
 
-                return await InternalSend(sendMemory);
+                return await ProcessSend(sendMemory);
             }
             finally
             {
@@ -153,7 +153,7 @@ namespace EasySocket.Client
                 return;
             }
 
-            await InternalStop();
+            await ProcessStop();
 
             socket?.Dispose();
             socket = null;
@@ -204,13 +204,13 @@ namespace EasySocket.Client
         /// <summary>
         /// <see cref="BaseSocketClient{TSocketClient}"/>의 파생 클래스에서 재정의하여 시작될 때 수행할 행동을 구현합니다.
         /// </summary>
-        protected abstract Task InternalStart();
+        protected abstract Task ProcessStart();
 
         /// <summary>
         /// <see cref="BaseSocketClient{TSocketClient}"/>의 파생 클래스에서 재정의하여 종료될 때 수행할 행동을 구현합니다.
         /// 해당 메서드는 파생 클래스에서 따로 호출되지 않는 이상 종료될 때 단 한번 호출을 보장합니다. 
         /// </summary>
-        protected abstract Task InternalStop();
-        protected abstract ValueTask<int> InternalSend(ReadOnlyMemory<byte> sendMemory);
+        protected abstract Task ProcessStop();
+        protected abstract ValueTask<int> ProcessSend(ReadOnlyMemory<byte> sendMemory);
     }
 }

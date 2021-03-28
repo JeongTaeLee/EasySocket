@@ -38,12 +38,12 @@ namespace EasySocket.Server.Listeners
                 logger.Warn("Error Handler is not set : Unable to receive events for error");
             }
 
-            await InternalStart();
+            await ProcessStart();
         }
 
         public async Task StopAsync()
         {
-            await InternalStop();   
+            await ProcessStop();   
         }
 
         protected async void OnAccept(Socket sck)
@@ -61,7 +61,7 @@ namespace EasySocket.Server.Listeners
             onError?.Invoke(this, ex);
         }
 
-        protected abstract ValueTask InternalStart();
-        protected abstract ValueTask InternalStop();
+        protected abstract ValueTask ProcessStart();
+        protected abstract ValueTask ProcessStop();
     }
 }
