@@ -14,24 +14,19 @@ namespace EasySocket.Server
         Stopped,
     }
 
-    public delegate void SessionStopHandler<TSession, TPacket>(TSession session) where TSession : ISession<TSession, TPacket>;
-
-    public interface ISession<TSession, TPacket> : ISession<TPacket>
-        where TSession : ISession<TSession, TPacket>
+    public interface ISession<TPacket> : ISession
     {
-        TSession SetMsgFilter(IMsgFilter<TPacket> msgfltr);
-        TSession SetOnStop(SessionStopHandler<TSession, TPacket> onClose);
-        TSession SetLogger(ILogger logger);
-    }
+        public ISessionBehavior<TPacket> behavior { get; }
 
-    public interface ISession<TPacket>
-    {
-        SessionState state { get; }
-        ISessionBehavior<TPacket> behavior { get; }
-
-        ValueTask StopAsync();
         ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry);
 
-        ISession<TPacket> SetSessionBehavior(ISessionBehavior<TPacket> bhvr);
+        public ISession<TPacket> SetSessionBehavior(ISessionBehavior<TPacket> bhvr);
+    } 
+
+    public interface ISession
+    {
+        SessionState state { get; }     
+
+        ValueTask StopAsync();
     }
 }

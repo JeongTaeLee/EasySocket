@@ -1,25 +1,20 @@
 using System;
 using System.Buffers;
-using System.Threading;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
-using EasySocket.Common.Logging;
-using EasySocket.Common.Protocols.MsgFilters;
 using EasySocket.Common.Extensions;
+using EasySocket.Common.Logging;
 
 namespace EasySocket.Server
 {
-    public abstract class BaseSocketSession<TSession, TPacket> : ISession<TSession, TPacket>
-        where TSession : BaseSocketSession<TSession, TPacket>
+    public abstract class SocketSession<TSession, TPacket> : BaseSession<TSession, TPacket>
+        where TSession : BaseSession<TSession, TPacket>
     {
-        
-        public SessionState state => (SessionState)_state;
-        public ISessionBehavior<TPacket> behavior { get; private set; } = null;
-
+        public override SessionState state => (SessionState)_state;
+    
         private int _state = (int)SessionState.None;
         private SemaphoreSlim _sendLock = null;
-        private IMsgFilter<TPacket> _msgFilter  = null;
-        private SessionStopHandler<TSession, TPacket> _onStop = null;
 
         protected Socket socket { get; private set; } = null;
         protected ILogger logger { get; private set; } = null;
@@ -32,7 +27,7 @@ namespace EasySocket.Server
                 throw new InvalidOperationException($"The session has an invalid initial state. : Session state is {(SessionState)prevState}");
             }
 
-            if (_msgFilter == null)
+            if (msgFilter == null)
             {
                 throw ExceptionExtensions.MemberNotSetIOE("MsgFilter", "SetMsgFilter");
             }
@@ -53,9 +48,9 @@ namespace EasySocket.Server
             }
 
             socket = sck ?? throw new ArgumentNullException(nameof(sck));
-            
+
             _sendLock = new SemaphoreSlim(1, 1);
-            
+
             await ProcessStart();
 
             _state = (int)SessionState.Running;
@@ -63,7 +58,7 @@ namespace EasySocket.Server
             behavior?.OnStarted(this);
         }
 
-        public async ValueTask StopAsync()
+        public override async ValueTask StopAsync()
         {
             if (_state == (int)SessionState.Running)
             {
@@ -73,7 +68,7 @@ namespace EasySocket.Server
             await OnStop();
         }
 
-        public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry)
+        public override async ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry)
         {
             try
             {
@@ -87,30 +82,31 @@ namespace EasySocket.Server
             }
         }
 
-        public TSession SetMsgFilter(IMsgFilter<TPacket> msgfltr)
+        protected virtual async ValueTask OnStop()
         {
-            _msgFilter = msgfltr ?? throw new ArgumentNullException(nameof(msgfltr));
-            return this as TSession;
-        }
+            int prevState = Interlocked.CompareExchange(ref _state, (int)SessionState.Stopping, (int)SessionState.Running);
+            if (prevState != (int)SessionState.Running)
+            {
+                throw new InvalidOperationException($"The session has an invalid initial state. : Session state is {(SessionState)prevState}");
+            }
 
-        public TSession SetLogger(ILogger lgr)
-        {
-            logger = lgr ?? throw new ArgumentNullException(nameof(lgr));
-            return this as TSession;
-        }
+            // 내부 종료
+            await ProcessStop();
 
-        public TSession SetOnStop( SessionStopHandler<TSession, TPacket> ssnStopHandler)
-        {
-            _onStop = ssnStopHandler ?? throw new ArgumentNullException(nameof(ssnStopHandler));
-            return this as TSession;
-        }
+            // 변수 초기화.
+            _sendLock = null;
+            socket = null;
 
-        public ISession<TPacket> SetSessionBehavior(ISessionBehavior<TPacket> bhvr)
-        {
-            behavior = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
-            return this as TSession;
-        }
+            // 상태 변경.
+            _state = (int)SessionState.Stopped;
 
+            // Behavior 종료 콜백 실행.
+            behavior?.OnStopped(this);
+
+            // 완전 종료 콜백 실행
+            _onStop?.Invoke(this as TSession);
+        }
+        
         protected virtual long OnReceive(ref ReadOnlySequence<byte> sequence)
         {
             try
@@ -119,7 +115,7 @@ namespace EasySocket.Server
 
                 while (sequence.Length > sequenceReader.Consumed)
                 {
-                    var packet = _msgFilter.Filter(ref sequenceReader);
+                    var packet = msgFilter.Filter(ref sequenceReader);
                     if (packet == null)
                     {
                         return sequence.Length;
@@ -143,29 +139,10 @@ namespace EasySocket.Server
             behavior?.OnError(this, ex);
         }
 
-        protected virtual async ValueTask OnStop()
+        public TSession SetLogger(ILogger lgr)
         {
-            int prevState = Interlocked.CompareExchange(ref _state, (int)SessionState.Stopping, (int)SessionState.Running);
-            if (prevState != (int)SessionState.Running)
-            {
-                throw new InvalidOperationException($"The session has an invalid initial state. : Session state is {(SessionState)prevState}");
-            }
-
-            // 내부 종료
-            await ProcessStop();
-
-            // 변수 초기화.
-            _sendLock = null;
-            socket = null;
-        
-            // 상태 변경.
-            _state = (int)SessionState.Stopped;
-
-            // Behavior 종료 콜백 실행.
-            behavior?.OnStopped(this);
-
-            // 완전 종료 콜백 실행
-            _onStop?.Invoke(this as TSession);
+            logger = lgr ?? throw new ArgumentNullException(nameof(lgr));
+            return this as TSession;
         }
 
         protected abstract ValueTask ProcessStart();

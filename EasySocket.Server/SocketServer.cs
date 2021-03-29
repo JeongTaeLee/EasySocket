@@ -1,36 +1,31 @@
 using System;
-using System.Threading;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using EasySocket.Common.Logging;
-using EasySocket.Server.Listeners;
 using EasySocket.Common.Extensions;
-using EasySocket.Common.Protocols.MsgFilters.Factories;
+using EasySocket.Server.Listeners;
+using EasySocket.Common.Logging;
 
 namespace EasySocket.Server
 {
-    public abstract class BaseSocketServer<TServer, TSession, TPacket> : IServer<TServer, TPacket>
-        where TServer : BaseSocketServer<TServer, TSession, TPacket>
-        where TSession : BaseSocketSession<TSession, TPacket>
+    public abstract class SocketServer<TServer, TSession, TPacket> : BaseServer<TServer, TSession, TPacket>
+        where TServer : BaseServer<TServer, TSession, TPacket>
+        where TSession : SocketSession<TSession, TPacket>
     {
-        public ServerState state => (ServerState)_state;
+        public override ServerState state => (ServerState)_state;
 
-        private int _state = (int)ServerState.None;
+
         private List<ListenerConfig> _listenerConfigs = new List<ListenerConfig>();
         private List<IListener> _listeners = new List<IListener>();
+        private int _state = (int)ServerState.None;
 
         protected ILogger logger { get; private set; } = null;
 
         public SocketServerConfig config { get; private set; } = new SocketServerConfig();
         public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
-
-        public IMsgFilterFactory<TPacket> msgFilterFactory { get; private set; } = null;
-        public IServerBehavior<TPacket> behavior { get; private set; } = null;
-        public Action<ISession<TPacket>> sessionConfigrator { get; private set; } = null;
-        public ILoggerFactory loggerFactory { get; private set; } = null;
-
-        public async Task StartAsync()
+        
+        public override async ValueTask StartAsync()
         {
             try
             {
@@ -80,8 +75,8 @@ namespace EasySocket.Server
                 }
             }
         }
-
-        public async Task StopAsync()
+        
+        public override async ValueTask StopAsync()
         {
             int prevState = Interlocked.CompareExchange(ref _state, (int)ServerState.Stopping, (int)ServerState.Running);
             if (prevState != (int)ServerState.Running)
@@ -96,29 +91,6 @@ namespace EasySocket.Server
             _state = (int)ServerState.Stopped;
         }
 
-        public TServer SetMsgFilterFactory(IMsgFilterFactory<TPacket> msgFltrFctr)
-        {
-            msgFilterFactory = msgFltrFctr ?? throw new ArgumentNullException(nameof(msgFltrFctr));
-            return this as TServer;
-        }
-
-        public TServer SetServerBehavior(IServerBehavior<TPacket> bhvr)
-        {
-            behavior = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
-            return this as TServer;
-        }
-
-        public TServer SetSessionConfigrator(Action<ISession<TPacket>> ssnCnfgr)
-        {
-            sessionConfigrator = ssnCnfgr ?? throw new ArgumentNullException(nameof(ssnCnfgr));
-            return this as TServer;
-        }
-
-        public TServer SetLoggerFactroy(ILoggerFactory lgrFctr)
-        {
-            loggerFactory = lgrFctr ?? throw new ArgumentNullException(nameof(lgrFctr));
-            return this as TServer;
-        }
         public TServer AddListener(ListenerConfig lstnrCnfg)
         {
             _listenerConfigs.Add(lstnrCnfg);
@@ -153,7 +125,7 @@ namespace EasySocket.Server
             {
                 return;
             }
-            
+
             List<Task> tasks = new List<Task>(_listenerConfigs.Count);
             foreach (var listener in _listeners)
             {
@@ -241,6 +213,5 @@ namespace EasySocket.Server
         protected abstract ValueTask ProcessStop();
         protected abstract TSession CreateSession();
         protected abstract IListener CreateListener();
-
     }
 }

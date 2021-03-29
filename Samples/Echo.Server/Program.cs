@@ -90,12 +90,12 @@ namespace Echo.Server
             var server = new TcpSocketServer<string>()
                 .AddListener(new ListenerConfig("127.0.0.1", 9199, 1000))
                 .SetMsgFilterFactory(new DefaultMsgFilterFactory<EchoFilter, string>())
-                .SetServerBehavior(new EchoServerBehavior())
+                .SetLoggerFactory(loggerFactory)
                 .SetSessionConfigrator(ssn =>
                 {
                     ssn.SetSessionBehavior(new EchoSessionBehavior());
                 })
-                .SetLoggerFactroy(loggerFactory);
+                .SetServerBehavior(new EchoServerBehavior());
 
             await server.StartAsync();
 

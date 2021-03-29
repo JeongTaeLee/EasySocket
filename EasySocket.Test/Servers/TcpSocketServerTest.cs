@@ -28,7 +28,7 @@ namespace EasySocket.Test.Servers
             Assert.ThrowsException<ArgumentNullException>(() =>
             {
                 // NULL 처리 테스트
-                testServer.SetLoggerFactroy(null);
+                testServer.SetLoggerFactory(null);
             });
 
             Assert.ThrowsException<ArgumentNullException>(() =>
@@ -49,14 +49,14 @@ namespace EasySocket.Test.Servers
                 testServer.SetServerBehavior(null);
             });
 
-            // var server = testServer
-            //         .SetMsgFilterFactory(new )
-
-            // 정상 상황 테스트.
+            //정상 상황 테스트.
             // var startTask  = testServer
-            //         .SetLoggerFactroy(null)
             //         .SetMsgFilterFactory(null)
-            //         .SetSessionConfigrator(null)
+            //         .SetLoggerFactory(null)
+            //         .SetSessionConfigrator((ssn)=>
+            //         {
+            //             //ssn.SetSessionBehavior
+            //         })
             //         .SetServerBehavior(null)
             //         .StartAsync();
 

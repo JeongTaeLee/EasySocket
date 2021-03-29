@@ -13,21 +13,19 @@ namespace EasySocket.Server
         Stopping,
         Stopped,
     }
-    public interface IServer<TServer, TPacket> : IServer<TPacket>
-        where TServer : IServer<TPacket>
-    {
-        TServer SetMsgFilterFactory(IMsgFilterFactory<TPacket> msgFltrFctr);
-        TServer SetServerBehavior(IServerBehavior<TPacket> bhvr);
-        TServer SetSessionConfigrator(Action<ISession<TPacket>> sessionConfigrator);
-        TServer SetLoggerFactroy(ILoggerFactory lgrFctr);
-    }
 
-    public interface IServer<TPacket>
+    public interface IServer<TPacket> : _IServer
     {
-        ServerState state { get; }
         IServerBehavior<TPacket> behavior { get; }
 
-        Task StartAsync();
-        Task StopAsync();
+        IServer<TPacket> SetServerBehavior(IServerBehavior<TPacket> bhvr);
+    }
+
+    public interface _IServer
+    {
+        ServerState state { get; }
+
+        ValueTask StartAsync();
+        ValueTask StopAsync();
     }
 }
