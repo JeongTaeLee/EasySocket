@@ -49,6 +49,9 @@ namespace EasySocket.Test.Servers
                 testServer.SetServerBehavior(null);
             });
 
+            // var server = testServer
+            //         .SetMsgFilterFactory(new )
+
             // 정상 상황 테스트.
             // var startTask  = testServer
             //         .SetLoggerFactroy(null)

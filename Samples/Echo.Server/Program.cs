@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Buffers;
 using System.Text;
-using EasySocket.Common.Protocols.MsgInfos;
+using System.Buffers;
+using System.Threading.Tasks;
+using NLog;
 using EasySocket.Common.Protocols.MsgFilters;
 using EasySocket.Common.Protocols.MsgFilters.Factories;
-using NLog;
 using EasySocket.Server;
-using System.Threading.Tasks;
 using EasySocket.Server.Listeners;
 
 namespace Echo.Server
@@ -65,17 +64,6 @@ namespace Echo.Server
         {
             _logger.Error(ex);
         }
-    }
-
-    internal class EchoMsgInfo : IMsgInfo
-    {
-        public string str { get; private set; }
-
-        public EchoMsgInfo(string str)
-        {
-            this.str = str;
-        }
-
     }
 
     internal class EchoFilter : IMsgFilter<string>

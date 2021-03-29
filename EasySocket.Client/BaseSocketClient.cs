@@ -1,12 +1,10 @@
 using System;
 using System.Buffers;
-using System.Net;
-using System.Net.Sockets;
 using System.Threading;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using EasySocket.Common.Logging;
 using EasySocket.Common.Extensions;
-using EasySocket.Common.Protocols.MsgInfos;
 using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Client

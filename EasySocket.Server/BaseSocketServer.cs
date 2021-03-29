@@ -24,6 +24,7 @@ namespace EasySocket.Server
 
         public SocketServerConfig config { get; private set; } = new SocketServerConfig();
         public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
+
         public IMsgFilterFactory<TPacket> msgFilterFactory { get; private set; } = null;
         public IServerBehavior<TPacket> behavior { get; private set; } = null;
         public Action<ISession<TPacket>> sessionConfigrator { get; private set; } = null;
@@ -33,7 +34,6 @@ namespace EasySocket.Server
         {
             try
             {
-
                 int prevState = Interlocked.CompareExchange(ref _state, (int)ServerState.Starting, (int)ServerState.None);
                 if (prevState != (int)ServerState.None)
                 {

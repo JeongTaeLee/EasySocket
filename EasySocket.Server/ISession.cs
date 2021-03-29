@@ -20,8 +20,8 @@ namespace EasySocket.Server
         where TSession : ISession<TSession, TPacket>
     {
         TSession SetMsgFilter(IMsgFilter<TPacket> msgfltr);
-        TSession SetLogger(ILogger logger);
         TSession SetOnStop(SessionStopHandler<TSession, TPacket> onClose);
+        TSession SetLogger(ILogger logger);
     }
 
     public interface ISession<TPacket>

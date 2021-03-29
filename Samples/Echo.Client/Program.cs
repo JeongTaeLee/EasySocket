@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Text;
 using System.Buffers;
-using System.Net.Sockets;
-using System.IO.Pipelines;
 using System.Threading.Tasks;
 using System.Threading;
-using System.Runtime.InteropServices;
 using EasySocket.Client;
-using EasySocket.Common.Protocols.MsgInfos;
 using EasySocket.Common.Protocols.MsgFilters;
-using EasySocket.Common.Logging;
 using Echo.Client.Logging;
 
 namespace Echo.Client
@@ -38,17 +33,6 @@ namespace Echo.Client
                 Console.WriteLine("Error");
             }
         }
-        
-        internal class EchoMsgInfo : IMsgInfo
-        {
-            public string str { get; private set; }
-
-            public EchoMsgInfo(string str)
-            {
-                this.str = str;
-            }
-        }
-
         internal class EchoFilter : IMsgFilter<string>
         {
             public string Filter(ref SequenceReader<byte> sequence)

@@ -1,5 +1,4 @@
 using System;
-using EasySocket.Common.Protocols.MsgInfos;
 
 namespace EasySocket.Client
 {

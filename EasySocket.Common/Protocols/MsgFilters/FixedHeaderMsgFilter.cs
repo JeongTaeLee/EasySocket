@@ -1,5 +1,4 @@
 ﻿using System.Buffers;
-using EasySocket.Common.Protocols.MsgInfos;
 
 namespace EasySocket.Common.Protocols.MsgFilters
 {
