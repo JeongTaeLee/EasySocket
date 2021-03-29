@@ -3,16 +3,16 @@ using EasySocket.Server.Listeners;
 
 namespace EasySocket.Server
 {
-    public class TcpSocketServer : BaseSocketServer<TcpSocketServer, TcpSocketSession>
+    public class TcpSocketServer<TPacket> : BaseSocketServer<TcpSocketServer<TPacket>, TcpSocketSession<TPacket>, TPacket>
     {
         protected override IListener CreateListener()
         {
             return new TcpSocketListener();
         }
 
-        protected override TcpSocketSession CreateSession()
+        protected override TcpSocketSession<TPacket> CreateSession()
         {
-            return new TcpSocketSession();
+            return new TcpSocketSession<TPacket>();
         }
 
         protected override ValueTask ProcessStart()

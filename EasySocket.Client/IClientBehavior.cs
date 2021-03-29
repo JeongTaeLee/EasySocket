@@ -3,11 +3,11 @@ using EasySocket.Common.Protocols.MsgInfos;
 
 namespace EasySocket.Client
 {
-    public interface IClientBehavior
+    public interface IClientBehavior<TPacket>
     {
-        void OnStarted(IClient client);
-        void OnStoped(IClient client);
-        void OnReceived(IClient client, IMsgInfo msgFilter);
-        void OnError(IClient client, Exception ex);
+        void OnStarted(IClient<TPacket> client);
+        void OnStoped(IClient<TPacket> client);
+        void OnReceived(IClient<TPacket> client, TPacket msgFilter);
+        void OnError(IClient<TPacket> client, Exception ex);
     }
 }

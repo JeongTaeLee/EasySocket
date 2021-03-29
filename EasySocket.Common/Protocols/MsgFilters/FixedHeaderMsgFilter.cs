@@ -7,7 +7,8 @@ namespace EasySocket.Common.Protocols.MsgFilters
     /// Body 부분 사이즈를 고정된 사이즈의 헤더에 포함하는 Msg 필터
     /// Message 구조 = Header(width BodySize) + Body
     ///</summary>
-    public abstract class FixedHeaderMsgFilter : IMsgFilter
+    public abstract class FixedHeaderMsgFilter<TPacket> : IMsgFilter<TPacket>
+        where TPacket : class
     {
         /// <summary>
         /// 고정된 헤더 사이즈
@@ -29,7 +30,7 @@ namespace EasySocket.Common.Protocols.MsgFilters
             this.headerSize = headerSize;
         }
 
-        public IMsgInfo Filter(ref SequenceReader<byte> reader)
+        public TPacket Filter(ref SequenceReader<byte> reader)
         {
             if (!parsedHeader)
             {
@@ -100,7 +101,7 @@ namespace EasySocket.Common.Protocols.MsgFilters
         ///<summary>
         /// Message Body 부분에서 IMsgInfo를 파싱합니다.
         ///</summary>
-        protected abstract IMsgInfo ParseMsgInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq);
+        protected abstract TPacket ParseMsgInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq);
 
     }
 }

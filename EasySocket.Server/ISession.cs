@@ -5,34 +5,33 @@ using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Server
 {
-
-    public delegate void SessionStopHandler<TSession>(TSession session) where TSession : ISession<TSession>;
-
-    public interface ISession<TSession> : ISession
-        where TSession : ISession<TSession>
+    public enum SessionState
     {
-        TSession SetMsgFilter(IMsgFilter msgfltr);
-        TSession SetLogger(ILogger logger);
-        TSession SetOnStop(SessionStopHandler<TSession> onClose);
+        None = 0,
+        Starting,
+        Running,
+        Stopping,
+        Stopped,
     }
 
-    public interface ISession
-    {
-        public enum State
-        {
-            None = 0,
-            Starting,
-            Running,
-            Stopping,
-            Stopped,
-        }
+    public delegate void SessionStopHandler<TSession, TPacket>(TSession session) where TSession : ISession<TSession, TPacket>;
 
-        State state { get; }
-        ISessionBehavior behavior { get; }
+    public interface ISession<TSession, TPacket> : ISession<TPacket>
+        where TSession : ISession<TSession, TPacket>
+    {
+        TSession SetMsgFilter(IMsgFilter<TPacket> msgfltr);
+        TSession SetLogger(ILogger logger);
+        TSession SetOnStop(SessionStopHandler<TSession, TPacket> onClose);
+    }
+
+    public interface ISession<TPacket>
+    {
+        SessionState state { get; }
+        ISessionBehavior<TPacket> behavior { get; }
 
         ValueTask StopAsync();
         ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry);
 
-        ISession SetSessionBehavior(ISessionBehavior bhvr);
+        ISession<TPacket> SetSessionBehavior(ISessionBehavior<TPacket> bhvr);
     }
 }

@@ -5,22 +5,21 @@ using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Client
 {
-    public interface IClient
+    public enum ClientState
     {
-        public enum State
-        {
-            None = 0,
-            Starting,
-            Running,
-            Stopping,
-            Stopped,
-        }
+        None = 0,
+        Starting,
+        Running,
+        Stopping,
+        Stopped,
+    }
 
-        State state { get; }
-        IMsgFilter msgFilter { get; }
-        IClientBehavior behavior { get; }
-        ILoggerFactory loggerFactroy { get; }
+    public interface IClient<TPacket>
+    {
 
+        ClientState state { get; }
+        IClientBehavior<TPacket> behavior { get; }
+        
         Task StopAsync();
         ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory);
     }

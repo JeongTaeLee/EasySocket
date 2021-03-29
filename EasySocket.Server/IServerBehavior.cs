@@ -2,12 +2,12 @@ using System;
 
 namespace EasySocket.Server
 {
-    public interface IServerBehavior
+    public interface IServerBehavior<TPacket>
     {
-        void OnSessionConnected(IServer server, ISession ssn);
+        void OnSessionConnected(IServer<TPacket> server, ISession<TPacket> ssn);
 
-        void OnSessionDisconnected(IServer server, ISession ssn);
+        void OnSessionDisconnected(IServer<TPacket> server, ISession<TPacket> ssn);
 
-        void OnError(IServer server, Exception ex);
+        void OnError(IServer<TPacket> server, Exception ex);
     }
 }

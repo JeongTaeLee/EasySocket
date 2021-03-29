@@ -5,32 +5,27 @@ using EasySocket.Common.Protocols.MsgFilters.Factories;
 
 namespace EasySocket.Server
 {
-    public interface IServer<TServer> : IServer
-        where TServer : IServer
+    public enum ServerState
     {
-        TServer SetMsgFilterFactory(IMsgFilterFactory msgFltrFctr);
-        TServer SetServerBehavior(IServerBehavior bhvr);
-        TServer SetSessionConfigrator(Action<ISession> sessionConfigrator);
+        None = 0,
+        Starting,
+        Running,
+        Stopping,
+        Stopped,
+    }
+    public interface IServer<TServer, TPacket> : IServer<TPacket>
+        where TServer : IServer<TPacket>
+    {
+        TServer SetMsgFilterFactory(IMsgFilterFactory<TPacket> msgFltrFctr);
+        TServer SetServerBehavior(IServerBehavior<TPacket> bhvr);
+        TServer SetSessionConfigrator(Action<ISession<TPacket>> sessionConfigrator);
         TServer SetLoggerFactroy(ILoggerFactory lgrFctr);
     }
 
-    public interface IServer
+    public interface IServer<TPacket>
     {
-        public enum State
-        {
-            None = 0,
-            Starting,
-            Running,
-            Stopping,
-            Stopped,
-        }
-
-        State state { get; }
-        IMsgFilterFactory msgFilterFactory { get; }
-        IServerBehavior behavior { get; }
-        ILoggerFactory loggerFactory { get; }
-        Action<ISession> sessionConfigrator { get; }
-
+        ServerState state { get; }
+        IServerBehavior<TPacket> behavior { get; }
 
         Task StartAsync();
         Task StopAsync();

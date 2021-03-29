@@ -3,11 +3,11 @@ using EasySocket.Common.Protocols.MsgInfos;
 
 namespace EasySocket.Server
 {
-    public interface ISessionBehavior
+    public interface ISessionBehavior<TPacket>
     {
-        void OnStarted(ISession ssn);
-        void OnStopped(ISession ssn);
-        void OnReceived(ISession ssn, IMsgInfo msgInfo);
-        void OnError(ISession ssn, Exception ex);
+        void OnStarted(ISession<TPacket> ssn);
+        void OnStopped(ISession<TPacket> ssn);
+        void OnReceived(ISession<TPacket> ssn, TPacket packet);
+        void OnError(ISession<TPacket> ssn, Exception ex);
     }
 }

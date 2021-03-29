@@ -7,7 +7,7 @@ using EasySocket.Common.Extensions;
 
 namespace EasySocket.Client
 {
-    public class TcpSocketClient : BaseSocketClient<TcpSocketClient>
+    public class TcpSocketClient<TPacket> : BaseSocketClient<TcpSocketClient<TPacket>, TPacket>
     {
         private CancellationTokenSource _cancellation;
         private NetworkStream _networkStream = null;

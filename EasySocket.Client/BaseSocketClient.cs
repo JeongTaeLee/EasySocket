@@ -11,26 +11,28 @@ using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Client
 {
-    public abstract class BaseSocketClient<TSocketClient> : ISocketClient<TSocketClient>
-        where TSocketClient : class, ISocketClient<TSocketClient>
+    public abstract class BaseSocketClient<TSocketClient, TPacket> : IClient<TPacket>
+        where TSocketClient : class, IClient<TPacket>
     {
-        public IClient.State state => (IClient.State)_state;
-        public IMsgFilter msgFilter { get; private set; } = null;
-        public IClientBehavior behavior { get; private set; } = null;
-        public ILoggerFactory loggerFactroy { get; private set; } = null;
-        public SocketClientConfig config { get; private set; } = null;
-        public Socket socket { get; private set; } = null;
+        public ClientState state => (ClientState)_state;
+        public IClientBehavior<TPacket> behavior { get; private set; } = null;
 
         private SemaphoreSlim _sendSemaphore = null;
-        private int _state = (int)IClient.State.None;
+        private int _state = (int)ClientState.None;
+        
         protected ILogger _logger = null;
+
+        public Socket socket { get; private set; } = null;
+        public SocketClientConfig config { get; private set; } = null;
+        public IMsgFilter<TPacket> msgFilter { get; private set; } = null;
+        public ILoggerFactory loggerFactroy { get; private set; } = null;
 
         public async Task StartAsync()
         {
-            int prevState = Interlocked.CompareExchange(ref _state, (int)IClient.State.Starting, (int)IClient.State.None);
-            if (prevState != (int)IClient.State.None)
+            int prevState = Interlocked.CompareExchange(ref _state, (int)ClientState.Starting, (int)ClientState.None);
+            if (prevState != (int)ClientState.None)
             {
-                throw new InvalidOperationException($"The client is in an invalid state. : Initial state cannot be \"{(IClient.State)prevState}\"");
+                throw new InvalidOperationException($"The client is in an invalid state. : Initial state cannot be \"{(ClientState)prevState}\"");
             }
 
             if (msgFilter == null)
@@ -70,7 +72,7 @@ namespace EasySocket.Client
             await socket.ConnectAsync(config.ip.ToIPAddress(), config.port);
             await ProcessStart();
 
-            _state = (int)IClient.State.Running;
+            _state = (int)ClientState.Running;
 
             behavior?.OnStarted(this as TSocketClient);
         }
@@ -82,7 +84,7 @@ namespace EasySocket.Client
 
         public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
         {
-            if (_state != (int)IClient.State.Running)
+            if (_state != (int)ClientState.Running)
             {
                 return -1;
             }
@@ -102,7 +104,7 @@ namespace EasySocket.Client
         /// <summary>
         /// 수신한 데이터를 <see cref="IMsgInfo"/>로 변환하는 <see cref="IMsgFilter"/>를 설정합니다.
         /// </summary>
-        public TSocketClient SetMsgFilter(IMsgFilter fltr)
+        public TSocketClient SetMsgFilter(IMsgFilter<TPacket> fltr)
         {
             msgFilter = fltr ?? throw new ArgumentNullException(nameof(fltr));
             return this as TSocketClient;
@@ -120,7 +122,7 @@ namespace EasySocket.Client
         /// <summary>
         /// <see cref="IClient"/>에서 발생하는 여러 이벤트들을 핸들링하는 <see cref="IClientBehavior"/>를 설정합니다.
         /// </summary>
-        public TSocketClient SetClientBehavior(IClientBehavior bhvr)
+        public TSocketClient SetClientBehavior(IClientBehavior<TPacket> bhvr)
         {
             behavior = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
             return this as TSocketClient;
@@ -148,7 +150,7 @@ namespace EasySocket.Client
         /// </summary>
         protected virtual async Task OnStop()
         {
-            if (Interlocked.CompareExchange(ref _state, (int)IClient.State.Stopping, (int)IClient.State.Running) != (int)IClient.State.Running)
+            if (Interlocked.CompareExchange(ref _state, (int)ClientState.Stopping, (int)ClientState.Running) != (int)ClientState.Running)
             {
                 return;
             }
@@ -157,7 +159,7 @@ namespace EasySocket.Client
 
             socket?.Dispose();
             socket = null;
-            _state = (int)IClient.State.Stopped;
+            _state = (int)ClientState.Stopped;
 
             behavior?.OnStoped(this as TSocketClient);
         }

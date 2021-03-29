@@ -16,26 +16,24 @@ namespace Echo.Client
 {
     class Program
     {
-        class TestClientBehavior : IClientBehavior
+        class TestClientBehavior : IClientBehavior<string>
         {
-            public void OnStarted(IClient client)
+            public void OnStarted(IClient<string> client)
             {
                 Console.WriteLine("Started");
             }
 
-            public void OnStoped(IClient client)
+            public void OnStoped(IClient<string> client)
             {
                 Console.WriteLine("Stoped");
             }
             
-            public void OnReceived(IClient client, IMsgInfo msgInfo)
+            public void OnReceived(IClient<string> client, string msgInfo)
             {
-                var convertInfo = msgInfo as EchoMsgInfo;
-
-                Console.WriteLine($"Received : {convertInfo.str}");
+                Console.WriteLine($"Received : {msgInfo}");
             }
 
-            public void OnError(IClient client, Exception ex)
+            public void OnError(IClient<string> client, Exception ex)
             {
                 Console.WriteLine("Error");
             }
@@ -51,14 +49,14 @@ namespace Echo.Client
             }
         }
 
-        internal class EchoFilter : IMsgFilter
+        internal class EchoFilter : IMsgFilter<string>
         {
-            public IMsgInfo Filter(ref SequenceReader<byte> sequence)
+            public string Filter(ref SequenceReader<byte> sequence)
             {
                 var buffer = sequence.Sequence.Slice(0, sequence.Length);
                 sequence.Advance(sequence.Length);
 
-                return new EchoMsgInfo(Encoding.Default.GetString(buffer));
+                return Encoding.Default.GetString(buffer);
             }
 
             public void Reset()
@@ -68,11 +66,9 @@ namespace Echo.Client
 
         static CancellationTokenSource cancelationToken = new CancellationTokenSource();
 
-        static TcpSocketClient socketClient = null;
-
         static async Task Main(string[] args)
         {
-            socketClient = new TcpSocketClient();
+            var socketClient = new TcpSocketClient<string>();
             await socketClient
                 .SetLoggerFactory(new NLogLoggerFactory("./NLog.config"))
                 .SetMsgFilter(new EchoFilter())
@@ -81,7 +77,7 @@ namespace Echo.Client
                 .StartAsync();
 
 
-            while (socketClient.state == IClient.State.Running)
+            while (socketClient.state == ClientState.Running)
             {
                 var input = Console.ReadLine();
 

@@ -10,17 +10,13 @@ using EasySocket.Common.Protocols.MsgFilters.Factories;
 
 namespace EasySocket.Server
 {
-    public abstract class BaseSocketServer<TSocketServer, TSession> : IServer<TSocketServer>
-        where TSocketServer : BaseSocketServer<TSocketServer, TSession>
-        where TSession : BaseSocketSession<TSession>
+    public abstract class BaseSocketServer<TServer, TSession, TPacket> : IServer<TServer, TPacket>
+        where TServer : BaseSocketServer<TServer, TSession, TPacket>
+        where TSession : BaseSocketSession<TSession, TPacket>
     {
-        public IServer.State state => (IServer.State)_state;
-        public IMsgFilterFactory msgFilterFactory { get; private set; } = null;
-        public IServerBehavior behavior { get; private set; } = null;
-        public ILoggerFactory loggerFactory { get; private set; } = null;
-        public Action<ISession> sessionConfigrator { get; private set; } = null;
+        public ServerState state => (ServerState)_state;
 
-        private int _state = (int)IServer.State.None;
+        private int _state = (int)ServerState.None;
         private List<ListenerConfig> _listenerConfigs = new List<ListenerConfig>();
         private List<IListener> _listeners = new List<IListener>();
 
@@ -28,17 +24,20 @@ namespace EasySocket.Server
 
         public SocketServerConfig config { get; private set; } = new SocketServerConfig();
         public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
-
+        public IMsgFilterFactory<TPacket> msgFilterFactory { get; private set; } = null;
+        public IServerBehavior<TPacket> behavior { get; private set; } = null;
+        public Action<ISession<TPacket>> sessionConfigrator { get; private set; } = null;
+        public ILoggerFactory loggerFactory { get; private set; } = null;
 
         public async Task StartAsync()
         {
             try
             {
 
-                int prevState = Interlocked.CompareExchange(ref _state, (int)IServer.State.Starting, (int)IServer.State.None);
-                if (prevState != (int)IServer.State.None)
+                int prevState = Interlocked.CompareExchange(ref _state, (int)ServerState.Starting, (int)ServerState.None);
+                if (prevState != (int)ServerState.None)
                 {
-                    throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(IServer.State)prevState}");
+                    throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(ServerState)prevState}");
                 }
 
                 if (msgFilterFactory == null)
@@ -71,59 +70,59 @@ namespace EasySocket.Server
 
                 await StartListenersAsync().ConfigureAwait(false);
 
-                _state = (int)IServer.State.Running;
+                _state = (int)ServerState.Running;
             }
             finally
             {
-                if (_state != (int)IServer.State.Running)
+                if (_state != (int)ServerState.Running)
                 {
-                    _state = (int)IServer.State.None;
+                    _state = (int)ServerState.None;
                 }
             }
         }
 
         public async Task StopAsync()
         {
-            int prevState = Interlocked.CompareExchange(ref _state, (int)IServer.State.Stopping, (int)IServer.State.Running);
-            if (prevState != (int)IServer.State.Running)
+            int prevState = Interlocked.CompareExchange(ref _state, (int)ServerState.Stopping, (int)ServerState.Running);
+            if (prevState != (int)ServerState.Running)
             {
-                throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(IServer.State)prevState}");
+                throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(ServerState)prevState}");
             }
 
             await ProcessStop();
 
             await StopListenersAsync().ConfigureAwait(false);
 
-            _state = (int)IServer.State.Stopped;
+            _state = (int)ServerState.Stopped;
         }
 
-        public TSocketServer SetMsgFilterFactory(IMsgFilterFactory msgFltrFctr)
+        public TServer SetMsgFilterFactory(IMsgFilterFactory<TPacket> msgFltrFctr)
         {
             msgFilterFactory = msgFltrFctr ?? throw new ArgumentNullException(nameof(msgFltrFctr));
-            return this as TSocketServer;
+            return this as TServer;
         }
 
-        public TSocketServer SetServerBehavior(IServerBehavior bhvr)
+        public TServer SetServerBehavior(IServerBehavior<TPacket> bhvr)
         {
             behavior = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
-            return this as TSocketServer;
+            return this as TServer;
         }
 
-        public TSocketServer SetSessionConfigrator(Action<ISession> ssnCnfgr)
+        public TServer SetSessionConfigrator(Action<ISession<TPacket>> ssnCnfgr)
         {
             sessionConfigrator = ssnCnfgr ?? throw new ArgumentNullException(nameof(ssnCnfgr));
-            return this as TSocketServer;
+            return this as TServer;
         }
 
-        public TSocketServer SetLoggerFactroy(ILoggerFactory lgrFctr)
+        public TServer SetLoggerFactroy(ILoggerFactory lgrFctr)
         {
             loggerFactory = lgrFctr ?? throw new ArgumentNullException(nameof(lgrFctr));
-            return this as TSocketServer;
+            return this as TServer;
         }
-        public TSocketServer AddListener(ListenerConfig lstnrCnfg)
+        public TServer AddListener(ListenerConfig lstnrCnfg)
         {
             _listenerConfigs.Add(lstnrCnfg);
-            return this as TSocketServer;
+            return this as TServer;
         }
 
         private async ValueTask StartListenersAsync()

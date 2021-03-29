@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EasySocket.Server
 {
-    public class TcpSocketSession : BaseSocketSession<TcpSocketSession>
+    public class TcpSocketSession<TPacket> : BaseSocketSession<TcpSocketSession<TPacket>, TPacket>
     {
         private CancellationTokenSource _cancellationTokenSource = null;
 
