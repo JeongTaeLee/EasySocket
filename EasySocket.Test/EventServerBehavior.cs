@@ -3,31 +3,25 @@ using EasySocket.Server;
 
 namespace EasySocket.Test
 {
-    public class EventServerBehavior<TPacket> : ISessionBehavior<TPacket>
+    public class EventServerBehavior<TPacket> : IServerBehavior<TPacket>
     {
-        private event Action<ISession<TPacket>> onStated;
-        private event Action<ISession<TPacket>> onStopped;
-        private event Action<ISession<TPacket>, TPacket> onReceived;
-        private event Action<ISession<TPacket>, Exception> onError;
+        private event Action<ISession<TPacket>> onSessionConnected;
+        private event Action<ISession<TPacket>> onSessionDisconnected;
+        private event Action<Exception> onError;
 
-        public void OnStarted(ISession<TPacket> ssn)
+        public void OnSessionConnected(IServer<TPacket> server, ISession<TPacket> ssn)
         {
-            onStated?.Invoke(ssn);
+            onSessionConnected?.Invoke(ssn);
         }
 
-        public void OnStopped(ISession<TPacket> ssn)
+        public void OnSessionDisconnected(IServer<TPacket> server, ISession<TPacket> ssn)
         {
-            onStopped?.Invoke(ssn);
+            onSessionDisconnected?.Invoke(ssn);
         }
 
-        public void OnReceived(ISession<TPacket> ssn, TPacket packet)
+        public void OnError(IServer<TPacket> server, Exception ex)
         {
-            onReceived?.Invoke(ssn, packet);
-        }
-
-        public void OnError(ISession<TPacket> ssn, Exception ex)
-        {
-            onError?.Invoke(ssn, ex);
+            onError?.Invoke(ex);
         }
     }
 }

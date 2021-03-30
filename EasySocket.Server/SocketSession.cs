@@ -17,8 +17,7 @@ namespace EasySocket.Server
         private SemaphoreSlim _sendLock = null;
 
         protected Socket socket { get; private set; } = null;
-        protected ILogger logger { get; private set; } = null;
-
+        
         public async ValueTask StartAsync(Socket sck)
         {
             int prevState = Interlocked.CompareExchange(ref _state, (int)SessionState.Starting, (int)SessionState.None);
@@ -27,31 +26,13 @@ namespace EasySocket.Server
                 throw new InvalidOperationException($"The session has an invalid initial state. : Session state is {(SessionState)prevState}");
             }
 
-            if (msgFilter == null)
-            {
-                throw ExceptionExtensions.MemberNotSetIOE("MsgFilter", "SetMsgFilter");
-            }
-
-            if (_onStop == null)
-            {
-                throw ExceptionExtensions.MemberNotSetIOE("OnStop Callback", "SetOnStop");
-            }
-
-            if (logger == null)
-            {
-                throw ExceptionExtensions.MemberNotSetIOE("Logger", "SetLogger");
-            }
-
-            if (behavior == null)
-            {
-                logger.MemberNotSetWarn("Session Behavior", "SetSessionBehavior");
-            }
+            InternalInitialize();
 
             socket = sck ?? throw new ArgumentNullException(nameof(sck));
 
             _sendLock = new SemaphoreSlim(1, 1);
 
-            await ProcessStart();
+            await ProcessStart().ConfigureAwait(false);
 
             _state = (int)SessionState.Running;
 
@@ -91,7 +72,7 @@ namespace EasySocket.Server
             }
 
             // 내부 종료
-            await ProcessStop();
+            await ProcessStop().ConfigureAwait(false);
 
             // 변수 초기화.
             _sendLock = null;
@@ -137,12 +118,6 @@ namespace EasySocket.Server
         protected virtual void OnError(Exception ex)
         {
             behavior?.OnError(this, ex);
-        }
-
-        public TSession SetLogger(ILogger lgr)
-        {
-            logger = lgr ?? throw new ArgumentNullException(nameof(lgr));
-            return this as TSession;
         }
 
         protected abstract ValueTask ProcessStart();

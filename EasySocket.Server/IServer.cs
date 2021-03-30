@@ -14,14 +14,11 @@ namespace EasySocket.Server
         Stopped,
     }
 
-    public interface IServer<TPacket> : _IServer
+    public interface IServer<TPacket> : IServer
     {
-        IServerBehavior<TPacket> behavior { get; }
-
-        IServer<TPacket> SetServerBehavior(IServerBehavior<TPacket> bhvr);
     }
 
-    public interface _IServer
+    public interface IServer
     {
         ServerState state { get; }
 

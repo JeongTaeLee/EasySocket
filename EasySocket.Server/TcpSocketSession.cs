@@ -48,7 +48,7 @@ namespace EasySocket.Server
 
         private async void WaitingForAbort()
         {
-            await _receiveTask;
+            await _receiveTask.ConfigureAwait(false);
 
             await OnStop();
         }

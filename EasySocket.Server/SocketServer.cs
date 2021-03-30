@@ -20,8 +20,6 @@ namespace EasySocket.Server
         private List<IListener> _listeners = new List<IListener>();
         private int _state = (int)ServerState.None;
 
-        protected ILogger logger { get; private set; } = null;
-
         public SocketServerConfig config { get; private set; } = new SocketServerConfig();
         public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
         
@@ -35,35 +33,11 @@ namespace EasySocket.Server
                     throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(ServerState)prevState}");
                 }
 
-                if (msgFilterFactory == null)
-                {
-                    throw ExceptionExtensions.MemberNotSetIOE("MsgFilterFactory", "SetMsgFilterFactory");
-                }
+                InternalInitialize();
 
-                if (loggerFactory == null)
-                {
-                    throw ExceptionExtensions.MemberNotSetIOE("LoggerFactory", "SetLoggerFactory");
-                }
+                await ProcessStart().ConfigureAwait(false);
 
-                logger = loggerFactory.GetLogger(GetType());
-                if (logger == null)
-                {
-                    throw new InvalidOperationException("Unable to get logger from LoggerFactory");
-                }
-
-                if (behavior == null)
-                {
-                    logger.MemberNotSetWarn("Server Behavior", "SetServerBehavior");
-                }
-
-                if (sessionConfigrator == null)
-                {
-                    logger.MemberNotSetWarn("Session Configrator", "SetSessionConfigrator");
-                }
-
-                await ProcessStart();
-
-                await StartListenersAsync().ConfigureAwait(false);
+                await StartListenersAsync();
 
                 _state = (int)ServerState.Running;
             }
@@ -84,11 +58,21 @@ namespace EasySocket.Server
                 throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(ServerState)prevState}");
             }
 
-            await ProcessStop();
+            await ProcessStop().ConfigureAwait(false);
 
-            await StopListenersAsync().ConfigureAwait(false);
+            await StopListenersAsync();
 
             _state = (int)ServerState.Stopped;
+        }
+
+        protected override void InternalInitialize()
+        {
+            base.InternalInitialize();
+
+            if (0 >= _listenerConfigs.Count)
+            {
+                throw new InvalidOperationException("At least one ListenerConfig is not set : Please call the \"AddListener\" Method and set it up.");
+            }
         }
 
         public TServer AddListener(ListenerConfig lstnrCnfg)
@@ -99,11 +83,6 @@ namespace EasySocket.Server
 
         private async ValueTask StartListenersAsync()
         {
-            if (0 >= _listenerConfigs.Count)
-            {
-                throw new InvalidOperationException("At least one ListenerConfig is not set : Please call the \"AddListener\" Method and set it up.");
-            }
-
             List<Task> tasks = new List<Task>(_listenerConfigs.Count);
             foreach (var listenerConfig in _listenerConfigs)
             {
