@@ -109,8 +109,7 @@ namespace EasySocket.Server
             }
             catch (Exception ex)
             {
-                behavior?.OnError(this, ex);
-
+                OnError(ex);
                 return sequence.Length;
             }
         }

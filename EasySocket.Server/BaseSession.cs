@@ -11,6 +11,7 @@ namespace EasySocket.Server
     public abstract class BaseSession<TSession, TPacket> : ISession<TPacket>
         where TSession : BaseSession<TSession, TPacket>
     {
+        public string sessionId { get; private set; } = string.Empty;
         public abstract SessionState state { get; }
         public ISessionBehavior<TPacket> behavior { get; private set; } = null;
 
@@ -18,6 +19,7 @@ namespace EasySocket.Server
 
         public IMsgFilter<TPacket> msgFilter { get; private set; } = null;
         public SessionStopHandler<TSession, TPacket> _onStop { get; private set; } = null;
+
 
         public abstract ValueTask StopAsync();
         public abstract ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry);
@@ -29,9 +31,9 @@ namespace EasySocket.Server
 
         protected virtual void InternalInitialize()
         {
-            if (behavior == null)
+            if (sessionId == null)
             {
-                logger.MemberNotSetWarn("Session Behavior", "SetSessionBehavior");
+                throw ExceptionExtensions.MemberNotSetIOE("SessionId", "SetSessionId");
             }
 
             if (logger == null)
@@ -48,6 +50,23 @@ namespace EasySocket.Server
             {
                 throw ExceptionExtensions.MemberNotSetIOE("OnStop Callback", "SetOnStop");
             }
+
+            if (behavior == null)
+            {
+                logger.MemberNotSetWarn("Session Behavior", "SetSessionBehavior");
+            }
+        }
+
+        public TSession SetSessionId(string ssnId)
+        {
+            if (string.IsNullOrEmpty(ssnId))
+            {
+                throw new ArgumentNullException(nameof(ssnId));
+            }
+
+            sessionId = ssnId;
+
+            return this as TSession;
         }
 
         public TSession SetLogger(ILogger lgr)

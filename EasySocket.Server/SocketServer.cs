@@ -13,56 +13,20 @@ namespace EasySocket.Server
         where TServer : BaseServer<TServer, TSession, TPacket>
         where TSession : SocketSession<TSession, TPacket>
     {
-        public override ServerState state => (ServerState)_state;
-
-
         private List<ListenerConfig> _listenerConfigs = new List<ListenerConfig>();
         private List<IListener> _listeners = new List<IListener>();
-        private int _state = (int)ServerState.None;
 
         public SocketServerConfig config { get; private set; } = new SocketServerConfig();
         public IReadOnlyList<ListenerConfig> listenerConfigs => _listenerConfigs;
         
-        public override async ValueTask StartAsync()
+        protected override async ValueTask ProcessStart()
         {
-            try
-            {
-                int prevState = Interlocked.CompareExchange(ref _state, (int)ServerState.Starting, (int)ServerState.None);
-                if (prevState != (int)ServerState.None)
-                {
-                    throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(ServerState)prevState}");
-                }
-
-                InternalInitialize();
-
-                await ProcessStart().ConfigureAwait(false);
-
-                await StartListenersAsync();
-
-                _state = (int)ServerState.Running;
-            }
-            finally
-            {
-                if (_state != (int)ServerState.Running)
-                {
-                    _state = (int)ServerState.None;
-                }
-            }
+            await StartListenersAsync();
         }
-        
-        public override async ValueTask StopAsync()
+
+        protected override async ValueTask ProcessStop()
         {
-            int prevState = Interlocked.CompareExchange(ref _state, (int)ServerState.Stopping, (int)ServerState.Running);
-            if (prevState != (int)ServerState.Running)
-            {
-                throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(ServerState)prevState}");
-            }
-
-            await ProcessStop().ConfigureAwait(false);
-
             await StopListenersAsync();
-
-            _state = (int)ServerState.Stopped;
         }
 
         protected override void InternalInitialize()
@@ -115,28 +79,44 @@ namespace EasySocket.Server
             await Task.WhenAll(tasks);
         }
 
-        protected virtual async ValueTask OnSocketAcceptedFromListeners(IListener listener, Socket acptdSck)
+        private void SocketSetting(Socket sck)
+        {
+            sck.LingerState = new LingerOption(true, 0);
+
+            sck.SendBufferSize = config.sendBufferSize;
+            sck.ReceiveBufferSize = config.recvBufferSize;
+
+            sck.NoDelay = config.noDelay;
+
+            if (0 < config.sendTimeout)
+            {
+                sck.SendTimeout = config.sendTimeout;
+            }
+
+            if (0 < config.recvTimeout)
+            {
+                sck.ReceiveBufferSize = config.recvTimeout;
+            }
+        }
+
+        protected virtual async ValueTask OnSocketAcceptedFromListeners(IListener listener, Socket sck)
         {
             TSession session = null;
+            string sessionId = string.Empty;
 
             try
             {
-                acptdSck.LingerState = new LingerOption(true, 0);
-
-                acptdSck.SendBufferSize = config.sendBufferSize;
-                acptdSck.ReceiveBufferSize = config.recvBufferSize;
-
-                if (0 < config.sendTimeout)
+                if (state != ServerState.Running)
                 {
-                    acptdSck.SendTimeout = config.sendTimeout;
+                    throw new Exception("A socket connection was attempted with the server shut down.");
                 }
 
-                if (0 < config.recvTimeout)
-                {
-                    acptdSck.ReceiveTimeout = config.recvTimeout;
-                }
+                SocketSetting(sck);
 
-                acptdSck.NoDelay = config.noDelay;
+                if (!sessionContainer.TryPreoccupancySessionId(out sessionId))
+                {
+                    throw new Exception("Unable to create Session Id.");
+                }
 
                 var msgFilter = msgFilterFactory.Get();
                 if (msgFilter == null)
@@ -151,45 +131,64 @@ namespace EasySocket.Server
                 }
 
                 sessionConfigrator?.Invoke(tempSession
+                    .SetSessionId(sessionId)
                     .SetOnStop(OnSessionStopFromSession)
                     .SetMsgFilter(msgFilterFactory.Get())
                     .SetLogger(loggerFactory.GetLogger(typeof(TSession))));
 
-                await tempSession.StartAsync(acptdSck).ConfigureAwait(false);
+                await tempSession.StartAsync(sck).ConfigureAwait(false);
 
                 // finally에서 오류 체크를 하기 위해 모든 작업이 성공적으로 끝난 후 대입해줍니다.
                 session = tempSession;
+
+                // TODO @jeongtae.lee : behavior에서 예외 발생 시 어떻게 처리할지..
+                behavior?.OnSessionConnected(this, session);
             }
             catch (Exception ex)
             {
-                behavior?.OnError(this, ex);
+                OnError(ex);
             }
             finally
             {
                 // 세션을 생성하지 못하면 연결이 실패한 것으로 관리합니다.
                 if (session == null)
                 {
-                    acptdSck?.SafeClose();
+                    if (!string.IsNullOrEmpty(sessionId))
+                    {
+                        sessionContainer.CancelPreoccupancySessionId(sessionId);
+                    }
+
+                    sck?.SafeClose();
                 }
                 else
                 {
-                    behavior?.OnSessionConnected(this, session);
+                    sessionContainer.SetSession(sessionId, session);
+                    
                 }
             }
         }
 
         protected virtual void OnErrorOccurredFromListeners(IListener listener, Exception ex)
         {
-            behavior?.OnError(this, ex);
+            OnError(ex);
         }
 
         protected virtual void OnSessionStopFromSession(TSession session)
         {
-            behavior?.OnSessionDisconnected(this, session);
+            try
+            {
+                behavior?.OnSessionDisconnected(this, session);
+            }
+            catch(Exception ex)
+            {
+                OnError(ex);
+            }
+            finally
+            {
+                sessionContainer.RemoveSession(session.sessionId);
+            }
         }
 
-        protected abstract ValueTask ProcessStart();
-        protected abstract ValueTask ProcessStop();
         protected abstract TSession CreateSession();
         protected abstract IListener CreateListener();
     }

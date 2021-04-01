@@ -25,6 +25,8 @@ namespace EasySocket.Server
 
     public interface ISession
     {
+        public string sessionId { get; 
+        }
         SessionState state { get; }     
 
         ValueTask StopAsync();

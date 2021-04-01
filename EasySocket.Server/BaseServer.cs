@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using EasySocket.Common.Extensions;
 using EasySocket.Common.Logging;
@@ -10,8 +11,10 @@ namespace EasySocket.Server
         where TServer : BaseServer<TServer, TSession, TPacket>
         where TSession : BaseSession<TSession, TPacket>
     {
-        public abstract ServerState state { get; }
+        public ServerState state => (ServerState)_state;
 
+        private int _state = (int)ServerState.None;
+        protected ISessionContainer<TSession> sessionContainer = new GUIDSessionContainer<TSession>();
         protected ILoggerFactory loggerFactory { get; private set; } = null;
         protected ILogger logger { get; private set; } = null;
 
@@ -19,8 +22,43 @@ namespace EasySocket.Server
         public IServerBehavior<TPacket> behavior { get; private set; } = null;
         public Action<ISession<TPacket>> sessionConfigrator { get; private set; } = null;
 
-        public abstract ValueTask StartAsync();
-        public abstract ValueTask StopAsync();
+        public async ValueTask StartAsync()
+        {
+            try
+            {
+                int prevState = Interlocked.CompareExchange(ref _state, (int)ServerState.Starting, (int)ServerState.None);
+                if (prevState != (int)ServerState.None)
+                {
+                    throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(ServerState)prevState}");
+                }
+
+                InternalInitialize();
+
+                await ProcessStart().ConfigureAwait(false);
+
+                _state = (int)ServerState.Running;
+            }
+            finally
+            {
+                if (_state != (int)ServerState.Running)
+                {
+                    _state = (int)ServerState.None;
+                }
+            }
+        }
+
+        public  async ValueTask StopAsync()
+        {
+            int prevState = Interlocked.CompareExchange(ref _state, (int)ServerState.Stopping, (int)ServerState.Running);
+            if (prevState != (int)ServerState.Running)
+            {
+                throw new InvalidOperationException($"The server has an invalid initial state. : Server state is {(ServerState)prevState}");
+            }
+
+            await ProcessStop();
+
+            _state = (int)ServerState.Stopped;
+        }
 
         protected virtual void InternalInitialize()
         {
@@ -50,6 +88,12 @@ namespace EasySocket.Server
                 logger.MemberNotSetWarn("Session Configrator", "SetSessionConfigrator");
             }
         }
+
+        protected virtual void OnError(Exception ex)
+        {
+            behavior?.OnError(this, ex);
+        }
+
         public TServer SetMsgFilterFactory(IMsgFilterFactory<TPacket> msgFltrFctr)
         {
             msgFilterFactory = msgFltrFctr ?? throw new ArgumentNullException(nameof(msgFltrFctr));
@@ -72,5 +116,8 @@ namespace EasySocket.Server
             loggerFactory = lgrFctr ?? throw new ArgumentNullException(nameof(lgrFctr));
             return this as TServer;
         }
+
+        protected abstract ValueTask ProcessStart();
+        protected abstract ValueTask ProcessStop();
     }
 }
