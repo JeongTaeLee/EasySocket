@@ -131,12 +131,14 @@ namespace EasySocket.Server
                 }
 
                 sessionConfigrator?.Invoke(tempSession
+                    .SetSocket(sck)
                     .SetSessionId(sessionId)
                     .SetOnStop(OnSessionStopFromSession)
                     .SetMsgFilter(msgFilterFactory.Get())
                     .SetLogger(loggerFactory.GetLogger(typeof(TSession))));
+                    
 
-                await tempSession.StartAsync(sck).ConfigureAwait(false);
+                await tempSession.StartAsync().ConfigureAwait(false);
 
                 // finally에서 오류 체크를 하기 위해 모든 작업이 성공적으로 끝난 후 대입해줍니다.
                 session = tempSession;

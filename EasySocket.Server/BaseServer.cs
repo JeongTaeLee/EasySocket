@@ -15,12 +15,12 @@ namespace EasySocket.Server
 
         private int _state = (int)ServerState.None;
         protected ISessionContainer<TSession> sessionContainer = new GUIDSessionContainer<TSession>();
-        protected ILoggerFactory loggerFactory { get; private set; } = null;
         protected ILogger logger { get; private set; } = null;
+        protected ILoggerFactory loggerFactory { get; private set; } = null;
 
         public IMsgFilterFactory<TPacket> msgFilterFactory { get; private set; } = null;
-        public IServerBehavior<TPacket> behavior { get; private set; } = null;
         public Action<ISession<TPacket>> sessionConfigrator { get; private set; } = null;
+        public IServerBehavior<TPacket> behavior { get; private set; } = null;
 
         public async ValueTask StartAsync()
         {
@@ -62,11 +62,6 @@ namespace EasySocket.Server
 
         protected virtual void InternalInitialize()
         {
-            if (behavior == null)
-            {
-                logger.MemberNotSetWarn("Server Behavior", "SetServerBehavior");
-            }
-
             if (loggerFactory == null)
             {
                 throw ExceptionExtensions.MemberNotSetIOE("LoggerFactory", "SetLoggerFactory");
@@ -86,6 +81,11 @@ namespace EasySocket.Server
             if (sessionConfigrator == null)
             {
                 logger.MemberNotSetWarn("Session Configrator", "SetSessionConfigrator");
+            }
+
+            if (behavior == null)
+            {
+                logger.MemberNotSetWarn("Server Behavior", "SetServerBehavior");
             }
         }
 

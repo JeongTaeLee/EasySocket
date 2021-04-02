@@ -40,7 +40,7 @@ namespace EasySocket.Server
             _pipeReader = null;
             _receiveTask = null;
         }
-
+        
         protected override async ValueTask<int> ProcessSend(ReadOnlyMemory<byte> mmry)
         {
             return await socket.SendAsync(mmry, SocketFlags.None);
