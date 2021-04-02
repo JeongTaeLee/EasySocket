@@ -44,18 +44,11 @@ namespace EasySocket.Test.Servers
                 testServer.SetSessionConfigrator(null);
             });
 
-            // NULL 처리 테스트
-            Assert.ThrowsException<ArgumentNullException>(() =>
-            {
-                testServer.SetServerBehavior(null);
-            });
-
             //정상 상황 테스트.
             var startTask = testServer
                     .AddListener(new Server.Listeners.ListenerConfig("127.0.0.1", 9199, 1000))
                     .SetLoggerFactory(new ConsoleLoggerFactory())
                     .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter, string>())
-                    .SetServerBehavior(new EventServerBehavior<string>())
                     .SetSessionConfigrator((ssn) =>
                     {
                         //ssn.SetSessionBehavior

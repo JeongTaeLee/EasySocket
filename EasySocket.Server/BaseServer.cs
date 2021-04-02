@@ -20,7 +20,7 @@ namespace EasySocket.Server
 
         public IMsgFilterFactory<TPacket> msgFilterFactory { get; private set; } = null;
         public Action<ISession<TPacket>> sessionConfigrator { get; private set; } = null;
-        public IServerBehavior<TPacket> behavior { get; private set; } = null;
+        public Action<TServer, Exception> onError { get; private set; } = null;
 
         public async ValueTask StartAsync()
         {
@@ -82,16 +82,32 @@ namespace EasySocket.Server
             {
                 logger.MemberNotSetWarn("Session Configrator", "SetSessionConfigrator");
             }
-
-            if (behavior == null)
+            
+            if (onError == null)
             {
-                logger.MemberNotSetWarn("Server Behavior", "SetServerBehavior");
+                logger.MemberNotSetWarn("OnError", "SetOnError");
             }
         }
 
         protected virtual void OnError(Exception ex)
         {
-            behavior?.OnError(this, ex);
+            onError?.Invoke(this as TServer, ex);
+        }
+
+        protected virtual void OnSessionStoppedFromSession(TSession session)
+        {
+            try
+            {
+                // TODO @jeongtae.lee : 코드 정리.
+            }
+            catch (Exception ex)
+            {
+                OnError(ex);
+            }
+            finally
+            {
+                sessionContainer.RemoveSession(session.sessionId);
+            }
         }
 
         public TServer SetMsgFilterFactory(IMsgFilterFactory<TPacket> msgFltrFctr)
@@ -105,11 +121,6 @@ namespace EasySocket.Server
             sessionConfigrator = ssnCnfgr ?? throw new ArgumentNullException(nameof(ssnCnfgr));
             return this as TServer;
         }
-        public TServer SetServerBehavior(IServerBehavior<TPacket> bhvr)
-        {
-            behavior = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
-            return this as TServer;
-        }
 
         public TServer SetLoggerFactory(ILoggerFactory lgrFctr)
         {
@@ -117,7 +128,15 @@ namespace EasySocket.Server
             return this as TServer;
         }
 
+        public TServer SetOnError(Action<TServer, Exception> onErr)
+        {
+            onError = onErr ?? throw new ArgumentNullException(nameof(onErr));
+            return this as TServer;
+        }
+
         protected abstract ValueTask ProcessStart();
         protected abstract ValueTask ProcessStop();
+
+        protected abstract TSession CreateSession();
     }
 }

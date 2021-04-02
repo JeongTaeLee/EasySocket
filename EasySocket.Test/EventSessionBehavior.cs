@@ -5,19 +5,34 @@ namespace EasySocket.Test
 {
     public class EventSessionBehavior<TPacket> : ISessionBehavior<TPacket>
     {
-        public event Action onStarted;
-        public event Action onStopped;
+        public event Action<ISession<TPacket>> onStartBefore;
+        public event Action<ISession<TPacket>> onStartAfter;
+
+        public event Action<ISession<TPacket>> onStopBefore;
+        public event Action<ISession<TPacket>> onStopAfter;
+
         public event Action<TPacket> onReceived;
         public event Action<Exception> onError;
 
-        public void OnStarted(ISession<TPacket> ssn)
+
+        public void OnStartBefore(ISession<TPacket> ssn)
         {
-            onStarted?.Invoke();
+            onStartBefore?.Invoke(ssn);
         }
 
-        public void OnStopped(ISession<TPacket> ssn)
+        public void OnStartAfter(ISession<TPacket> ssn)
         {
-            onStopped?.Invoke();
+            onStartAfter?.Invoke(ssn);
+        }
+
+        public void OnStopBefore(ISession<TPacket> ssn)
+        {
+            onStopBefore?.Invoke(ssn);
+        }
+
+        public void OnStopAfter(ISession<TPacket> ssn)
+        {
+            onStopAfter?.Invoke(ssn);
         }
 
         public void OnReceived(ISession<TPacket> ssn, TPacket packet)

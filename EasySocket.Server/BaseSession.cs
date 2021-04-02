@@ -34,11 +34,13 @@ namespace EasySocket.Server
 
             InternalInitialize();
 
+            behavior?.OnStartBefore(this);
+
             await ProcessStart();
 
             _state = (int)SessionState.Running;
 
-            behavior?.OnStarted(this);
+            behavior?.OnStartAfter(this);
         }
 
         public async ValueTask StopAsync()
@@ -89,11 +91,13 @@ namespace EasySocket.Server
                 throw new InvalidOperationException($"The session has an invalid state. : Session state is {(SessionState)prevState}");
             }
 
+            behavior?.OnStopBefore(this);
+        
             await ProcessStop();
 
             _state = (int)SessionState.Stopped;
 
-            behavior?.OnStopped(this);
+            behavior?.OnStopAfter(this);
 
             _onStop?.Invoke(this as TSession);
         }

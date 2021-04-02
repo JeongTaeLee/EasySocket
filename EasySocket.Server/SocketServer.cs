@@ -130,21 +130,19 @@ namespace EasySocket.Server
                     throw new Exception("CreateSession retunred null");
                 }
 
-                sessionConfigrator?.Invoke(tempSession
-                    .SetSocket(sck)
+                tempSession
+                    .SetLogger(loggerFactory.GetLogger(typeof(TSession)))
                     .SetSessionId(sessionId)
-                    .SetOnStop(OnSessionStopFromSession)
+                    .SetOnStop(OnSessionStoppedFromSession)
                     .SetMsgFilter(msgFilterFactory.Get())
-                    .SetLogger(loggerFactory.GetLogger(typeof(TSession))));
-                    
+                    .SetSocket(sck);
+
+                sessionConfigrator?.Invoke(tempSession);
 
                 await tempSession.StartAsync().ConfigureAwait(false);
 
                 // finally에서 오류 체크를 하기 위해 모든 작업이 성공적으로 끝난 후 대입해줍니다.
                 session = tempSession;
-
-                // TODO @jeongtae.lee : behavior에서 예외 발생 시 어떻게 처리할지..
-                behavior?.OnSessionConnected(this, session);
             }
             catch (Exception ex)
             {
@@ -175,23 +173,6 @@ namespace EasySocket.Server
             OnError(ex);
         }
 
-        protected virtual void OnSessionStopFromSession(TSession session)
-        {
-            try
-            {
-                behavior?.OnSessionDisconnected(this, session);
-            }
-            catch(Exception ex)
-            {
-                OnError(ex);
-            }
-            finally
-            {
-                sessionContainer.RemoveSession(session.sessionId);
-            }
-        }
-
-        protected abstract TSession CreateSession();
         protected abstract IListener CreateListener();
     }
 }

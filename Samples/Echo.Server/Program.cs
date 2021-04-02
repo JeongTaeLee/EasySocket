@@ -10,39 +10,25 @@ using EasySocket.Server.Listeners;
 
 namespace Echo.Server
 {
-    internal class EchoServerBehavior : IServerBehavior<string>
-    {
-        private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-
-        public void OnSessionConnected(IServer<string> server, ISession<string> ssn)
-        {
-            _logger.Info($"Connected Session : {ssn}");
-        }
-
-        public void OnSessionDisconnected(IServer<string> server, ISession<string> ssn)
-        {
-            _logger.Info($"Disconnected Session : {ssn}");
-        }
-
-        public void OnError(IServer<string> server, Exception ex)
-        {
-            _logger.Error(ex);
-        }
-    }
     internal class EchoSessionBehavior : ISessionBehavior<string>
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        public void OnStarted(ISession<string> ssn)
+
+        public void OnStartAfter(ISession<string> ssn)
         {
-            _logger.Info($"Started Session : {this}");
+            _logger.Info($"Start Session(After) : {this}");
         }
 
-        public void OnStopped(ISession<string> ssn)
+        public void OnStopBefore(ISession<string> ssn)
         {
-            _logger.Info($"Closed  Session : {this}");
+            _logger.Info($"Stop Session(Before) : {this}");
         }
 
+        public void OnStopAfter(ISession<string> ssn)
+        {
+            _logger.Info($"Stop Session(After) : {this}");
+        }
         public async void OnReceived(ISession<string> ssn, string packet)
         {
             var buffer = new byte[1048576];
@@ -64,6 +50,11 @@ namespace Echo.Server
         {
             _logger.Error(ex);
         }
+
+        public void OnStartBefore(ISession<string> ssn)
+        {
+            _logger.Info($"Start Session(Before) : {this}");
+        }
     }
 
     internal class EchoFilter : IMsgFilter<string>
@@ -83,6 +74,8 @@ namespace Echo.Server
 
     internal static class Program
     {
+        static ILogger logger = LogManager.GetCurrentClassLogger();
+
         private static async Task Main(string[] args)
         {
             var loggerFactory = new Echo.Server.Logging.NLogLoggerFactory("NLog.config");
@@ -91,11 +84,14 @@ namespace Echo.Server
                 .AddListener(new ListenerConfig("127.0.0.1", 9199, 1000))
                 .SetMsgFilterFactory(new DefaultMsgFilterFactory<EchoFilter, string>())
                 .SetLoggerFactory(loggerFactory)
+                .SetOnError((server, ex) =>
+                {
+                    logger.Error(ex);
+                })
                 .SetSessionConfigrator(ssn =>
                 {
                     ssn.SetSessionBehavior(new EchoSessionBehavior());
-                })
-                .SetServerBehavior(new EchoServerBehavior());
+                });
 
             await server.StartAsync();
 

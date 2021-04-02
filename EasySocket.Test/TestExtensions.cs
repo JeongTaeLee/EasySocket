@@ -30,7 +30,6 @@ namespace EasySocket.Test
                 .AddListener(listenerConfig)
                 .SetLoggerFactory(new ConsoleLoggerFactory())
                 .SetMsgFilterFactory(new StringMsgFilterFactory())
-                .SetServerBehavior(serverBehavior ?? new StringServerBehavior())
                 .SetSessionConfigrator((ssn) =>
                 {
                     ssn.SetSessionBehavior(sessionBehavior ?? new StringSessionBehavior());
