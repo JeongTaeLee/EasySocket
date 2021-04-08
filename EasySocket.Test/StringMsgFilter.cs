@@ -4,9 +4,9 @@ using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Test
 {
-    public class StringMsgFilter : IMsgFilter<string>
+    public class StringMsgFilter : IMsgFilter
     {
-        public string Filter(ref SequenceReader<byte> sequence)
+        public object Filter(ref SequenceReader<byte> sequence)
         {
             try
             {

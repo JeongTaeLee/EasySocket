@@ -14,15 +14,13 @@ namespace EasySocket.Server
         Stopped,
     }
 
-    public interface IServer<TPacket> : IServer
-    {
-    }
-
     public interface IServer
     {
         ServerState state { get; }
+        int sessionCount { get; }
 
         ValueTask StartAsync();
         ValueTask StopAsync();
+        ISession GetSessionById(string ssn);
     }
 }

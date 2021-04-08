@@ -14,11 +14,11 @@ namespace EasySocket.Client
         Stopped,
     }
 
-    public interface IClient<TPacket>
+    public interface IClient
     {
 
         ClientState state { get; }
-        IClientBehavior<TPacket> behavior { get; }
+        IClientBehavior behavior { get; }
         
         Task StopAsync();
         ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory);

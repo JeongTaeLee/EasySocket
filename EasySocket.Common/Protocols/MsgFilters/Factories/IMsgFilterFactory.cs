@@ -1,7 +1,7 @@
 namespace EasySocket.Common.Protocols.MsgFilters.Factories
 {
-    public interface IMsgFilterFactory<TPacket>
+    public interface IMsgFilterFactory
     {
-        IMsgFilter<TPacket> Get();
+        IMsgFilter Get();
     }
 }

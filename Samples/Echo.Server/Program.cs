@@ -10,56 +10,57 @@ using EasySocket.Server.Listeners;
 
 namespace Echo.Server
 {
-    internal class EchoSessionBehavior : ISessionBehavior<string>
+    internal class EchoSessionBehavior : ISessionBehavior
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-
-        public void OnStartAfter(ISession<string> ssn)
+        public void OnStartBefore(ISession ssn)
         {
-            _logger.Info($"Start Session(After) : {this}");
+            _logger.Info($"Start Session(Before) : {this}");
         }
 
-        public void OnStopBefore(ISession<string> ssn)
+        public void OnStartAfter(ISession ssn)
+        {
+            _logger.Info($"Start Session(After) : Count({Program.server.sessionCount})");
+        }
+
+        public void OnStopBefore(ISession ssn)
         {
             _logger.Info($"Stop Session(Before) : {this}");
         }
 
-        public void OnStopAfter(ISession<string> ssn)
+        public void OnStopAfter(ISession ssn)
         {
-            _logger.Info($"Stop Session(After) : {this}");
+            _logger.Info($"Stop Session(After) : Count({Program.server.sessionCount})");
         }
-        public async void OnReceived(ISession<string> ssn, string packet)
+        public async void OnReceived(ISession ssn, object packet)
         {
             var buffer = new byte[1048576];
+            var strPacket = packet.ToString();
 
             _logger.Info(packet);
 
-            if (packet == "Bye")
+            if (strPacket == "Bye")
             {
                 await ssn.StopAsync();
                 return;
             }
 
-            var sendByte = Encoding.Default.GetBytes(packet);
+            var sendByte = Encoding.Default.GetBytes(strPacket);
 
             await ssn.SendAsync(sendByte);
         }
 
-        public void OnError(ISession<string> ssn, Exception ex)
+        public void OnError(ISession ssn, Exception ex)
         {
             _logger.Error(ex);
         }
 
-        public void OnStartBefore(ISession<string> ssn)
-        {
-            _logger.Info($"Start Session(Before) : {this}");
-        }
     }
 
-    internal class EchoFilter : IMsgFilter<string>
+    internal class EchoFilter : IMsgFilter
     {
-        public string Filter(ref SequenceReader<byte> sequence)
+        public object Filter(ref SequenceReader<byte> sequence)
         {
             var buffer = sequence.Sequence.Slice(0, sequence.Length);
             sequence.Advance(sequence.Length);
@@ -75,14 +76,15 @@ namespace Echo.Server
     internal static class Program
     {
         static ILogger logger = LogManager.GetCurrentClassLogger();
+        public static TcpSocketServer server = null;
 
         private static async Task Main(string[] args)
         {
             var loggerFactory = new Echo.Server.Logging.NLogLoggerFactory("NLog.config");
 
-            var server = new TcpSocketServer<string>()
+            server = new TcpSocketServer()
                 .AddListener(new ListenerConfig("127.0.0.1", 9199, 1000))
-                .SetMsgFilterFactory(new DefaultMsgFilterFactory<EchoFilter, string>())
+                .SetMsgFilterFactory(new DefaultMsgFilterFactory<EchoFilter>())
                 .SetLoggerFactory(loggerFactory)
                 .SetOnError((server, ex) =>
                 {

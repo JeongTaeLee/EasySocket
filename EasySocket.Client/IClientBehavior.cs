@@ -2,11 +2,11 @@ using System;
 
 namespace EasySocket.Client
 {
-    public interface IClientBehavior<TPacket>
+    public interface IClientBehavior
     {
-        void OnStarted(IClient<TPacket> client);
-        void OnStoped(IClient<TPacket> client);
-        void OnReceived(IClient<TPacket> client, TPacket msgFilter);
-        void OnError(IClient<TPacket> client, Exception ex);
+        void OnStarted(IClient client);
+        void OnStoped(IClient client);
+        void OnReceived(IClient client, object msgFilter);
+        void OnError(IClient client, Exception ex);
     }
 }

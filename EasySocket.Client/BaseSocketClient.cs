@@ -9,11 +9,11 @@ using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Client
 {
-    public abstract class BaseSocketClient<TSocketClient, TPacket> : IClient<TPacket>
-        where TSocketClient : class, IClient<TPacket>
+    public abstract class BaseSocketClient<TSocketClient> : IClient
+        where TSocketClient : class, IClient
     {
         public ClientState state => (ClientState)_state;
-        public IClientBehavior<TPacket> behavior { get; private set; } = null;
+        public IClientBehavior behavior { get; private set; } = null;
 
         private SemaphoreSlim _sendSemaphore = null;
         private int _state = (int)ClientState.None;
@@ -22,7 +22,7 @@ namespace EasySocket.Client
 
         public Socket socket { get; private set; } = null;
         public SocketClientConfig config { get; private set; } = null;
-        public IMsgFilter<TPacket> msgFilter { get; private set; } = null;
+        public IMsgFilter msgFilter { get; private set; } = null;
         public ILoggerFactory loggerFactroy { get; private set; } = null;
 
         public async Task StartAsync()
@@ -102,7 +102,7 @@ namespace EasySocket.Client
         /// <summary>
         /// 수신한 데이터를 <see cref="IMsgInfo"/>로 변환하는 <see cref="IMsgFilter"/>를 설정합니다.
         /// </summary>
-        public TSocketClient SetMsgFilter(IMsgFilter<TPacket> fltr)
+        public TSocketClient SetMsgFilter(IMsgFilter fltr)
         {
             msgFilter = fltr ?? throw new ArgumentNullException(nameof(fltr));
             return this as TSocketClient;
@@ -120,7 +120,7 @@ namespace EasySocket.Client
         /// <summary>
         /// <see cref="IClient"/>에서 발생하는 여러 이벤트들을 핸들링하는 <see cref="IClientBehavior"/>를 설정합니다.
         /// </summary>
-        public TSocketClient SetClientBehavior(IClientBehavior<TPacket> bhvr)
+        public TSocketClient SetClientBehavior(IClientBehavior bhvr)
         {
             behavior = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
             return this as TSocketClient;

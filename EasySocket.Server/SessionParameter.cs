@@ -1,0 +1,29 @@
+using System;
+using EasySocket.Common.Logging;
+using EasySocket.Common.Protocols.MsgFilters;
+
+namespace EasySocket.Server
+{
+    public class SessionParameter<TSession>
+    {
+        public string sessionId { get; }
+        public IMsgFilter msgFilter { get; }
+        public ILogger logger { get; }
+        public SocketSessionStopHandler<TSession> onStop { get; }
+
+        private SessionParameter() { }
+
+        public SessionParameter(string ssnId, IMsgFilter msgFltr, SocketSessionStopHandler<TSession> onSt, ILogger lgr)
+        {
+            if (string.IsNullOrEmpty(ssnId))
+            {
+                throw new ArgumentNullException(nameof(ssnId));
+            }
+
+            sessionId = ssnId;
+            msgFilter = msgFltr ?? throw new ArgumentNullException(nameof(msgFltr));
+            onStop = onSt ?? throw new ArgumentNullException(nameof(onSt));
+            logger = lgr ?? throw new ArgumentNullException(nameof(lgr));
+        }
+    }
+}

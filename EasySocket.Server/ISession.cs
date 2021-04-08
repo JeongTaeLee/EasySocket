@@ -14,21 +14,16 @@ namespace EasySocket.Server
         Stopped,
     }
 
-    public interface ISession<TPacket> : ISession
-    {
-        public ISessionBehavior<TPacket> behavior { get; }
-
-        ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry);
-
-        public ISession<TPacket> SetSessionBehavior(ISessionBehavior<TPacket> bhvr);
-    } 
-
     public interface ISession
     {
-        public string sessionId { get; 
-        }
+        string sessionId { get; }
         SessionState state { get; }     
+        ISessionBehavior behavior { get; }
 
         ValueTask StopAsync();
+        
+        ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry);
+
+        ISession SetSessionBehavior(ISessionBehavior bhvr);
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EasySocket.Server
 {
-    public class TcpSocketSession<TPacket> : SocketSession<TcpSocketSession<TPacket>, TPacket>
+    public class TcpSocketSession : SocketSession<TcpSocketSession>
     {
         private CancellationTokenSource _cancellationTokenSource = null;
 
@@ -41,7 +41,7 @@ namespace EasySocket.Server
             _receiveTask = null;
         }
         
-        protected override async ValueTask<int> ProcessSend(ReadOnlyMemory<byte> mmry)
+        public override async ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry)
         {
             return await socket.SendAsync(mmry, SocketFlags.None);
         }

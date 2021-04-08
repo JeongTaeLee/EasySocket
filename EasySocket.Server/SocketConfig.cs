@@ -1,6 +1,6 @@
 namespace EasySocket.Server
 {
-    public class SocketServerConfig
+    public class SocketConfig
     {
         public int recvBufferSize { get; private set; } = 1024 * 4;
         public int sendBufferSize { get; private set; } = 1024 * 4;

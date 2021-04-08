@@ -1,9 +1,9 @@
 namespace EasySocket.Common.Protocols.MsgFilters.Factories
 {
-    public class DefaultMsgFilterFactory<TMsgFilter, TPacket> : IMsgFilterFactory<TPacket>
-        where TMsgFilter : IMsgFilter<TPacket>, new()
+    public class DefaultMsgFilterFactory<TMsgFilter> : IMsgFilterFactory
+        where TMsgFilter : IMsgFilter, new()
     {
-        public IMsgFilter<TPacket> Get()
+        public IMsgFilter Get()
         {
             return new TMsgFilter();
         }

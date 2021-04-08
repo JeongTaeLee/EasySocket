@@ -2,15 +2,15 @@ using System;
 
 namespace EasySocket.Server
 {
-    public interface ISessionBehavior<TPacket>
+    public interface ISessionBehavior
     {
-        void OnStartBefore(ISession<TPacket> ssn);
-        void OnStartAfter(ISession<TPacket> ssn);
+        void OnStartBefore(ISession ssn);
+        void OnStartAfter(ISession ssn);
         
-        void OnStopBefore(ISession<TPacket> ssn);
-        void OnStopAfter(ISession<TPacket> ssn);
+        void OnStopBefore(ISession ssn);
+        void OnStopAfter(ISession ssn);
 
-        void OnReceived(ISession<TPacket> ssn, TPacket packet);
-        void OnError(ISession<TPacket> ssn, Exception ex);
+        void OnReceived(ISession ssn, object packet);
+        void OnError(ISession ssn, Exception ex);
     }
 }

@@ -6,36 +6,44 @@ using System.Threading;
 using EasySocket.Client;
 using EasySocket.Common.Protocols.MsgFilters;
 using Echo.Client.Logging;
+using System.Collections.Generic;
 
 namespace Echo.Client
 {
     class Program
     {
-        class TestClientBehavior : IClientBehavior<string>
+        class TestClientBehavior : IClientBehavior
         {
-            public void OnStarted(IClient<string> client)
+            private int i = 0;
+
+            public void OnStarted(IClient client)
             {
-                Console.WriteLine("Started");
+                lock(this)
+                {
+                    Console.WriteLine("Started");
+                    Console.WriteLine(i);
+                    ++i;
+                }
             }
 
-            public void OnStoped(IClient<string> client)
+            public void OnStoped(IClient client)
             {
                 Console.WriteLine("Stoped");
             }
             
-            public void OnReceived(IClient<string> client, string msgInfo)
+            public void OnReceived(IClient client, object msgInfo)
             {
                 Console.WriteLine($"Received : {msgInfo}");
             }
 
-            public void OnError(IClient<string> client, Exception ex)
+            public void OnError(IClient client, Exception ex)
             {
                 Console.WriteLine("Error");
             }
         }
-        internal class EchoFilter : IMsgFilter<string>
+        internal class EchoFilter : IMsgFilter
         {
-            public string Filter(ref SequenceReader<byte> sequence)
+            public object Filter(ref SequenceReader<byte> sequence)
             {
                 var buffer = sequence.Sequence.Slice(0, sequence.Length);
                 sequence.Advance(sequence.Length);
@@ -52,29 +60,43 @@ namespace Echo.Client
 
         static async Task Main(string[] args)
         {
-            var socketClient = new TcpSocketClient<string>();
-            await socketClient
-                .SetLoggerFactory(new NLogLoggerFactory("./NLog.config"))
-                .SetMsgFilter(new EchoFilter())
-                .SetSocketClientConfig(new SocketClientConfig("127.0.0.1", 9199))
-                .SetClientBehavior(new TestClientBehavior())
-                .StartAsync();
+            var sessionBehavior = new TestClientBehavior();
 
-
-            while (socketClient.state == ClientState.Running)
+            var lst = new List<TcpSocketClient>();
+            var tasks = new List<Task>();
+            for (int index = 0; index < 100; ++index)
             {
-                var input = Console.ReadLine();
+                var socketClient = new TcpSocketClient();
+                lst.Add(socketClient);
+                tasks.Add(socketClient
+                    .SetLoggerFactory(new NLogLoggerFactory("./NLog.config"))
+                    .SetMsgFilter(new EchoFilter())
+                    .SetSocketClientConfig(new SocketClientConfig("127.0.0.1", 9199))
+                    .SetClientBehavior(sessionBehavior)
+                    .StartAsync());
+            }
 
-                if (input == "close")
+            await Task.WhenAll(tasks);
+
+            while (true)
+            {
+                var inputStr =Console.ReadLine();
+                if (inputStr == "close")
                 {
                     break;
                 }
-
-                await socketClient.SendAsync(Encoding.Default.GetBytes(input));
-                Console.WriteLine($"Sended : {input}");
             }
 
-            await socketClient.StopAsync();
+            tasks.Clear();
+
+            foreach (var client in lst)
+            {
+                tasks.Add(client.StopAsync());
+            }
+
+            await Task.WhenAll(tasks);
+
+            Console.WriteLine("Done");
         }
     }
 }

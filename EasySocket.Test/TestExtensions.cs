@@ -24,15 +24,15 @@ namespace EasySocket.Test
         //             });
         // }
 
-        public static TcpSocketServer<string> CreateStringTcpServer(ListenerConfig listenerConfig, StringServerBehavior serverBehavior= null, StringSessionBehavior sessionBehavior = null)
+        public static TcpSocketServer CreateStringTcpServer(ListenerConfig listenerConfig, EventSessionBehavior sessionBehavior = null)
         {
-            return new TcpSocketServer<string>()
+            return new TcpSocketServer()
                 .AddListener(listenerConfig)
                 .SetLoggerFactory(new ConsoleLoggerFactory())
-                .SetMsgFilterFactory(new StringMsgFilterFactory())
+                .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
                 .SetSessionConfigrator((ssn) =>
                 {
-                    ssn.SetSessionBehavior(sessionBehavior ?? new StringSessionBehavior());
+                    ssn.SetSessionBehavior(sessionBehavior ?? new EventSessionBehavior());
                 });
 
         }

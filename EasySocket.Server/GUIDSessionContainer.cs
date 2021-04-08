@@ -9,6 +9,8 @@ namespace EasySocket.Server
     {
         private const int _sessionIdAttemptMaxCount = 100;
 
+        public int count => _sessions.Count;
+        
         private ConcurrentDictionary<string, TSession> _sessions = new ConcurrentDictionary<string, TSession>();
 
         public bool AddSession(string sessionId, TSession session)
@@ -62,16 +64,6 @@ namespace EasySocket.Server
             sessionId = returnSessionId;
 
             return !string.IsNullOrEmpty(sessionId);
-        }
-
-        public void CancelPreoccupancySessionId(string sessionId)
-        {
-            _sessions.TryRemove(sessionId, out var session);
-        }
-
-        public IEnumerator GetSessionEnumerator()
-        {
-            return _sessions.GetEnumerator();
         }
     }
 }

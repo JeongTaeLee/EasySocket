@@ -12,7 +12,7 @@ namespace EasySocket.Test.Servers
         [TestMethod]
         public async Task StartTest()
         {
-            var testServer = new TcpSocketServer<string>();
+            var testServer = new TcpSocketServer();
 
             // 초기 상태 테스트.
             Assert.AreEqual(testServer.state, ServerState.None);
@@ -48,7 +48,7 @@ namespace EasySocket.Test.Servers
             var startTask = testServer
                     .AddListener(new Server.Listeners.ListenerConfig("127.0.0.1", 9199, 1000))
                     .SetLoggerFactory(new ConsoleLoggerFactory())
-                    .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter, string>())
+                    .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
                     .SetSessionConfigrator((ssn) =>
                     {
                         //ssn.SetSessionBehavior
