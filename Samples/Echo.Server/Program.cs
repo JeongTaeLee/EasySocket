@@ -35,7 +35,6 @@ namespace Echo.Server
         }
         public async void OnReceived(ISession ssn, object packet)
         {
-            var buffer = new byte[1048576];
             var strPacket = packet.ToString();
 
             _logger.Info(packet);
