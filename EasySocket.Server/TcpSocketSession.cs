@@ -21,9 +21,9 @@ namespace EasySocket.Server
 
             _networkStream = new NetworkStream(socket);
             _pipeReader = PipeReader.Create(_networkStream);
+            
 
             _receiveTask = ReceiveLoop();
-
 
             return new ValueTask();
         }
@@ -104,6 +104,14 @@ namespace EasySocket.Server
             catch (OperationCanceledException)
             {
                 // cancel~
+            }
+            catch (SocketException ex)
+            {
+                // TODO : Exception
+            }
+            catch (Exception ex)
+            {
+                // TODO : Exception
             }
             finally
             {
