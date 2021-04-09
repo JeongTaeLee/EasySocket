@@ -18,18 +18,6 @@ namespace EasySocket.Server
             return _sessions.TryAdd(sessionId, session);
         }
 
-        public TSession GetSession(string sessionId)
-        {
-            _sessions.TryGetValue(sessionId, out var session);
-            return session;
-        }
-
-        public TSession RemoveSession(string sessionId)
-        {
-            _sessions.TryRemove(sessionId, out var session);
-            return session;
-        }
-
         public bool SetSession(string sessionId, TSession session)
         {
             if (!_sessions.ContainsKey(sessionId))
@@ -41,6 +29,19 @@ namespace EasySocket.Server
 
             return true;
         }
+        
+        public TSession RemoveSession(string sessionId)
+        {
+            _sessions.TryRemove(sessionId, out var session);
+            return session;
+        }
+
+        public TSession GetSession(string sessionId)
+        {
+            _sessions.TryGetValue(sessionId, out var session);
+            return session;
+        }
+
         public bool TryPreoccupancySessionId(out string sessionId)
         {
             int attemptCount = 0;
@@ -64,6 +65,11 @@ namespace EasySocket.Server
             sessionId = returnSessionId;
 
             return !string.IsNullOrEmpty(sessionId);
+        }
+
+        public IEnumerator GetSessionEnumerator()
+        {
+            return _sessions.GetEnumerator();
         }
     }
 }

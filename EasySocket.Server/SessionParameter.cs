@@ -6,10 +6,10 @@ namespace EasySocket.Server
 {
     public class SessionParameter<TSession>
     {
-        public string sessionId { get; }
-        public IMsgFilter msgFilter { get; }
-        public ILogger logger { get; }
-        public SocketSessionStopHandler<TSession> onStop { get; }
+        public readonly string sessionId;
+        public readonly IMsgFilter msgFilter;
+        public readonly ILogger logger;
+        public readonly SocketSessionStopHandler<TSession> onStop;
 
         private SessionParameter() { }
 

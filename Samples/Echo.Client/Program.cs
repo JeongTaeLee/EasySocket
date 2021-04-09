@@ -18,12 +18,9 @@ namespace Echo.Client
 
             public void OnStarted(IClient client)
             {
-                lock(this)
-                {
-                    Console.WriteLine("Started");
-                    Console.WriteLine(i);
-                    ++i;
-                }
+                Console.WriteLine("Started");
+                Console.WriteLine(i);
+                ++i;
             }
 
             public void OnStoped(IClient client)
@@ -56,8 +53,8 @@ namespace Echo.Client
             }
         }
 
-        static CancellationTokenSource cancelationToken = new CancellationTokenSource();
-
+        static TestClientBehavior clientBehavior = new TestClientBehavior();
+        static CancellationTokenSource cancellationToken = new CancellationTokenSource();
         static async Task Main(string[] args)
         {
             var sessionBehavior = new TestClientBehavior();
@@ -68,35 +65,44 @@ namespace Echo.Client
             {
                 var socketClient = new TcpSocketClient();
                 lst.Add(socketClient);
-                tasks.Add(socketClient
-                    .SetLoggerFactory(new NLogLoggerFactory("./NLog.config"))
-                    .SetMsgFilter(new EchoFilter())
-                    .SetSocketClientConfig(new SocketClientConfig("127.0.0.1", 9199))
-                    .SetClientBehavior(sessionBehavior)
-                    .StartAsync());
+                tasks.Add(ProcessSession(index));
             }
-
-            await Task.WhenAll(tasks);
 
             while (true)
             {
                 var inputStr =Console.ReadLine();
                 if (inputStr == "close")
                 {
+                    cancellationToken.Cancel();
                     break;
                 }
             }
 
+            await Task.WhenAll(tasks);
             tasks.Clear();
 
-            foreach (var client in lst)
+            Console.WriteLine("Done");
+        }
+
+        static async Task ProcessSession(int index)
+        {
+            var socketClient = new TcpSocketClient();
+            await socketClient
+                .SetLoggerFactory(new NLogLoggerFactory("./NLog.config"))
+                .SetMsgFilter(new EchoFilter())
+                .SetSocketClientConfig(new SocketClientConfig("127.0.0.1", 9199))
+                .SetClientBehavior(clientBehavior)
+                .StartAsync();
+
+            int sendCount = 0;
+            while (!cancellationToken.IsCancellationRequested)
             {
-                tasks.Add(client.StopAsync());
+                await Task.Delay(100);
+                
+                await socketClient.SendAsync(Encoding.Default.GetBytes($"Session({index}) : SendCount({sendCount++})"));
             }
 
-            await Task.WhenAll(tasks);
-
-            Console.WriteLine("Done");
+            await socketClient.StopAsync();
         }
     }
 }

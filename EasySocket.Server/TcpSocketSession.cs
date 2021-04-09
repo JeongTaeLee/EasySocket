@@ -24,8 +24,13 @@ namespace EasySocket.Server
 
             _receiveTask = ReceiveLoop();
 
-            WaitingForAbort();
 
+            return new ValueTask();
+        }
+
+        protected override ValueTask ProcessStartAfter()
+        {
+            WaitingForAbort();
             return new ValueTask();
         }
 

@@ -16,7 +16,7 @@ namespace EasySocket.Server
 
     public interface ISession
     {
-        string sessionId { get; }
+        string id { get; }
         SessionState state { get; }     
         ISessionBehavior behavior { get; }
 

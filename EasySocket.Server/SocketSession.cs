@@ -15,14 +15,14 @@ namespace EasySocket.Server
     public abstract class SocketSession<TSession> : ISession
         where TSession : SocketSession<TSession>
     {
-        public string sessionId => parameter.sessionId;
+        public string id => parameter.sessionId;
         public SessionState state => (SessionState)_state;
         public ISessionBehavior behavior { get; private set; } = null;
 
         private int _state = (int)SessionState.None;
         
-        protected Socket socket { get; private set; } = null;
         protected SessionParameter<TSession> parameter { get; private set; } = default;
+        protected Socket socket { get; private set; } = null;
 
         public async ValueTask StartAsync(Socket sck, SessionParameter<TSession> ssnPrmtr)
         {
@@ -45,6 +45,8 @@ namespace EasySocket.Server
             await ProcessStart();
 
             _state = (int)SessionState.Running;
+
+            await ProcessStartAfter();
 
             behavior?.OnStartAfter(this);
         }
@@ -73,8 +75,9 @@ namespace EasySocket.Server
 
             _state = (int)SessionState.Stopped;
 
-            behavior?.OnStopAfter(this);
+            await ProcessStopAfter();
 
+            behavior?.OnStopAfter(this);
             parameter.onStop.Invoke(this as TSession);
         }
 
@@ -114,7 +117,17 @@ namespace EasySocket.Server
             return new ValueTask();
         }
 
+        protected virtual ValueTask ProcessStartAfter()
+        {
+            return new ValueTask();
+        }
+
         protected virtual ValueTask ProcessStop()
+        {
+            return new ValueTask();
+        }
+
+        protected virtual ValueTask ProcessStopAfter()
         {
             return new ValueTask();
         }

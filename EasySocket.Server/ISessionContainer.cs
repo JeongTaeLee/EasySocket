@@ -7,11 +7,12 @@ namespace EasySocket.Server
         public int count { get; }
 
         bool AddSession(string sessionId, TSession session);
-        TSession RemoveSession(string sessionId);
         bool SetSession(string sessionId, TSession session);
+        TSession RemoveSession(string sessionId);
+        TSession GetSession(string sessionId);
 
         bool TryPreoccupancySessionId(out string sessionId);
 
-        TSession GetSession(string sessionId);
+        IEnumerator GetSessionEnumerator();
     }
 }
