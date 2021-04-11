@@ -7,102 +7,177 @@ using EasySocket.Client;
 using EasySocket.Common.Protocols.MsgFilters;
 using Echo.Client.Logging;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Echo.Client
 {
-    class Program
+    class EchoFilter : FixedHeaderMsgFilter
     {
-        class TestClientBehavior : IClientBehavior
+        public EchoFilter()
+            : base(8)
         {
-            private int i = 0;
 
-            public void OnStarted(IClient client)
-            {
-                Console.WriteLine("Started");
-                Console.WriteLine(i);
-                ++i;
-            }
-
-            public void OnStoped(IClient client)
-            {
-                Console.WriteLine("Stoped");
-            }
-            
-            public void OnReceived(IClient client, object msgInfo)
-            {
-                Console.WriteLine($"Received : {msgInfo}");
-            }
-
-            public void OnError(IClient client, Exception ex)
-            {
-                Console.WriteLine("Error");
-            }
-        }
-        internal class EchoFilter : IMsgFilter
-        {
-            public object Filter(ref SequenceReader<byte> sequence)
-            {
-                var buffer = sequence.Sequence.Slice(0, sequence.Length);
-                sequence.Advance(sequence.Length);
-
-                return Encoding.Default.GetString(buffer);
-            }
-
-            public void Reset()
-            {
-            }
         }
 
-        static TestClientBehavior clientBehavior = new TestClientBehavior();
-        static CancellationTokenSource cancellationToken = new CancellationTokenSource();
-        static async Task Main(string[] args)
+        protected override int ParseBodySizeFromHeader(ref ReadOnlySequence<byte> buffer)
         {
-            var sessionBehavior = new TestClientBehavior();
-
-            var lst = new List<TcpSocketClient>();
-            var tasks = new List<Task>();
-            for (int index = 0; index < 100; ++index)
-            {
-                var socketClient = new TcpSocketClient();
-                lst.Add(socketClient);
-                tasks.Add(ProcessSession(index));
-            }
-
-            while (true)
-            {
-                var inputStr =Console.ReadLine();
-                if (inputStr == "close")
-                {
-                    cancellationToken.Cancel();
-                    break;
-                }
-            }
-
-            await Task.WhenAll(tasks);
-            tasks.Clear();
-
-            Console.WriteLine("Done");
+            return BitConverter.ToInt32(buffer.Slice(0, 4).FirstSpan);
         }
 
-        static async Task ProcessSession(int index)
+        protected override object ParseMsgInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq)
         {
-            var socketClient = new TcpSocketClient();
-            await socketClient
+            return Encoding.Default.GetString(bodySeq);
+        }
+    }
+
+    class MyClient : IClientBehavior
+    {
+        TcpSocketClient client = null;
+
+        int myIndex = -1;
+
+        Stopwatch stopWatch = new Stopwatch();
+
+        Action<long> recordPing = null;
+
+        CancellationTokenSource tokenSource = null;
+
+        public MyClient(int clntIdx, Action<long> rcrdPng, CancellationTokenSource tknSrc)
+        {
+            myIndex = clntIdx;
+            recordPing = rcrdPng;
+            tokenSource = tknSrc;
+        }
+
+        public async Task StartAsync()
+        {
+            client = new TcpSocketClient();
+            await client
                 .SetLoggerFactory(new NLogLoggerFactory("./NLog.config"))
                 .SetMsgFilter(new EchoFilter())
                 .SetSocketClientConfig(new SocketClientConfig("127.0.0.1", 9199))
-                .SetClientBehavior(clientBehavior)
+                .SetClientBehavior(this)
                 .StartAsync();
+        }
 
-            int sendCount = 0;
-            while (!cancellationToken.IsCancellationRequested)
+        public async Task StopAsync()
+        {
+            await client.StopAsync();
+        }
+
+        public void OnStarted(IClient client)
+        {
+            Console.WriteLine($"started client : index({myIndex})");
+        }
+
+        public void OnStoped(IClient client)
+        {
+            Console.WriteLine($"stopped client : index({myIndex})");
+        }
+        
+        public void OnReceived(IClient client, object msgFilter)
+        {
+            var str = msgFilter.ToString();
+
+            if (str == "Pong")
             {
-                await Task.Delay(100);
-                
-                await socketClient.SendAsync(Encoding.Default.GetBytes($"Session({index}) : SendCount({sendCount++})"));
+                stopWatch.Stop();
+
+                recordPing?.Invoke(stopWatch.ElapsedMilliseconds);
+
+                SendPing();
+            }
+        }
+
+        public void OnError(IClient client, Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
+
+        public void SendPing()
+        {
+            if (tokenSource.IsCancellationRequested)
+            {
+                return;
             }
 
-            await socketClient.StopAsync();
+            client.SendAsync(Encoding.Default.GetBytes("Ping"));
+        
+            stopWatch.Reset();
+            stopWatch.Start();
+        }
+    }
+
+    internal class Program
+    {
+        static CancellationTokenSource cancellationToken = new CancellationTokenSource();
+
+        // index / ping
+        static Dictionary<int, long> pingByClientIdx = new Dictionary<int, long>();
+
+        static async Task Main(string[] args)
+        {
+            var lst = new List<MyClient>();
+            var tasks = new List<Task>();
+         
+            for (int index = 0; index < 100; ++index)
+            {
+                var client = new MyClient(index, (ping)=>
+                {
+                    pingByClientIdx[index] = ping;
+                }, cancellationToken);
+
+                lst.Add(client);
+                tasks.Add(client.StartAsync());
+            }
+
+            await Task.WhenAll(tasks);
+
+            Console.WriteLine("Start Send ? (Input)");
+            Console.ReadKey();
+
+            Console.WriteLine("Start Send!");
+
+            foreach (var clnt in lst)
+            {
+                clnt.SendPing();
+            }
+
+            var recordPing = RecordPing();
+
+            Console.ReadKey();
+
+            cancellationToken?.Cancel();
+
+            tasks.Clear();
+            foreach (var clnt in lst)
+            {
+                tasks.Add(clnt.StopAsync());
+            }
+
+            await recordPing;
+        }
+
+        static async Task RecordPing()
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(1000);
+
+                long ping = 0;
+
+                foreach (var pingPair in pingByClientIdx)
+                {
+                    ping += pingPair.Value;
+                }
+
+                if (ping == 0)
+                {
+                    continue;
+                }
+
+                Console.WriteLine(ping / pingByClientIdx.Count);
+            }
         }
     }
 }

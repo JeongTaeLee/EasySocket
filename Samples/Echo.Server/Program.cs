@@ -33,21 +33,14 @@ namespace Echo.Server
         {
             _logger.Info($"Stop Session(After) : Count({Program.server.sessionCount})");
         }
-        public async void OnReceived(ISession ssn, object packet)
+        public void OnReceived(ISession ssn, object packet)
         {
             var strPacket = packet.ToString();
 
-            _logger.Info(packet);
-
-            if (strPacket == "Bye")
+            if (strPacket == "Ping")
             {
-                await ssn.StopAsync();
-                return;
+                ssn.SendAsync(Encoding.Default.GetBytes("Pong"));
             }
-
-            var sendByte = Encoding.Default.GetBytes(strPacket);
-
-            await ssn.SendAsync(sendByte);
         }
 
         public void OnError(ISession ssn, Exception ex)
