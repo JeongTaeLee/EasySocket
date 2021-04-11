@@ -48,17 +48,16 @@ namespace EasySocket.Common.Protocols.MsgFilters
                     throw new ProtocolException("The body size cannot be smaller than 0.");
                 }
 
-                try
+                if (bodySize == 0)
                 {
-                    // Body size 가 0이라면 헤더만 파싱함.
-                    if (bodySize == 0)
+                    try
                     {
                         return ParseMsgInfo(ref headerSeq, ref headerSeq);
                     }
-                }
-                finally
-                {
-                    Reset();
+                    finally
+                    {
+                        Reset();
+                    }
                 }
 
                 parsedHeader = true;

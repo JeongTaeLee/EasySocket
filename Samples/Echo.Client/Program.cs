@@ -14,7 +14,7 @@ namespace Echo.Client
     class EchoFilter : FixedHeaderMsgFilter
     {
         public EchoFilter()
-            : base(8)
+            : base(4)
         {
 
         }
@@ -82,7 +82,6 @@ namespace Echo.Client
             if (str == "Pong")
             {
                 stopWatch.Stop();
-
                 recordPing?.Invoke(stopWatch.ElapsedMilliseconds);
 
                 SendPing();
@@ -101,7 +100,13 @@ namespace Echo.Client
                 return;
             }
 
-            client.SendAsync(Encoding.Default.GetBytes("Ping"));
+            var pongPacket = Encoding.Default.GetBytes("Ping");
+            var sendPacket = new byte[pongPacket.Length + 4];
+
+            Buffer.BlockCopy(BitConverter.GetBytes(4), 0, sendPacket, 0, 4);
+            Buffer.BlockCopy(pongPacket, 0, sendPacket, 4, pongPacket.Length);
+
+            client.SendAsync(sendPacket);
         
             stopWatch.Reset();
             stopWatch.Start();
@@ -120,7 +125,7 @@ namespace Echo.Client
             var lst = new List<MyClient>();
             var tasks = new List<Task>();
          
-            for (int index = 0; index < 100; ++index)
+            for (int index = 0; index < 100000; ++index)
             {
                 var client = new MyClient(index, (ping)=>
                 {
@@ -128,10 +133,10 @@ namespace Echo.Client
                 }, cancellationToken);
 
                 lst.Add(client);
-                tasks.Add(client.StartAsync());
+                await client.StartAsync();
             }
 
-            await Task.WhenAll(tasks);
+            //await Task.WhenAll(tasks);
 
             Console.WriteLine("Start Send ? (Input)");
             Console.ReadKey();
@@ -152,7 +157,8 @@ namespace Echo.Client
             tasks.Clear();
             foreach (var clnt in lst)
             {
-                tasks.Add(clnt.StopAsync());
+                await clnt.StopAsync();
+                //tasks.Add(clnt.StopAsync());
             }
 
             await recordPing;

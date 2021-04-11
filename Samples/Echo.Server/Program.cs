@@ -39,7 +39,14 @@ namespace Echo.Server
 
             if (strPacket == "Ping")
             {
-                ssn.SendAsync(Encoding.Default.GetBytes("Pong"));
+                var pongPacket = Encoding.Default.GetBytes("Pong");
+                var sendPacket = new byte[pongPacket.Length + 4];
+                    
+                Buffer.BlockCopy(BitConverter.GetBytes(4), 0, sendPacket, 0, 4);
+                Buffer.BlockCopy(pongPacket, 0, sendPacket, 4, pongPacket.Length);
+
+                ssn.SendAsync(sendPacket);
+                _logger.Info("Sended Ping");
             }
         }
 
@@ -50,18 +57,22 @@ namespace Echo.Server
 
     }
 
-    internal class EchoFilter : IMsgFilter
+    internal class EchoFilter : FixedHeaderMsgFilter
     {
-        public object Filter(ref SequenceReader<byte> sequence)
+        public EchoFilter()
+            : base(8)
         {
-            var buffer = sequence.Sequence.Slice(0, sequence.Length);
-            sequence.Advance(sequence.Length);
-            
-            return Encoding.Default.GetString(buffer);
+
         }
 
-        public void Reset()
+        protected override int ParseBodySizeFromHeader(ref ReadOnlySequence<byte> buffer)
         {
+            return BitConverter.ToInt32(buffer.Slice(0, 4).FirstSpan);
+        }
+
+        protected override object ParseMsgInfo(ref ReadOnlySequence<byte> headerSeq, ref ReadOnlySequence<byte> bodySeq)
+        {
+            return Encoding.Default.GetString(bodySeq);
         }
     }
 
