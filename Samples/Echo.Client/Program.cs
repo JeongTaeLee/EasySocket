@@ -125,7 +125,7 @@ namespace Echo.Client
             var lst = new List<MyClient>();
             var tasks = new List<Task>();
          
-            for (int index = 0; index < 100000; ++index)
+            for (int index = 0; index < 10000; ++index)
             {
                 var client = new MyClient(index, (ping)=>
                 {

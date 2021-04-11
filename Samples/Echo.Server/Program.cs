@@ -60,7 +60,7 @@ namespace Echo.Server
     internal class EchoFilter : FixedHeaderMsgFilter
     {
         public EchoFilter()
-            : base(8)
+            : base(4)
         {
 
         }
