@@ -102,8 +102,6 @@ namespace EasySocket.Server
             await StopListenersAsync();
             await StopAllSession();
             await ProcessStop();
-
-            throw new NotImplementedException();
         }
 
         private async ValueTask StartListenersAsync()

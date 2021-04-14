@@ -1,7 +1,7 @@
 using System;
 using EasySocket.Common.Logging;
 
-namespace EasySocket.Test
+namespace EasySocket.Test.Components
 {
     public class ConsoleLogger : ILogger
     {
