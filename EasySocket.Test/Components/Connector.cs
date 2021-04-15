@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace EasySocket.Test.Components
 {
+    // TODO - 테스트용 클래스. 추후 클라이언트 라이브러리에 정상적인 구조 및 새 로직으로 작성해서
+    //        추가한 후 그 클래스로 사용해야 한다.
     public sealed class Connector
     {
         private readonly Socket _socket;

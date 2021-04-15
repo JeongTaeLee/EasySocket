@@ -43,32 +43,11 @@ namespace EasySocket.Test
 
         }
 
-        // TODO - ��ġ ���� �ȵ�� �ű⼼��
         public static void ForAll<T>(this IEnumerable<T> source, Action<T> action)
         {
             foreach (var iter in source)
             {
                 action(iter);
-            }
-        }
-
-        // TODO - ��ġ ���� �ȵ�� �ű⼼��
-        public static int GetFreePort(string ipAddress)
-        {
-            Socket portFinder = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-            try
-            {
-                portFinder.Bind(new IPEndPoint(IPAddress.Parse(ipAddress), 0));
-                return ((IPEndPoint)portFinder.LocalEndPoint).Port;
-            }
-            catch
-            {
-                throw;
-            }
-            finally
-            {
-                portFinder.Close();
             }
         }
     }

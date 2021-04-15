@@ -11,18 +11,46 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace EasySocket.Test.Servers
 {
     [TestClass]
-    public class TcpSocketServerTest
+    public class SocketServerTest
     {
         [TestMethod]
-        public async Task ServerStartTest()
+        [Timeout(10_000)]
+        public async Task Test_TcpSocketServer_RunAndStop()
         {
             var server = new TcpSocketServer();
 
             // 초기 상태 테스트.
-            Assert.AreEqual(server.state, ServerState.None);
+            Assert.AreEqual(ServerState.None, server.state);
             
+            // 초기화 없이 서버를 시작 할 때 테스트
+            await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
+            {
+                await server.StartAsync();
+            });
+
+            // 실패 했을 경우 상태가 변경되면 안됨.
+            Assert.AreEqual(ServerState.None, server.state);
+
+            // NULL 처리 테스트
+            Assert.ThrowsException<ArgumentNullException>(() =>
+            {
+                server.SetLoggerFactory(null);
+            });
+
+            // NULL 처리 테스트
+            Assert.ThrowsException<ArgumentNullException>(() =>
+            {
+                server.SetMsgFilterFactory(null);
+            });
+
+            // NULL 처리 테스트
+            Assert.ThrowsException<ArgumentNullException>(() =>
+            {
+                server.SetSessionConfigrator(null);
+            });
+
             //정상 상황 테스트.
-            var freeLocalPort = TestExtensions.GetFreePort("127.0.0.1");
+            var freeLocalPort = TestHelper.GetLocalFreePort();
             var startTask = server
                 .AddListener(new Server.Listeners.ListenerConfig("127.0.0.1", freeLocalPort, 1000))
                 .SetLoggerFactory(new ConsoleLoggerFactory())
@@ -39,7 +67,7 @@ namespace EasySocket.Test.Servers
             await startTask;
 
             // 서버 진행 중..
-            Assert.AreEqual(server.state, ServerState.Running);
+            Assert.AreEqual(ServerState.Running, server.state);
 
             var stopTask = server.StopAsync();
 
@@ -49,7 +77,7 @@ namespace EasySocket.Test.Servers
             await stopTask;
 
             // 종료 상태 체크.
-            Assert.AreEqual(server.state, ServerState.Stopped);
+            Assert.AreEqual(ServerState.Stopped, server.state);
 
             // 서버는 재시작되면 안됨..
             await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
@@ -57,9 +85,51 @@ namespace EasySocket.Test.Servers
                 await server.StartAsync();
             });
         }
-        
+
         [TestMethod]
-        public async Task SessionBehaviourCallbackTest()
+        [Timeout(10_000)]
+        public async Task Test_TcpSocketServer_MultiListener()
+        {
+            const int LISTENER_COUNT = 10;
+
+            int acceptCount = 0;
+
+            // 서버 실행 준비.
+            var server = new TcpSocketServer();
+            var ports = new int[LISTENER_COUNT];
+
+            // 10 개의 Listener 를 추가한다.
+            for (int i = 0; i < 10; ++i)
+            {
+                ports[i] = TestHelper.GetLocalFreePort();
+                server.AddListener(new Server.Listeners.ListenerConfig("127.0.0.1", ports[i], 1000));
+            }
+
+            server.SetLoggerFactory(new ConsoleLoggerFactory())
+                .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
+                .SetSessionConfigrator((ssn) =>
+                {
+                    Interlocked.Increment(ref acceptCount);
+                });
+
+            await server.StartAsync();
+
+            // 테스트용 커넥터 (임시 Client) 를 만든다.
+            Connector[] connectors = Enumerable.Range(0, LISTENER_COUNT)
+                .Select(x => new Connector(new IPEndPoint(IPAddress.Parse("127.0.0.1"), ports[x])))
+                .ToArray();
+
+            await Task.WhenAll(connectors.Select(x => x.ConnectAsync()));
+            await Task.Delay(1000); // TODO - 연결하는 Task 를 다 기다렸지만.. 바로 Counting이 되지 않는다.
+
+            // 각 Listener에 Connector를 하나씩 매칭해 연결한 후
+            // 잘 연결되었는지 카운터를 체크한다.
+            Assert.AreEqual(LISTENER_COUNT, acceptCount);
+        }
+
+        [TestMethod]
+        [Timeout(10_000)]
+        public async Task Test_SessionBehaviourCallbacks()
         {
             const int CONNECTOR_COUNT = 10;
 
@@ -78,7 +148,7 @@ namespace EasySocket.Test.Servers
             ssnBhvr.onError += (inSsn) => Interlocked.Increment(ref onErrorCalled);
 
             // 서버 실행 준비.
-            var freeLocalPort = TestExtensions.GetFreePort("127.0.0.1");
+            var freeLocalPort = TestHelper.GetLocalFreePort();
             var server = new TcpSocketServer()
                 .AddListener(new Server.Listeners.ListenerConfig("127.0.0.1", freeLocalPort, 1000))
                 .SetLoggerFactory(new ConsoleLoggerFactory())
@@ -94,7 +164,7 @@ namespace EasySocket.Test.Servers
             await server.StartAsync();
 
             // 서버 진행 중..
-            Assert.AreEqual(server.state, ServerState.Running);
+            Assert.AreEqual(ServerState.Running, server.state);
 
 
             // 테스트용 커넥터 (임시 Client) 를 만든다.
@@ -107,11 +177,11 @@ namespace EasySocket.Test.Servers
             await Task.Delay(1000); // TODO - 연결하는 Task 를 다 기다렸지만.. 바로 Counting이 되지 않는다.
 
             // 생성된 세션 수는 합계 CONNECTOR_COUNT 이 되어야 한다.
-            Assert.AreEqual(createdSessionCount, CONNECTOR_COUNT);
+            Assert.AreEqual(CONNECTOR_COUNT, createdSessionCount);
 
             // 시작 시 콜백 호출 횟수는 합계 CONNECTOR_COUNT 이 되어야 한다.
-            Assert.AreEqual(onStartBeforeCalled, CONNECTOR_COUNT);
-            Assert.AreEqual(onStartAfterCalled, CONNECTOR_COUNT);
+            Assert.AreEqual(CONNECTOR_COUNT, onStartBeforeCalled);
+            Assert.AreEqual(CONNECTOR_COUNT, onStartAfterCalled);
 
 
             // "Hello" 문자열을 모두 보낸다.
@@ -119,17 +189,17 @@ namespace EasySocket.Test.Servers
             await Task.Delay(1000); // TODO - 보내는 Task 를 다 기다렸지만.. 바로 Counting이 되지 않는다.
 
             // 받은 횟수는 합계 CONNECTOR_COUNT 이 되어야 한다.
-            Assert.AreEqual(onReceivedCalled, CONNECTOR_COUNT);
+            Assert.AreEqual(CONNECTOR_COUNT, onReceivedCalled);
 
 
             // 서버를 끈다.
             await server.StopAsync();
 
             // 종료 시 콜백 호출 횟수는 합계 CONNECTOR_COUNT 이 되어야 한다.
-            Assert.AreEqual(onStoppedCalled, CONNECTOR_COUNT);
+            Assert.AreEqual(CONNECTOR_COUNT, onStoppedCalled);
 
             // 에러 횟수는 합계 0 이 되어야 한다.
-            Assert.AreEqual(onErrorCalled, 0);
+            Assert.AreEqual(0, onErrorCalled);
         }
     }
 }
