@@ -99,6 +99,14 @@ namespace EasySocket.Test.Servers
             int onReceivedCalled = 0;
             int onErrorCalled = 0;
 
+            var ssnBhvr = new EventSessionBehaviour();
+            ssnBhvr.onStartBefore += (inSsn) => Interlocked.Increment(ref onStartBeforeCalled);
+            ssnBhvr.onStartAfter += (inSsn) => Interlocked.Increment(ref onStartAfterCalled);
+            ssnBhvr.onStopBefore += (inSsn) => Interlocked.Increment(ref onStopBeforeCalled);
+            ssnBhvr.onStopAfter += (inSsn) => Interlocked.Increment(ref onStopAfterCalled);
+            ssnBhvr.onReceived += (inSsn) => Interlocked.Increment(ref onReceivedCalled);
+            ssnBhvr.onError += (inSsn) => Interlocked.Increment(ref onErrorCalled);
+
             // 서버 실행 준비.
             var freeLocalPort = TestExtensions.GetFreePort("127.0.0.1");
             var server = new TcpSocketServer()
@@ -107,17 +115,7 @@ namespace EasySocket.Test.Servers
                 .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
                 .SetSessionConfigrator((ssn) =>
                 {
-                    ssn.SetSessionBehavior(new EventSessionBehaviour());
-
-                    var eventBehaviour = ssn.behavior as EventSessionBehaviour;
-
-                    // 각 Action 에 대한 카운팅 콜백 등록 
-                    eventBehaviour.onStartBefore += (inSsn) => Interlocked.Increment(ref onStartBeforeCalled);
-                    eventBehaviour.onStartAfter += (inSsn) => Interlocked.Increment(ref onStartAfterCalled);
-                    eventBehaviour.onStopBefore += (inSsn) => Interlocked.Increment(ref onStopBeforeCalled);
-                    eventBehaviour.onStopAfter += (inSsn) => Interlocked.Increment(ref onStopAfterCalled);
-                    eventBehaviour.onReceived += (inSsn) => Interlocked.Increment(ref onReceivedCalled);
-                    eventBehaviour.onError += (inSsn) => Interlocked.Increment(ref onErrorCalled);
+                    ssn.SetSessionBehavior(ssnBhvr);
 
                     // 세션 개수 카운팅을 올려준다.
                     Interlocked.Increment(ref createdSessionCount);
