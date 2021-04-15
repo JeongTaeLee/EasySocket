@@ -10,7 +10,7 @@ using EasySocket.Server.Listeners;
 
 namespace Echo.Server
 {
-    internal class EchoSessionBehavior : ISessionBehaviour
+    internal class EchoSessionBehaviour : ISessionBehaviour
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
@@ -93,7 +93,7 @@ namespace Echo.Server
                 })
                 .SetSessionConfigrator(ssn =>
                 {
-                    ssn.SetSessionBehaviour(new EchoSessionBehavior());
+                    ssn.SetSessionBehaviour(new EchoSessionBehaviour());
                 });
 
             await server.StartAsync();

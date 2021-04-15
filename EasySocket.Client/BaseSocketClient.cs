@@ -13,7 +13,7 @@ namespace EasySocket.Client
         where TSocketClient : class, IClient
     {
         public ClientState state => (ClientState)_state;
-        public IClientBehavior behavior { get; private set; } = null;
+        public IClientBehaviour behaviour { get; private set; } = null;
 
         private SemaphoreSlim _sendSemaphore = null;
         private int _state = (int)ClientState.None;
@@ -54,9 +54,9 @@ namespace EasySocket.Client
                 throw new InvalidOperationException("Unable to create logger from LoggerFactory.");
             }
 
-            if (behavior == null)
+            if (behaviour == null)
             {
-                _logger.MemberNotSetWarn("Client Behavior", "SetClientBehavior");
+                _logger.MemberNotSetWarn("Client Behaviour", "SetClientBehaviour");
             }
 
             socket = CreateSocket(config);
@@ -72,7 +72,7 @@ namespace EasySocket.Client
 
             _state = (int)ClientState.Running;
 
-            behavior?.OnStarted(this as TSocketClient);
+            behaviour?.OnStarted(this as TSocketClient);
         }
 
         public async Task StopAsync()
@@ -118,11 +118,11 @@ namespace EasySocket.Client
         }
 
         /// <summary>
-        /// <see cref="IClient"/>에서 발생하는 여러 이벤트들을 핸들링하는 <see cref="IClientBehavior"/>를 설정합니다.
+        /// <see cref="IClient"/>에서 발생하는 여러 이벤트들을 핸들링하는 <see cref="IClientBehaviour"/>를 설정합니다.
         /// </summary>
-        public TSocketClient SetClientBehavior(IClientBehavior bhvr)
+        public TSocketClient SetClientBehaviour(IClientBehaviour bhvr)
         {
-            behavior = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
+            behaviour = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
             return this as TSocketClient;
         }
 
@@ -136,11 +136,11 @@ namespace EasySocket.Client
         }
 
         /// <summary>
-        /// 내부에서 에러 발생 시 호출되는 함수입니다. 해당 함수 호출 후 <see cref="IClientBehavior.OnError(IClient, Exception)"/> 가 호출됩니다.
+        /// 내부에서 에러 발생 시 호출되는 함수입니다. 해당 함수 호출 후 <see cref="IClientBehaviour.OnError(IClient, Exception)"/> 가 호출됩니다.
         /// </summary>
         protected virtual void OnError(Exception ex)
         {
-            behavior?.OnError(this as TSocketClient, ex);
+            behaviour?.OnError(this as TSocketClient, ex);
         }
 
         /// <summary>
@@ -159,12 +159,12 @@ namespace EasySocket.Client
             socket = null;
             _state = (int)ClientState.Stopped;
 
-            behavior?.OnStoped(this as TSocketClient);
+            behaviour?.OnStoped(this as TSocketClient);
         }
 
         /// <summary>
         /// 내부에서 읽기 이벤트 발생 시 호출되는 메서드 입니다. 파생 클래스에서 호출 후 <see cref="IMsgFilter"/>에서 데이터를 변환 후
-        /// <see cref="IClientBehavior.OnReceived(IClient, IMsgFilter)"/> 호출 됩니다.
+        /// <see cref="IClientBehaviour.OnReceived(IClient, IMsgFilter)"/> 호출 됩니다.
         /// </summary>
         protected virtual long OnRead(ref ReadOnlySequence<byte> sequence)
         {
@@ -181,14 +181,14 @@ namespace EasySocket.Client
                         break;
                     }
 
-                    behavior?.OnReceived(this, msgInfo);
+                    behaviour?.OnReceived(this, msgInfo);
                 }
 
                 return (int)sequenceReader.Consumed;
             }
             catch (Exception ex)
             {
-                behavior?.OnError(this, ex);
+                behaviour?.OnError(this, ex);
 
                 OnStop().DoNotWait();
 

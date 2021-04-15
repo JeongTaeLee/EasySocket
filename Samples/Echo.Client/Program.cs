@@ -30,7 +30,7 @@ namespace Echo.Client
         }
     }
 
-    class MyClient : IClientBehavior
+    class MyClient : IClientBehaviour
     {
         TcpSocketClient client = null;
 
@@ -56,7 +56,7 @@ namespace Echo.Client
                 .SetLoggerFactory(new NLogLoggerFactory("./NLog.config"))
                 .SetMsgFilter(new EchoFilter())
                 .SetSocketClientConfig(new SocketClientConfig("127.0.0.1", 9199))
-                .SetClientBehavior(this)
+                .SetClientBehaviour(this)
                 .StartAsync();
         }
 

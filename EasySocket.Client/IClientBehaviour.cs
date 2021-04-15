@@ -2,7 +2,7 @@ using System;
 
 namespace EasySocket.Client
 {
-    public interface IClientBehavior
+    public interface IClientBehaviour
     {
         void OnStarted(IClient client);
         void OnStoped(IClient client);

@@ -35,7 +35,7 @@ namespace EasySocket.Server
 
             if (behaviour == null)
             {
-                param.logger.MemberNotSetWarn("Session Behavior", "SetSessionBehavior");
+                param.logger.MemberNotSetWarn("Session Behaviour", "SetSessionBehaviour");
             }
 
             behaviour?.OnStartBefore(this);

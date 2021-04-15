@@ -29,7 +29,7 @@ namespace EasySocket.Test.Servers
                 .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
                 .SetSessionConfigrator((ssn) =>
                 {
-                    //ssn.SetSessionBehavior
+       
                 })
                 .StartAsync().ConfigureAwait(false);
 

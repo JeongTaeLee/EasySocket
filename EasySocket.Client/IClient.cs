@@ -18,7 +18,7 @@ namespace EasySocket.Client
     {
 
         ClientState state { get; }
-        IClientBehavior behavior { get; }
+        IClientBehaviour behaviour { get; }
         
         Task StopAsync();
         ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory);
