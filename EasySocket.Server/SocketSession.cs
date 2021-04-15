@@ -22,9 +22,9 @@ namespace EasySocket.Server
         protected SessionParameter<TSession> param { get; private set; } = null;
         protected Socket socket { get; private set; } = null;
 
-        public virtual async ValueTask StartAsync(SessionParameter<TSession> param, Socket sck)
+        public virtual async ValueTask StartAsync(SessionParameter<TSession> prm, Socket sck)
         {
-            param = param ?? throw new ArgumentNullException(nameof(param));
+            param = prm ?? throw new ArgumentNullException(nameof(prm));
             socket = sck ?? throw new ArgumentNullException(nameof(sck));
 
             int prevState = Interlocked.CompareExchange(ref _state, (int)SessionState.Starting, (int)SessionState.None);
@@ -93,7 +93,7 @@ namespace EasySocket.Server
             int prevState = Interlocked.CompareExchange(ref _state, (int)SessionState.Stopping, (int)SessionState.Running);
             if (prevState != (int)SessionState.Running)
             {
-                param.logger.Error($"The session has an invalid state. : Session state is {(SessionState)prevState}");
+                return;
             }
 
             await InternalStopAsync();

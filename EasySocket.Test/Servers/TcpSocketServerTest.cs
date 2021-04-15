@@ -59,7 +59,6 @@ namespace EasySocket.Test.Servers
         }
         
         [TestMethod]
-        [Timeout(10000)]
         public async Task SessionBehaviourCallbackTest()
         {
             const int CONNECTOR_COUNT = 10;

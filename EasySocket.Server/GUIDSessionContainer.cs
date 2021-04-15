@@ -69,7 +69,7 @@ namespace EasySocket.Server
 
         public IEnumerator GetSessionEnumerator()
         {
-            return _sessions.GetEnumerator();
+            return _sessions.Values.GetEnumerator();
         }
     }
 }
