@@ -1,6 +1,12 @@
 using EasySocket.Common.Protocols.MsgFilters.Factories;
 using EasySocket.Server;
 using EasySocket.Server.Listeners;
+using EasySocket.Test.Components;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 
 namespace EasySocket.Test
 {
@@ -24,7 +30,7 @@ namespace EasySocket.Test
         //             });
         // }
 
-        public static TcpSocketServer CreateStringTcpServer(ListenerConfig listenerConfig, EventSessionBehavior sessionBehavior = null)
+        public static TcpSocketServer CreateStringTcpServer(ListenerConfig listenerConfig, EventSessionBehaviour sessionBehavior = null)
         {
             return new TcpSocketServer()
                 .AddListener(listenerConfig)
@@ -32,9 +38,38 @@ namespace EasySocket.Test
                 .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
                 .SetSessionConfigrator((ssn) =>
                 {
-                    ssn.SetSessionBehavior(sessionBehavior ?? new EventSessionBehavior());
+                    ssn.SetSessionBehavior(sessionBehavior ?? new EventSessionBehaviour());
                 });
 
+        }
+
+        // TODO - 위치 맘에 안들면 옮기세요
+        public static void ForAll<T>(this IEnumerable<T> source, Action<T> action)
+        {
+            foreach (var iter in source)
+            {
+                action(iter);
+            }
+        }
+
+        // TODO - 위치 맘에 안들면 옮기세요
+        public static int GetFreePort(string ipAddress)
+        {
+            Socket portFinder = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+            try
+            {
+                portFinder.Bind(new IPEndPoint(IPAddress.Parse(ipAddress), 0));
+                return ((IPEndPoint)portFinder.LocalEndPoint).Port;
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                portFinder.Close();
+            }
         }
     }
 }

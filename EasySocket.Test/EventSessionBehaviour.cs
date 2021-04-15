@@ -1,9 +1,10 @@
 using System;
+using System.Collections.Generic;
 using EasySocket.Server;
 
 namespace EasySocket.Test
 {
-    public class EventSessionBehavior : ISessionBehavior
+    public class EventSessionBehaviour : ISessionBehavior
     {
         public event Action<ISession> onStartBefore;
         public event Action<ISession> onStartAfter;
@@ -13,7 +14,6 @@ namespace EasySocket.Test
 
         public event Action<object> onReceived;
         public event Action<Exception> onError;
-
 
         public void OnStartBefore(ISession ssn)
         {

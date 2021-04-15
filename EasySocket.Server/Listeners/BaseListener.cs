@@ -23,7 +23,7 @@ namespace EasySocket.Server.Listeners
                 throw new ArgumentNullException(nameof(cnfg.ip));
             }
 
-            if (0 > cnfg.port || short.MaxValue < cnfg.port)
+            if (0 > cnfg.port)
             {
                 throw new ArgumentException("Invalid Port Range");
             }
