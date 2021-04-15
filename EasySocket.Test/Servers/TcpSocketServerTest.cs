@@ -21,33 +21,6 @@ namespace EasySocket.Test.Servers
             // 초기 상태 테스트.
             Assert.AreEqual(server.state, ServerState.None);
             
-            // 초기화 없이 서버를 시작 할 때 테스트
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
-            {
-                await server.StartAsync();
-            });
-
-            // 실패 했을 경우 상태가 변경되면 안됨.
-            Assert.AreEqual(server.state, ServerState.None);
-
-            // NULL 처리 테스트
-            Assert.ThrowsException<ArgumentNullException>(() =>
-            {
-                server.SetLoggerFactory(null);
-            });
-
-            // NULL 처리 테스트
-            Assert.ThrowsException<ArgumentNullException>(() =>
-            {
-                server.SetMsgFilterFactory(null);
-            });
-
-            // NULL 처리 테스트
-            Assert.ThrowsException<ArgumentNullException>(() =>
-            {
-                server.SetSessionConfigrator(null);
-            });
-
             //정상 상황 테스트.
             var freeLocalPort = TestExtensions.GetFreePort("127.0.0.1");
             var startTask = server
@@ -94,16 +67,14 @@ namespace EasySocket.Test.Servers
             int createdSessionCount = 0;
             int onStartBeforeCalled = 0;
             int onStartAfterCalled = 0;
-            int onStopBeforeCalled = 0;
-            int onStopAfterCalled = 0;
+            int onStoppedCalled = 0;
             int onReceivedCalled = 0;
             int onErrorCalled = 0;
 
             var ssnBhvr = new EventSessionBehaviour();
             ssnBhvr.onStartBefore += (inSsn) => Interlocked.Increment(ref onStartBeforeCalled);
             ssnBhvr.onStartAfter += (inSsn) => Interlocked.Increment(ref onStartAfterCalled);
-            ssnBhvr.onStopBefore += (inSsn) => Interlocked.Increment(ref onStopBeforeCalled);
-            ssnBhvr.onStopAfter += (inSsn) => Interlocked.Increment(ref onStopAfterCalled);
+            ssnBhvr.onStopped += (inSsn) => Interlocked.Increment(ref onStoppedCalled);
             ssnBhvr.onReceived += (inSsn) => Interlocked.Increment(ref onReceivedCalled);
             ssnBhvr.onError += (inSsn) => Interlocked.Increment(ref onErrorCalled);
 
@@ -115,7 +86,7 @@ namespace EasySocket.Test.Servers
                 .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
                 .SetSessionConfigrator((ssn) =>
                 {
-                    ssn.SetSessionBehavior(ssnBhvr);
+                    ssn.SetSessionBehaviour(ssnBhvr);
 
                     // 세션 개수 카운팅을 올려준다.
                     Interlocked.Increment(ref createdSessionCount);
@@ -156,8 +127,7 @@ namespace EasySocket.Test.Servers
             await server.StopAsync();
 
             // 종료 시 콜백 호출 횟수는 합계 CONNECTOR_COUNT 이 되어야 한다.
-            Assert.AreEqual(onStopAfterCalled, CONNECTOR_COUNT);
-            Assert.AreEqual(onStopBeforeCalled, CONNECTOR_COUNT);
+            Assert.AreEqual(onStoppedCalled, CONNECTOR_COUNT);
 
             // 에러 횟수는 합계 0 이 되어야 한다.
             Assert.AreEqual(onErrorCalled, 0);

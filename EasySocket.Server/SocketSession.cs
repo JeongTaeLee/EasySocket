@@ -1,11 +1,10 @@
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using EasySocket.Common.Extensions;
-using EasySocket.Common.Logging;
-using EasySocket.Common.Protocols.MsgFilters;
 
 namespace EasySocket.Server
 {
@@ -15,24 +14,18 @@ namespace EasySocket.Server
     public abstract class SocketSession<TSession> : ISession
         where TSession : SocketSession<TSession>
     {
-        public string id => parameter.sessionId;
+        public string id => param.sessionId;
         public SessionState state => (SessionState)_state;
-        public ISessionBehavior behavior { get; private set; } = null;
+        public ISessionBehaviour behaviour { get; private set; } = null;
 
         private int _state = (int)SessionState.None;
-        
-        protected SessionParameter<TSession> parameter { get; private set; } = default;
+        protected SessionParameter<TSession> param { get; private set; } = null;
         protected Socket socket { get; private set; } = null;
 
-        public async ValueTask StartAsync(Socket sck, SessionParameter<TSession> ssnPrmtr)
+        public virtual async ValueTask StartAsync(SessionParameter<TSession> param, Socket sck)
         {
+            param = param ?? throw new ArgumentNullException(nameof(param));
             socket = sck ?? throw new ArgumentNullException(nameof(sck));
-            parameter = ssnPrmtr ?? throw new ArgumentNullException(nameof(ssnPrmtr));
-
-            if (behavior == null)
-            {
-                parameter.logger.MemberNotSetWarn("Session Behavior", "SetSessionBehavior");
-            }
 
             int prevState = Interlocked.CompareExchange(ref _state, (int)SessionState.Starting, (int)SessionState.None);
             if (prevState != (int)SessionState.None)
@@ -40,48 +33,80 @@ namespace EasySocket.Server
                 throw new InvalidOperationException($"The session has an invalid initial state. : Session state is {(SessionState)prevState}");
             }
 
-            behavior?.OnStartBefore(this);
+            if (behaviour == null)
+            {
+                param.logger.MemberNotSetWarn("Session Behavior", "SetSessionBehavior");
+            }
 
-            await ProcessStart();
+            behaviour?.OnStartBefore(this);
+
+            await InternalStartAsync();
 
             _state = (int)SessionState.Running;
 
-            await ProcessStartAfter();
-
-            behavior?.OnStartAfter(this);
+            OnStarted();
         }
-
-        public async ValueTask StopAsync()
+        
+        public virtual async ValueTask StopAsync()
         {
             if (_state != (int)SessionState.Running)
             {
                 throw new InvalidOperationException($"The session has an invalid state. : Session state is {(SessionState)_state}");
             }
 
-            await OnStop();
+            await ProcessStopAsync();
         }
 
-        protected async ValueTask OnStop()
+        /// <summary>
+        /// 세션이 시작된 후 외부(<see cref="IServer"/>) 계열 클래스 에서 호출되는 메서드
+        /// </summary>
+        protected virtual void OnStarted()
+        {
+            if (_state != (int)SessionState.Running)
+            {
+                param.logger.Error($"The session has an invalid state. : Session state is {(SessionState)_state}");
+                return;
+            }
+
+            behaviour?.OnStartAfter(this);
+        }
+
+        /// <summary>
+        /// 세션이 종료된 후 외부(<see cref="IServer"/>) 계열 클래스 에서 호출되는 메서드
+        /// </summary>
+        protected virtual void OnStopped()
+        {
+            if (_state != (int)SessionState.Stopped)
+            {
+                param.logger.Error($"The session has an invalid state. : Session state is {(SessionState)_state}");
+                return;
+            }
+
+            behaviour?.OnStopped(this);
+        }
+
+        /// <summary>
+        /// 내부에서 사용하는 종료 메서드.
+        /// </summary>
+        protected async ValueTask ProcessStopAsync()
         {
             int prevState = Interlocked.CompareExchange(ref _state, (int)SessionState.Stopping, (int)SessionState.Running);
             if (prevState != (int)SessionState.Running)
             {
-                throw new InvalidOperationException($"The session has an invalid state. : Session state is {(SessionState)prevState}");
+                param.logger.Error($"The session has an invalid state. : Session state is {(SessionState)prevState}");
             }
 
-            behavior?.OnStopBefore(this);
-
-            await ProcessStop();
+            await InternalStopAsync();
 
             _state = (int)SessionState.Stopped;
 
-            await ProcessStopAfter();
-
-            behavior?.OnStopAfter(this);
-            parameter.onStop.Invoke(this as TSession);
+            OnStopped();
         }
 
-        protected virtual long OnReceive(ref ReadOnlySequence<byte> sequence)
+        /// <summary>
+        /// 데이터 수신시 호출되는 메서드.
+        /// </summary>
+        protected long ProcessReceive(ReadOnlySequence<byte> sequence)
         {
             try
             {
@@ -89,54 +114,50 @@ namespace EasySocket.Server
 
                 while (sequence.Length > sequenceReader.Consumed)
                 {
-                    var packet = parameter.msgFilter.Filter(ref sequenceReader);
+                    var packet = param.msgFilter.Filter(ref sequenceReader);
                     if (packet == null)
                     {
                         return sequence.Length;
                     }
 
-                    behavior?.OnReceived(this, packet);
+                    behaviour?.OnReceived(this, packet).GetAwaiter().GetResult(); // 대기
                 }
 
                 return (int)sequenceReader.Consumed;
             }
             catch (Exception ex)
             {
-                OnError(ex);
+                ProcessError(ex);
                 return sequence.Length;
             }
         }
 
-        protected virtual void OnError(Exception ex)
+        /// <summary>
+        /// 내부 오류 발생시 호출되는 메서드.
+        /// </summary>
+        protected void ProcessError(Exception ex)
         {
-            behavior?.OnError(this, ex);
+            behaviour?.OnError(this as TSession, ex);
         }
 
-        protected virtual ValueTask ProcessStart()
-        {
-            return new ValueTask();
-        }
-
-        protected virtual ValueTask ProcessStartAfter()
-        {
-            return new ValueTask();
-        }
-
-        protected virtual ValueTask ProcessStop()
-        {
-            return new ValueTask();
-        }
-
-        protected virtual ValueTask ProcessStopAfter()
-        {
-            return new ValueTask();
-        }
-
+        /// <summary>
+        /// 하위 객체에서 정의하는 데이터 전송 메서드.
+        /// </summary>
         public abstract ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry);
+
+        /// <summary>
+        /// 하위 객체에서 정의하는 시작시 호출 메서드.
+        /// </summary>
+        protected virtual ValueTask InternalStartAsync() { return new ValueTask(); }
         
-        public ISession SetSessionBehavior(ISessionBehavior bhvr)
+        /// <summary>
+        /// 하위 객체에서 정의하는 종료시 호출
+        /// </summary>
+        protected virtual ValueTask InternalStopAsync() { return new ValueTask(); }
+
+        public ISession SetSessionBehaviour(ISessionBehaviour bhvr)
         {
-            behavior = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
+            behaviour = bhvr ?? throw new ArgumentNullException(nameof(bhvr));
             return this;
         }
     }

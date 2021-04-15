@@ -7,12 +7,6 @@ namespace EasySocket.Common.Protocols.MsgFilters
     /// </summary>
     public interface IMsgFilter
     {
-        /// <summary>
-        /// 수신한 데이터를 <see cref ="IMsgInfo"/>로 변환 합니다.
-        /// </summary>
-        /// <param name="msgInfo">파싱된 <see cref="IMsgInfo"/>을 담을 out 변수입니다.</param>
-        /// <param name="sequence">파싱할 데이터가 들어있는 <see cref="SequenceReader"/> 입니다.</param>
-        /// <returns>파싱할때 사용한 데이터 길이 입니다.</returns>
         object Filter(ref SequenceReader<byte> sequence);
 
         /// <summary>

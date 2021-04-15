@@ -18,12 +18,12 @@ namespace EasySocket.Server
     {
         string id { get; }
         SessionState state { get; }     
-        ISessionBehavior behavior { get; }
+        ISessionBehaviour behaviour { get; }
 
         ValueTask StopAsync();
         
         ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry);
 
-        ISession SetSessionBehavior(ISessionBehavior bhvr);
+        ISession SetSessionBehaviour(ISessionBehaviour bhvr);
     }
 }

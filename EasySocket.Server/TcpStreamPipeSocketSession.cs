@@ -1,70 +1,40 @@
 using System;
-using System.Threading;
 using System.Net.Sockets;
 using System.IO.Pipelines;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EasySocket.Server
 {
-    public class TcpSocketSession : SocketSession<TcpSocketSession>
+    public class TcpStreamPipeSocketSession : PipeSocketSession<TcpStreamPipeSocketSession>
     {
-        private CancellationTokenSource _cancellationTokenSource = null;
-
         private NetworkStream _networkStream = null;
-        private PipeReader _pipeReader = null;
 
-        private Task _receiveTask = null;
-
-        protected override ValueTask ProcessStart()
+        protected override ValueTask StartPipe(out PipeWriter writer, out PipeReader reader)
         {
-            _cancellationTokenSource = new CancellationTokenSource();
-
             _networkStream = new NetworkStream(socket);
-            _pipeReader = PipeReader.Create(_networkStream);
             
-
-            _receiveTask = ReceiveLoop();
+            writer = null;
+            reader = PipeReader.Create(_networkStream);
 
             return new ValueTask();
         }
 
-        protected override ValueTask ProcessStartAfter()
+        protected override ValueTask StopPipe()
         {
-            WaitingForAbort();
-            return new ValueTask();
-        }
-
-        protected override async ValueTask ProcessStop()
-        {
-            await (_receiveTask ?? Task.CompletedTask);
-
             _networkStream?.Close();
-        
-            _cancellationTokenSource = null;
             _networkStream = null;
-            _pipeReader = null;
-            _receiveTask = null;
-        }
-        
-        public override async ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry)
-        {
-            return await socket.SendAsync(mmry, SocketFlags.None);
+
+            return new ValueTask();
         }
 
-        private async void WaitingForAbort()
-        {
-            await _receiveTask.ConfigureAwait(false);
-
-            await OnStop();
-        }
-
-        private async Task ReceiveLoop()
+        protected override async Task ReadAsync(PipeReader reader)
         {
             try
             {
-                while (!_cancellationTokenSource.IsCancellationRequested)
+                while (true)
                 {
-                    var result = await _pipeReader.ReadAsync(_cancellationTokenSource.Token);
+                    var result = await pipeReader.ReadAsync(CancellationToken.None);
                     var buffer = result.Buffer;
 
                     var readLength = 0L;
@@ -73,7 +43,7 @@ namespace EasySocket.Server
                     {
                         if (0 < buffer.Length)
                         {
-                            readLength = OnReceive(ref buffer);
+                            readLength = ProcessReceive(buffer);
                         }
 
                         if (result.IsCanceled)
@@ -91,13 +61,13 @@ namespace EasySocket.Server
                     catch (Exception ex)
                     {
                         readLength = buffer.Length;
-                        OnError(ex);
-                        
+                        ProcessError(ex);
+
                         break;
                     }
                     finally
                     {
-                        _pipeReader.AdvanceTo(buffer.GetPosition(readLength));
+                        pipeReader.AdvanceTo(buffer.GetPosition(readLength));
                     }
                 }
             }
@@ -115,8 +85,13 @@ namespace EasySocket.Server
             }
             finally
             {
-                await _pipeReader.CompleteAsync();
+                await pipeReader.CompleteAsync();
             }
+        }
+
+        public override async ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry)
+        {
+            return await socket.SendAsync(mmry, SocketFlags.None);
         }
     }
 }

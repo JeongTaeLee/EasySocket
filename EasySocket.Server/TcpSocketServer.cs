@@ -3,17 +3,16 @@ using EasySocket.Server.Listeners;
 
 namespace EasySocket.Server
 {
-    public class TcpSocketServer : SocketServer<TcpSocketServer, TcpSocketSession>
+    public class TcpSocketServer : SocketServer<TcpSocketServer, TcpStreamPipeSocketSession>
     {
-
         protected override IListener CreateListener()
         {
             return new TcpSocketListener();
         }
 
-        protected override TcpSocketSession CreateSession()
+        protected override TcpStreamPipeSocketSession CreateSession()
         {
-            return new TcpSocketSession();
+            return new TcpStreamPipeSocketSession();
         }
     }
 }

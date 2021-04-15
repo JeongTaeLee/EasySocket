@@ -38,12 +38,12 @@ namespace EasySocket.Test
                 .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
                 .SetSessionConfigrator((ssn) =>
                 {
-                    ssn.SetSessionBehavior(sessionBehavior ?? new EventSessionBehaviour());
+                    ssn.SetSessionBehaviour(sessionBehavior ?? new EventSessionBehaviour());
                 });
 
         }
 
-        // TODO - À§Ä¡ ¸¾¿¡ ¾Èµé¸é ¿Å±â¼¼¿ä
+        // TODO - ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ ï¿½Èµï¿½ï¿½ ï¿½Å±â¼¼ï¿½ï¿½
         public static void ForAll<T>(this IEnumerable<T> source, Action<T> action)
         {
             foreach (var iter in source)
@@ -52,7 +52,7 @@ namespace EasySocket.Test
             }
         }
 
-        // TODO - À§Ä¡ ¸¾¿¡ ¾Èµé¸é ¿Å±â¼¼¿ä
+        // TODO - ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ ï¿½Èµï¿½ï¿½ ï¿½Å±â¼¼ï¿½ï¿½
         public static int GetFreePort(string ipAddress)
         {
             Socket portFinder = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);

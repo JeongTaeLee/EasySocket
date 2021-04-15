@@ -10,7 +10,7 @@ using EasySocket.Server.Listeners;
 
 namespace Echo.Server
 {
-    internal class EchoSessionBehavior : ISessionBehavior
+    internal class EchoSessionBehavior : ISessionBehaviour
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
@@ -24,16 +24,12 @@ namespace Echo.Server
             _logger.Info($"Start Session(After) : Count({Program.server.sessionCount})");
         }
 
-        public void OnStopBefore(ISession ssn)
+        public void OnStopped(ISession ssn)
         {
-            _logger.Info($"Stop Session(Before) : {this}");
+            _logger.Info($"Stopped Session(Before) : {this}");
         }
 
-        public void OnStopAfter(ISession ssn)
-        {
-            _logger.Info($"Stop Session(After) : Count({Program.server.sessionCount})");
-        }
-        public void OnReceived(ISession ssn, object packet)
+        public ValueTask OnReceived(ISession ssn, object packet)
         {
             var strPacket = packet.ToString();
 
@@ -48,6 +44,8 @@ namespace Echo.Server
                 ssn.SendAsync(sendPacket);
                 _logger.Info("Sended Ping");
             }
+
+            return new ValueTask();
         }
 
         public void OnError(ISession ssn, Exception ex)
@@ -95,7 +93,7 @@ namespace Echo.Server
                 })
                 .SetSessionConfigrator(ssn =>
                 {
-                    ssn.SetSessionBehavior(new EchoSessionBehavior());
+                    ssn.SetSessionBehaviour(new EchoSessionBehavior());
                 });
 
             await server.StartAsync();

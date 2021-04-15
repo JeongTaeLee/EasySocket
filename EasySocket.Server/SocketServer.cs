@@ -102,6 +102,8 @@ namespace EasySocket.Server
             await StopListenersAsync();
             await StopAllSession();
             await ProcessStop();
+
+            _state = (int)ServerState.Stopped;
         }
 
         private async ValueTask StartListenersAsync()
@@ -235,8 +237,9 @@ namespace EasySocket.Server
                 // 설정 완료 후 생성한 ID로 컨테이너 등록.
                 sessionContainer.SetSession(sessionId, session);
              
+
                 // NOTE : 정상적인 플로우를 위해 세션 시작과 관련된 모든 작업은 마치고 session을 시작해야한다.
-                await session.StartAsync(sck, ssnPrmtr)
+                await session.StartAsync(ssnPrmtr, sck)
                     .ConfigureAwait(false);
             }
             catch (Exception ex)

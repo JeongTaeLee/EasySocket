@@ -1,16 +1,16 @@
 using System;
+using System.Threading.Tasks;
 
 namespace EasySocket.Server
 {
-    public interface ISessionBehavior
+    public interface ISessionBehaviour
     {
         void OnStartBefore(ISession ssn);
         void OnStartAfter(ISession ssn);
-        
-        void OnStopBefore(ISession ssn);
-        void OnStopAfter(ISession ssn);
 
-        void OnReceived(ISession ssn, object packet);
+        void OnStopped(ISession ssn);
+
+        ValueTask OnReceived(ISession ssn, object packet);
         void OnError(ISession ssn, Exception ex);
     }
 }

@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using EasySocket.Server;
 
 namespace EasySocket.Test
 {
-    public class EventSessionBehaviour : ISessionBehavior
+    public class EventSessionBehaviour : ISessionBehaviour
     {
         public event Action<ISession> onStartBefore;
         public event Action<ISession> onStartAfter;
 
-        public event Action<ISession> onStopBefore;
-        public event Action<ISession> onStopAfter;
+        public event Action<ISession> onStopped;
 
         public event Action<object> onReceived;
         public event Action<Exception> onError;
@@ -25,20 +25,17 @@ namespace EasySocket.Test
             onStartAfter?.Invoke(ssn);
         }
 
-        public void OnStopBefore(ISession ssn)
+        public void OnStopped(ISession ssn)
         {
-            onStopBefore?.Invoke(ssn);
+            onStopped?.Invoke(ssn);
         }
 
-        public void OnStopAfter(ISession ssn)
-        {
-            onStopAfter?.Invoke(ssn);
-        }
-
-        public void OnReceived(ISession ssn, object packet)
+        public ValueTask OnReceived(ISession ssn, object packet)
         {
             onReceived?.Invoke(packet);
+            return new ValueTask();
         }
+
         public void OnError(ISession ssn, Exception ex)
         {
             onError?.Invoke(ex);
