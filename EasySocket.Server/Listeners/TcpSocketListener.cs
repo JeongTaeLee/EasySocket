@@ -30,11 +30,13 @@ namespace EasySocket.Server.Listeners
         protected override async ValueTask ProcessStop()
         {
             _cancellationToken?.Cancel();
+            _listenSocket?.Close(); // Accept socket 은 SafeClose 호출 시 에러(연결이 안되어 있기 때문에)
             
             await _acceptLoopTask;
-            _acceptLoopTask = null;
 
-            _listenSocket.SafeClose();
+            _cancellationToken = null;
+            _listenSocket = null;
+            _acceptLoopTask = null;
         }
 
         private async Task AcceptLoop(CancellationToken cancellationToken)

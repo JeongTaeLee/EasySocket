@@ -83,10 +83,12 @@ namespace EasySocket.Server
             catch (SocketException ex)
             {
                 // TODO : Exception
+                ProcessError(ex);
             }
             catch (Exception ex)
             {
                 // TODO : Exception
+                ProcessError(ex);
             }
             finally
             {
