@@ -10,10 +10,9 @@ namespace EasySocket.Server.Listeners
     public class TcpSocketListener : BaseListener
     {
         private Socket _listenSocket = null;
-        private CancellationTokenSource _cancellationToken = null;
         private Task _acceptLoopTask = null;
         
-        protected override ValueTask ProcessStart()
+        protected override ValueTask InternalStartAsync()
         {
             IPEndPoint endPoint = new IPEndPoint(config.ip.ToIPAddress(), config.port);
 
@@ -21,38 +20,35 @@ namespace EasySocket.Server.Listeners
             _listenSocket.Bind(endPoint);
             _listenSocket.Listen(this.config.backlog);
 
-            _cancellationToken = new CancellationTokenSource();
-            _acceptLoopTask = AcceptLoop(_cancellationToken.Token);
+            _acceptLoopTask = AcceptLoop();
 
             return new ValueTask();
         }
 
-        protected override async ValueTask ProcessStop()
+        protected override async ValueTask InternalStopAsync()
         {
-            _cancellationToken?.Cancel();
             _listenSocket?.Close(); // Accept socket 은 SafeClose 호출 시 에러(연결이 안되어 있기 때문에)
             
             await _acceptLoopTask;
 
-            _cancellationToken = null;
             _listenSocket = null;
             _acceptLoopTask = null;
         }
 
-        private async Task AcceptLoop(CancellationToken cancellationToken)
+        private async Task AcceptLoop()
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while (true)
             {
                 try
                 {
                     var acceptedSocket = await _listenSocket.AcceptAsync().ConfigureAwait(false);
 
-                    if (cancellationToken.IsCancellationRequested)
+                    if (acceptedSocket == null)
                     {
                         break;
                     }
 
-                    OnAccept(acceptedSocket);
+                    ProcessAccept(acceptedSocket);
                 }
                 catch (ObjectDisposedException)
                 {
@@ -65,12 +61,12 @@ namespace EasySocket.Server.Listeners
                     if (ex.ErrorCode == 89)
                         break;
 
-                    OnError(ex);
+                    ProcessError(ex);
                 }
                 catch (Exception ex)
                 {
                     // 예측하지 못한 오류.
-                    OnError(ex);
+                    ProcessError(ex);
                 }
             }
         }

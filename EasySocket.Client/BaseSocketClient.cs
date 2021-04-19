@@ -56,7 +56,7 @@ namespace EasySocket.Client
 
             if (behaviour == null)
             {
-                _logger.MemberNotSetWarn("Client Behaviour", "SetClientBehaviour");
+                _logger.MemberNotSetUseMethodWarn("Client Behaviour", "SetClientBehaviour");
             }
 
             socket = CreateSocket(config);

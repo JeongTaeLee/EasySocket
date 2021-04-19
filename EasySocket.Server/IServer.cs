@@ -19,7 +19,6 @@ namespace EasySocket.Server
         ServerState state { get; }
         int sessionCount { get; }
 
-        ValueTask StartAsync();
         ValueTask StopAsync();
         ISession GetSessionById(string ssn);
     }

@@ -33,14 +33,12 @@ namespace EasySocket.Test
         public static TcpSocketServer CreateStringTcpServer(ListenerConfig listenerConfig, EventSessionBehaviour sessionBehavior = null)
         {
             return new TcpSocketServer()
-                .AddListener(listenerConfig)
                 .SetLoggerFactory(new ConsoleLoggerFactory())
                 .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
                 .SetSessionConfigrator((ssn) =>
                 {
                     ssn.SetSessionBehaviour(sessionBehavior ?? new EventSessionBehaviour());
                 });
-
         }
 
         // TODO - ��ġ ���� �ȵ�� �ű⼼��

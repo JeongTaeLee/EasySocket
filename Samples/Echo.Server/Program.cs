@@ -84,7 +84,6 @@ namespace Echo.Server
             var loggerFactory = new Echo.Server.Logging.NLogLoggerFactory("NLog.config");
 
             server = new TcpSocketServer()
-                .AddListener(new ListenerConfig("127.0.0.1", 9199, 1000))
                 .SetMsgFilterFactory(new DefaultMsgFilterFactory<EchoFilter>())
                 .SetLoggerFactory(loggerFactory)
                 .SetOnError((server, ex) =>
@@ -96,7 +95,7 @@ namespace Echo.Server
                     ssn.SetSessionBehaviour(new EchoSessionBehaviour());
                 });
 
-            await server.StartAsync();
+            await server.StartAsync(new ListenerConfig("Any", 9199, 1000));
 
             while (true)
             {

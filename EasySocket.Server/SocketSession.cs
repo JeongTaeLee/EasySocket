@@ -24,34 +24,48 @@ namespace EasySocket.Server
 
         public virtual async ValueTask StartAsync(SessionParameter<TSession> prm, Socket sck)
         {
+            if (state == SessionState.Stopped)
+            {
+                throw ExceptionExtensions.TerminatedObjectIOE("Session");
+            }
+            
             param = prm ?? throw new ArgumentNullException(nameof(prm));
             socket = sck ?? throw new ArgumentNullException(nameof(sck));
 
             int prevState = Interlocked.CompareExchange(ref _state, (int)SessionState.Starting, (int)SessionState.None);
             if (prevState != (int)SessionState.None)
             {
-                throw new InvalidOperationException($"The session has an invalid initial state. : Session state is {(SessionState)prevState}");
+                throw ExceptionExtensions.CantStartObjectIOE("Session", (SessionState)prevState);
             }
 
             if (behaviour == null)
             {
-                param.logger.MemberNotSetWarn("Session Behaviour", "SetSessionBehaviour");
+                param.logger.MemberNotSetUseMethodWarn("Session Behaviour", "SetSessionBehaviour");
             }
 
-            behaviour?.OnStartBefore(this);
+            try
+            {
+                behaviour?.OnStartBefore(this);
 
-            await InternalStartAsync();
+                await InternalStartAsync();
+                _state = (int)SessionState.Running;
 
-            _state = (int)SessionState.Running;
-
-            OnStarted();
+                OnStarted();
+            }
+            finally
+            {
+                if (state != SessionState.Running)
+                {
+                    _state = (int)SessionState.None;
+                }
+            }
         }
         
         public virtual async ValueTask StopAsync()
         {
             if (_state != (int)SessionState.Running)
             {
-                throw new InvalidOperationException($"The session has an invalid state. : Session state is {(SessionState)_state}");
+                throw ExceptionExtensions.CantStopObjectIOE("Session", state);
             }
 
             await ProcessStopAsync();
@@ -62,9 +76,9 @@ namespace EasySocket.Server
         /// </summary>
         protected virtual void OnStarted()
         {
-            if (_state != (int)SessionState.Running)
+            if (state != SessionState.Running)
             {
-                param.logger.Error($"The session has an invalid state. : Session state is {(SessionState)_state}");
+                ExceptionExtensions.InvalidObjectStateIOE("Session", state);
                 return;
             }
 
@@ -76,9 +90,9 @@ namespace EasySocket.Server
         /// </summary>
         protected virtual void OnStopped()
         {
-            if (_state != (int)SessionState.Stopped)
+            if (state != SessionState.Stopped)
             {
-                param.logger.Error($"The session has an invalid state. : Session state is {(SessionState)_state}");
+                ExceptionExtensions.InvalidObjectStateIOE("Session", state);
                 return;
             }
 
@@ -93,6 +107,7 @@ namespace EasySocket.Server
             int prevState = Interlocked.CompareExchange(ref _state, (int)SessionState.Stopping, (int)SessionState.Running);
             if (prevState != (int)SessionState.Running)
             {
+                ExceptionExtensions.InvalidObjectStateIOE("Session", (SessionState)prevState);
                 return;
             }
 
@@ -108,6 +123,11 @@ namespace EasySocket.Server
         /// </summary>
         protected long ProcessReceive(ReadOnlySequence<byte> sequence)
         {
+            if (state != SessionState.Running)
+            {
+                ExceptionExtensions.InvalidObjectStateIOE("Session", state);
+            }
+
             try
             {
                 var sequenceReader = new SequenceReader<byte>(sequence);
