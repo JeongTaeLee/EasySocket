@@ -70,7 +70,7 @@ namespace Echo.Client
             Console.WriteLine($"started client : index({myIndex})");
         }
 
-        public void OnStoped(IClient client)
+        public void OnStopped(IClient client)
         {
             Console.WriteLine($"stopped client : index({myIndex})");
         }

@@ -61,7 +61,7 @@ namespace EasySocket.Test.Servers
         [TestMethod]
         public async Task SessionBehaviourCallbackTest()
         {
-            const int CONNECTOR_COUNT = 10;
+            const int CONNECTOR_COUNT = 1;
 
             int createdSessionCount = 0;
             int onStartBeforeCalled = 0;

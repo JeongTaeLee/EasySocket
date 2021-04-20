@@ -159,7 +159,7 @@ namespace EasySocket.Client
             socket = null;
             _state = (int)ClientState.Stopped;
 
-            behaviour?.OnStoped(this as TSocketClient);
+            behaviour?.OnStopped(this as TSocketClient);
         }
 
         /// <summary>

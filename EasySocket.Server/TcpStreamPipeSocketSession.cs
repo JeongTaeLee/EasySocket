@@ -9,12 +9,10 @@ namespace EasySocket.Server
     public class TcpStreamPipeSocketSession : PipeSocketSession<TcpStreamPipeSocketSession>
     {
         private NetworkStream _networkStream = null;
-        private CancellationTokenSource _cancellationTokenSource = null;
 
         protected override ValueTask StartPipe(out PipeWriter writer, out PipeReader reader)
         {
             _networkStream = new NetworkStream(socket);
-            _cancellationTokenSource = new CancellationTokenSource();
 
             writer = null;
             reader = PipeReader.Create(_networkStream);
@@ -27,9 +25,6 @@ namespace EasySocket.Server
             _networkStream?.Close();
             _networkStream = null;
 
-            _cancellationTokenSource.Cancel();
-            _cancellationTokenSource = null;
-
             return new ValueTask();
         }
 
@@ -39,7 +34,7 @@ namespace EasySocket.Server
             {
                 while (true)
                 {
-                    var result = await pipeReader.ReadAsync(_cancellationTokenSource.Token);
+                    var result = await pipeReader.ReadAsync();
                     var buffer = result.Buffer;
 
                     var readLength = 0L;
@@ -75,10 +70,6 @@ namespace EasySocket.Server
                         pipeReader.AdvanceTo(buffer.GetPosition(readLength));
                     }
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                // cancel~
             }
             catch (SocketException ex)
             {
