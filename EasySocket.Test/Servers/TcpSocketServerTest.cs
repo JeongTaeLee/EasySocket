@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using EasySocket.Common.Protocols.MsgFilters.Factories;
 using EasySocket.Server;
+using EasySocket.Server.Listeners;
 using EasySocket.Test.Components;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -14,51 +17,158 @@ namespace EasySocket.Test.Servers
     [TestClass]
     public class TcpSocketServerTest
     {
-        // [TestMethod]
-        // public async Task ServerStartTest()
-        // {
-        //     var server = new TcpSocketServer();
+        [TestMethod]
+        public async Task ListenerAddRemoveTest()
+        {
+            const int CONNECTE_COUNT = 100;
 
-        //     // 초기 상태 테스트.
-        //     Assert.AreEqual(server.state, ServerState.None);
-            
-        //     //정상 상황 테스트.
-        //     var freeLocalPort = TestExtensions.GetFreePort("127.0.0.1");
-        //     var startTask = server
-        //         .AddListener(new Server.Listeners.ListenerConfig("127.0.0.1", freeLocalPort, 1000))
-        //         .SetLoggerFactory(new ConsoleLoggerFactory())
-        //         .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
-        //         .SetSessionConfigrator((ssn) =>
-        //         {
-       
-        //         })
-        //         .StartAsync().ConfigureAwait(false);
+            int onStartBeforeCalled = 0;
+            int onStartAfterCalled = 0;
+            int onStoppedCalled = 0;
+            int onReceivedCalled = 0;
+            int onErrorCalled = 0;
 
-        //     // 시작중인 상태 체크 -> Async 지만 바로 시작할 수도 있으니 Running 까지 Pass 로 처리한다.
-        //     Assert.IsTrue(server.state == ServerState.Starting || server.state == ServerState.Running);
+            var ssnBhvr = new EventSessionBehaviour();
+            ssnBhvr.onStartBefore += (inSsn) => Interlocked.Increment(ref onStartBeforeCalled);
+            ssnBhvr.onStartAfter += (inSsn) => Interlocked.Increment(ref onStartAfterCalled);
+            ssnBhvr.onStopped += (inSsn) => Interlocked.Increment(ref onStoppedCalled);
+            ssnBhvr.onReceived += (inSsn) => Interlocked.Increment(ref onReceivedCalled);
+            ssnBhvr.onError += (inSsn) => Interlocked.Increment(ref onErrorCalled);
 
-        //     await startTask;
+            // 서버 생성.
+            var server = TestExtensions.CreateTcpSocketServer(ssnBhvr);
 
-        //     // 서버 진행 중..
-        //     Assert.AreEqual(server.state, ServerState.Running);
+            int curPort = 9199;
 
-        //     var stopTask = server.StopAsync();
+            // 서버 시작
+            await server.StartAsync(new ListenerConfig("127.0.0.1", curPort, 100));
 
-        //     // 종료중인 상태 체크 -> Async 지만 바로 종료될 수 있으니 Stopped 까지 Pass 로 처리한다.
-        //     Assert.IsTrue(server.state == ServerState.Stopping || server.state == ServerState.Stopped);
+            {
+                // 연결 
+                var client = await TestExtensions.ConnectTcpSocketClient("127.0.0.1", curPort);
 
-        //     await stopTask;
+                // 대기
+                await Task.Delay(100);
 
-        //     // 종료 상태 체크.
-        //     Assert.AreEqual(server.state, ServerState.Stopped);
+                // 리스너 종료
+                await server.StopListenerAsync(curPort);
 
-        //     // 서버는 재시작되면 안됨..
-        //     await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () =>
-        //     {
-        //         await server.StartAsync();
-        //     });
-        // }
-        
+                // 체크
+                Assert.AreEqual(server.sessionCount, 1);
+                Assert.AreEqual(server.sessionCount, 1);
+
+                // 세션 종료
+                await client.StopAsync();
+
+                // 대기
+                await Task.Delay(100);
+
+                // 종료 후 세션 카운트 체크
+                Assert.AreEqual(server.sessionCount, 0);
+                Assert.AreEqual(server.sessionCount, 0);
+
+                // 종료 후 연결(예외 발생해야함)
+                await Assert.ThrowsExceptionAsync<SocketException>(async () =>
+                {
+                    await TestExtensions.ConnectTcpSocketClient("127.0.0.1", curPort);
+                });
+            }
+
+            {
+                // 다시 시작
+                await server.StartListenerAsync(new ListenerConfig("127.0.0.1", curPort, 100));
+
+                // 연결 
+                var client = await TestExtensions.ConnectTcpSocketClient("127.0.0.1", curPort);
+
+                // 대기
+                await Task.Delay(100);
+
+                // 체크
+                Assert.AreEqual(server.sessionCount, 1);
+                
+                // 리스너 종료
+                await server.StopListenerAsync(curPort);
+
+                // 세션 종료
+                await client.StopAsync();
+
+                // 대기
+                await Task.Delay(100);
+
+                // 체크
+                Assert.AreEqual(server.sessionCount, 0);
+            }
+
+            {
+                var secondPort = 9192;
+
+                // 두개의 리스너 실행
+                await server.StartListenersAsync(new List<ListenerConfig>()
+                {
+                    new ListenerConfig("127.0.0.1", curPort, 100),
+                    new ListenerConfig("127.0.0.1", secondPort, 100),
+                });
+
+                // 두개 포트 연결 모드 시도
+                var client = await TestExtensions.ConnectTcpSocketClient("127.0.0.1", curPort);
+                var secondClient = await TestExtensions.ConnectTcpSocketClient("127.0.0.1", secondPort);
+
+                // 대기
+                await Task.Delay(100);
+
+                // 접속 후 체크
+                Assert.AreEqual(server.sessionCount, 2);
+
+                // 종료 대기
+                await Task.WhenAll(client.StopAsync(), secondClient.StopAsync());
+
+                // 대기
+                await Task.Delay(100);
+
+                // 종료 후 체크
+                Assert.AreEqual(server.sessionCount, 0);
+
+                // 첫번째 포트 종료
+                await server.StopListenerAsync(curPort);
+
+                // 첫번째 포트 접속 실패 테스트
+                await Assert.ThrowsExceptionAsync<SocketException>(async () =>
+                {
+                    await TestExtensions.ConnectTcpSocketClient("127.0.0.1", curPort);
+                });
+
+                // 열려있는 두번째 포트 접속 테스트
+                secondClient = await TestExtensions.ConnectTcpSocketClient("127.0.0.1", secondPort);
+
+                // 대기
+                await Task.Delay(100);
+
+                // 접속 후 체크
+                Assert.AreEqual(server.sessionCount, 1);
+
+                // 종료 대기
+                await secondClient.StopAsync();
+
+                // 대기
+                await Task.Delay(100);
+
+                // 종료 후 체크
+                Assert.AreEqual(server.sessionCount, 0);
+
+                // 두 번째 포트 종료
+                await server.StopListenerAsync(secondPort);
+
+                // 두번째 포트에 재연결 실패 테스트
+                await Assert.ThrowsExceptionAsync<SocketException>(async () =>
+                {
+                    await TestExtensions.ConnectTcpSocketClient("127.0.0.1", secondPort);
+                });
+            }
+
+            await server.StopAsync();
+        }
+
         [TestMethod]
         public async Task SessionBehaviourCallbackTest()
         {
@@ -97,7 +207,7 @@ namespace EasySocket.Test.Servers
             Assert.AreEqual(server.state, ServerState.Running);
 
             // 클라이언트 연결
-            var clients = await TestExtensions.ConnectTcpSocketClient("127.0.0.1", freeLocalPort, CONNECTOR_COUNT);
+            var clients = await TestExtensions.ConnectTcpSocketClients("127.0.0.1", freeLocalPort, CONNECTOR_COUNT);
 
             // 대기
             await Task.Delay(1000);

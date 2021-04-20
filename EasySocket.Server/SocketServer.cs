@@ -166,7 +166,8 @@ namespace EasySocket.Server
                 throw;
             }
         }
-        private async ValueTask StartListenersAsync(List<ListenerConfig> listenerCnfgs)
+
+        public async ValueTask StartListenersAsync(List<ListenerConfig> listenerCnfgs)
         {
             if (listenerCnfgs == null)
             {

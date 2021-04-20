@@ -8,13 +8,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EasySocket.Test
 {
     public static class TestExtensions
     {
-        public static TcpSocketServer CreateStringTcpServer(EventSessionBehaviour sessionBehavior = null)
+        public static TcpSocketServer CreateTcpSocketServer(EventSessionBehaviour sessionBehavior = null)
         {
             return new TcpSocketServer()
                 .SetLoggerFactory(new ConsoleLoggerFactory())
@@ -25,7 +26,24 @@ namespace EasySocket.Test
                 });
         }
 
-        public static async Task<List<TcpSocketClient>> ConnectTcpSocketClient(string ip, int port, int connectCount, EventClientBehavior clientBehavior = null)
+        public static async Task<TcpSocketClient> ConnectTcpSocketClient(string ip, int port, EventClientBehavior cntBhvr = null)
+        {
+            var client = new TcpSocketClient()
+                .SetLoggerFactory(new ConsoleLoggerFactory())
+                .SetMsgFilter(new StringMsgFilter())
+                .SetSocketClientConfig(new SocketClientConfig(ip, port));
+
+            if (cntBhvr != null)
+            {
+                client.SetClientBehaviour(cntBhvr);
+            }
+
+            await client.StartAsync();
+
+            return client;
+        }
+
+        public static async Task<List<TcpSocketClient>> ConnectTcpSocketClients(string ip, int port, int connectCount, EventClientBehavior clientBehavior = null)
         {
             var lst = new List<TcpSocketClient>();
 
@@ -35,7 +53,6 @@ namespace EasySocket.Test
                     .SetLoggerFactory(new ConsoleLoggerFactory())
                     .SetMsgFilter(new StringMsgFilter())
                     .SetSocketClientConfig(new SocketClientConfig(ip, port));
-                //.SetClientBehaviour(clientBehavior);
 
                 if (clientBehavior != null)
                 {
@@ -49,6 +66,7 @@ namespace EasySocket.Test
 
             return lst;
         }
+
 
         // TODO - ��ġ ���� �ȵ�� �ű⼼��
         public static void ForAll<T>(this IEnumerable<T> source, Action<T> action)
