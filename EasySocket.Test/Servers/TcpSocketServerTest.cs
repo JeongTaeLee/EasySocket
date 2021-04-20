@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using EasySocket.Common.Protocols.MsgFilters.Factories;
@@ -61,7 +62,7 @@ namespace EasySocket.Test.Servers
         [TestMethod]
         public async Task SessionBehaviourCallbackTest()
         {
-            const int CONNECTOR_COUNT = 1;
+            const int CONNECTOR_COUNT = 10;
 
             int createdSessionCount = 0;
             int onStartBeforeCalled = 0;
@@ -95,15 +96,11 @@ namespace EasySocket.Test.Servers
             // 서버 진행 중..
             Assert.AreEqual(server.state, ServerState.Running);
 
+            // 클라이언트 연결
+            var clients = await TestExtensions.ConnectTcpSocketClient("127.0.0.1", freeLocalPort, CONNECTOR_COUNT);
 
-            // 테스트용 커넥터 (임시 Client) 를 만든다.
-            Connector[] connectors = Enumerable.Range(0, CONNECTOR_COUNT)
-                .Select(x => new Connector(new IPEndPoint(IPAddress.Parse("127.0.0.1"), freeLocalPort)))
-                .ToArray();
-
-            // 커넥터를 모두 연결시킨다
-            await Task.WhenAll(connectors.Select(x => x.ConnectAsync()));
-            await Task.Delay(1000); // TODO - 연결하는 Task 를 다 기다렸지만.. 바로 Counting이 되지 않는다.
+            // 대기
+            await Task.Delay(1000);
 
             // 생성된 세션 수는 합계 CONNECTOR_COUNT 이 되어야 한다.
             Assert.AreEqual(createdSessionCount, CONNECTOR_COUNT);
@@ -112,20 +109,27 @@ namespace EasySocket.Test.Servers
             Assert.AreEqual(onStartBeforeCalled, CONNECTOR_COUNT);
             Assert.AreEqual(onStartAfterCalled, CONNECTOR_COUNT);
 
-
             // "Hello" 문자열을 모두 보낸다.
-            await Task.WhenAll(connectors.Select(x => x.SendStringAsync("Hello")));
+            var sendingMsg = Encoding.Default.GetBytes("Hello");
+            await Task.WhenAll(clients.Select(async client => await client.SendAsync(sendingMsg)));
+            
+            // 대기
             await Task.Delay(1000); // TODO - 보내는 Task 를 다 기다렸지만.. 바로 Counting이 되지 않는다.
 
             // 받은 횟수는 합계 CONNECTOR_COUNT 이 되어야 한다.
             Assert.AreEqual(onReceivedCalled, CONNECTOR_COUNT);
 
+            // 모든 클라이언트 종료.
+            await Task.WhenAll(clients.Select(async client => await client .StopAsync()));
 
-            // 서버를 끈다.
-            await server.StopAsync();
+            // 대기
+            await Task.Delay(1000);
 
             // 종료 시 콜백 호출 횟수는 합계 CONNECTOR_COUNT 이 되어야 한다.
             Assert.AreEqual(onStoppedCalled, CONNECTOR_COUNT);
+
+            // 서버를 끈다.
+            await server.StopAsync();
 
             // 에러 횟수는 합계 0 이 되어야 한다.
             Assert.AreEqual(onErrorCalled, 0);
