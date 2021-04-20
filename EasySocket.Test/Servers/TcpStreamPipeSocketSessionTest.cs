@@ -38,6 +38,8 @@ namespace EasySocket.Test.Servers
             // 다수의 Client 시작 
             var clients = await TestExtensions.ConnectTcpSocketClient("127.0.0.1", 9199, CONNECTOR_COUNT);
 
+            await Task.Delay(1000);
+
             // 클라이언트 갯수 체크.
             Assert.AreEqual(CONNECTOR_COUNT, ssns.Count);
 
@@ -48,7 +50,7 @@ namespace EasySocket.Test.Servers
                 await client.StopAsync();
             }
 
-            await Task.Delay(2000);
+            await Task.Delay(1000);
 
             // 종류 후 클라이언트 갯수 체크
             Assert.AreEqual(0, ssns.Count);

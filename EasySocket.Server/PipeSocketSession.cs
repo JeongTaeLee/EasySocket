@@ -77,7 +77,10 @@ namespace EasySocket.Server
             }
             finally
             {
-                await ProcessStopAsync();
+                if (state == SessionState.Running)
+                {
+                    await ProcessStopAsync();
+                }
             }
         }
 

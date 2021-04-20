@@ -37,36 +37,46 @@ namespace EasySocket.Server.Listeners
 
         private async Task AcceptLoop()
         {
-            while (true)
+            try
             {
-                try
+                while (true)
                 {
-                    var acceptedSocket = await _listenSocket.AcceptAsync().ConfigureAwait(false);
-
-                    if (acceptedSocket == null)
+                    try
                     {
+                        var acceptedSocket = await _listenSocket.AcceptAsync().ConfigureAwait(false);
+
+                        if (acceptedSocket == null)
+                        {
+                            break;
+                        }
+
+                        ProcessAccept(acceptedSocket);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // 종료된 소켓으로 다시 Accepte 호출 할 때.
                         break;
                     }
+                    catch (SocketException ex)
+                    {
+                        // 소켓 종료, .. 오류에서 제외할 코드 있으면 추가하기
+                        if (ex.ErrorCode == 89)
+                            break;
 
-                    ProcessAccept(acceptedSocket);
+                        ProcessError(ex);
+                    }
+                    catch (Exception ex)
+                    {
+                        // 예측하지 못한 오류.
+                        ProcessError(ex);
+                    }
                 }
-                catch (ObjectDisposedException)
+            }
+            finally
+            {
+                if (state == ListenerState.Running)
                 {
-                    // 종료된 소켓으로 다시 Accepte 호출 할 때.
-                    break;
-                }
-                catch (SocketException ex)
-                {
-                    // 소켓 종료, .. 오류에서 제외할 코드 있으면 추가하기
-                    if (ex.ErrorCode == 89)
-                        break;
-
-                    ProcessError(ex);
-                }
-                catch (Exception ex)
-                {
-                    // 예측하지 못한 오류.
-                    ProcessError(ex);
+                    ProcessStop();
                 }
             }
         }

@@ -116,6 +116,8 @@ namespace EasySocket.Server
             _state = (int)SessionState.Stopped;
 
             OnStopped();
+
+            param?.onStop?.Invoke(this as TSession);
         }
 
         /// <summary>
