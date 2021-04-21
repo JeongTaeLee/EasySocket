@@ -18,6 +18,67 @@ namespace EasySocket.Test.Servers
     public class TcpSocketServerTest
     {
         [TestMethod]
+        public async Task SessionConnectTest()
+        {
+            //
+            var ssnBhvr = new EventSessionBehaviour();
+
+            //
+            int curPort = 9199;
+            
+            // 서버 생성.
+            var server = TestExtensions.CreateTcpSocketServer(ssnBhvr);
+
+            // 서버 시작
+            await server.StartAsync(new ListenerConfig("127.0.0.1", curPort, 100));
+
+            // 연결/종료 테스트
+            {
+                // 클라이언트 연결
+                var client = await TestExtensions.ConnectTcpSocketClient("127.0.0.1", curPort);
+
+                // 연결 확인
+                await Task.Delay(100);
+                Assert.AreEqual(1, server.sessionCount);
+
+                await client.StopAsync();
+                
+                // 연결 종료
+                await Task.Delay(100);
+                Assert.AreEqual(0, server.sessionCount);
+            }
+
+            // 다중 연결/종료 테스트
+            {
+                var connectClientCount = 100;
+
+                var clients = await TestExtensions.ConnectTcpSocketClients("127.0.0.1", curPort, connectClientCount);
+
+                // 연결 확인
+                await Task.Delay(100);
+                Assert.AreEqual(connectClientCount, server.sessionCount);
+
+                // 두개 종료
+                await clients[0].StopAsync();
+                await clients[1].StopAsync();
+                connectClientCount -= 2;
+
+                // 종료 후 확인
+                await Task.Delay(100);
+                Assert.AreEqual(connectClientCount, server.sessionCount);
+
+                // 모두 종료
+                await Task.WhenAll(clients.Select(client => client.StopAsync()));
+
+                // 모두 종료 후 확인
+                await Task.Delay(100);
+                Assert.AreEqual(0, server.sessionCount);
+            }
+
+            await server.StopAsync();
+        }
+
+        [TestMethod]
         public async Task ListenerAddRemoveTest()
         {
             //
