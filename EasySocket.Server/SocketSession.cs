@@ -110,6 +110,8 @@ namespace EasySocket.Server
                 ExceptionExtensions.InvalidObjectStateIOE("Session", (SessionState)prevState);
                 return;
             }
+            
+            socket?.Close();
 
             await InternalStopAsync();
 
