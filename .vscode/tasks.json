@@ -2,29 +2,29 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build_EasySocket",
+            "label": "watch",
             "command": "dotnet",
             "type": "process",
             "args": [
-                "build",
-                "${workspaceFolder}/EasySocket/EasySocket.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "build_EasySocket.Test",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
+                "watch",
+                "run",
                 "${workspaceFolder}/EasySocket.Test/EasySocket.Test.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
         },
+
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+            ],
+            "problemMatcher": "$msCompile"
+        },        
+        
         {
             "label": "build_Samples_Echo.Server",
             "command": "dotnet",
@@ -36,7 +36,9 @@
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
+        
         },
+
         {
             "label": "build_Samples_Echo.Client",
             "command": "dotnet",
@@ -49,34 +51,26 @@
             ],
             "problemMatcher": "$msCompile"
         },
+
         {
-            "label": "build",
+            "label": "Test_EasySocket.Test",
             "command": "dotnet",
             "type": "process",
             "args": [
-                "build",
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "publish",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "publish",
+                "test",
                 "${workspaceFolder}/EasySocket.Test/EasySocket.Test.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
         },
+
         {
-            "label": "watch",
+            "label": "publish",
             "command": "dotnet",
             "type": "process",
             "args": [
-                "watch",
-                "run",
+                "publish",
                 "${workspaceFolder}/EasySocket.Test/EasySocket.Test.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"

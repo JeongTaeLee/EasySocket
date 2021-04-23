@@ -35,7 +35,7 @@ namespace EasySocket.Test
 
             if (cntBhvr != null)
             {
-                client.SetClientBehaviour(cntBhvr);
+                client.SetClientBehaviour(cntBhvr ?? new EventClientBehavior());
             }
 
             await client.StartAsync();
@@ -56,7 +56,7 @@ namespace EasySocket.Test
 
                 if (clientBehavior != null)
                 {
-                    client.SetClientBehaviour(clientBehavior);
+                    client.SetClientBehaviour(clientBehavior ?? new EventClientBehavior());
                 }
 
                 await client.StartAsync();
