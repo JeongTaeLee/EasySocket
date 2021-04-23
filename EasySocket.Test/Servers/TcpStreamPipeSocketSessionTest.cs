@@ -41,8 +41,7 @@ namespace EasySocket.Test.Servers
 
             // 여러개 종료
             int stopCount = 5;
-            int targetCount = connectCount - stopCount;
-            while (targetCount < connectCount)
+            for (int stopIndex = 0; stopIndex < stopCount; ++stopIndex)
             {
                 await clients[0].StopAsync();
                 clients.RemoveAt(0);
