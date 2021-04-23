@@ -10,7 +10,7 @@ namespace EasySocket.Server.Listeners
     public abstract class BaseListener : IListener
     {
         public ListenerState state => (ListenerState)_state;
-        public ListenerConfig config { get; private set; } = null;
+        public ListenerConfig config { get; private set; }
         public ListenerAcceptHandler onAccept { get; set; }
         public ListenerErrorHandler onError { get; set; }
 
@@ -24,10 +24,6 @@ namespace EasySocket.Server.Listeners
                 throw ExceptionExtensions.TerminatedObjectIOE("Listener");
             }
 
-            if (cnfg == null)
-            {
-                throw new ArgumentNullException(nameof(cnfg));
-            }
 
             if (string.IsNullOrEmpty(cnfg.ip))
             {
@@ -37,6 +33,11 @@ namespace EasySocket.Server.Listeners
             if (0 > cnfg.port)
             {
                 throw new ArgumentException("Invalid Port Range");
+            }
+
+            if (0 > cnfg.backlog)
+            {
+                throw new ArgumentException("Invalid Backlog Range");
             }
 
             if (lger == null)

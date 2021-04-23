@@ -1,6 +1,8 @@
+using EasySocket.Common;
+
 namespace EasySocket.Server
 {
-    public class SocketServerConfig : ISocketServerConfig
+    public class SocketServerConfig : IDeepCloneableObject<SocketServerConfig>
     {
         public int maxConnection { get; set; } = 10000;
 
@@ -14,12 +16,17 @@ namespace EasySocket.Server
 
         public bool noDelay { get; set; } = true;
 
-        public ISocketServerConfig DeepClone()
+        public SocketServerConfig DeepClone()
         {
             return new SocketServerConfig
             {
-                maxConnection = maxConnection
-        };
+                maxConnection = maxConnection,
+                recvBufferSize = recvBufferSize,
+                sendBufferSize = sendBufferSize,
+                recvTimeout = recvTimeout,
+                sendTimeout = sendTimeout,
+                noDelay = noDelay
+            };
         }
     }
 }

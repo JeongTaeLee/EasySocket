@@ -28,7 +28,7 @@ namespace EasySocket.Server
         protected ISessionContainer<TSession> sessionContainer { get; private set; } = new GUIDSessionContainer<TSession>();
         protected ILogger logger { get; private set; } = null;
 
-        public ISocketServerConfig socketServerConfig { get; private set; } = new SocketServerConfig();
+        public SocketServerConfig socketServerConfig { get; private set; } = new SocketServerConfig();
         public IMsgFilterFactory msgFilterFactory { get; private set; } = null;
         public ILoggerFactory loggerFactory { get; private set; } = null;
 
@@ -139,11 +139,6 @@ namespace EasySocket.Server
 
         public async ValueTask StartListenerAsync(ListenerConfig listenerCnfg)
         {
-            if (listenerCnfg == null)
-            {
-                throw new ArgumentNullException(nameof(listenerCnfg));
-            }
-
             if (!_listenerDict.TryAdd(listenerCnfg.port, default))
             {
                 throw new InvalidOperationException($"The port is already open : the port({listenerCnfg.port}) number cannot be duplicated.");
@@ -361,7 +356,7 @@ namespace EasySocket.Server
         #region Setter / Getter
         public TServer SetSocketServerConfig(SocketServerConfig sckServCnfg)
         {
-            socketServerConfig = sckServCnfg ?? throw new ArgumentNullException(nameof(sckServCnfg));
+            socketServerConfig = sckServCnfg?.DeepClone() ?? throw new ArgumentNullException(nameof(sckServCnfg));
             return this as TServer;
         }
 

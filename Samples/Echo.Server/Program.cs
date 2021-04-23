@@ -77,13 +77,13 @@ namespace Echo.Server
     internal static class Program
     {
         static ILogger logger = LogManager.GetCurrentClassLogger();
-        public static TcpSocketServer server = null;
+        public static TcpStreamPipeSocketServer server = null;
 
         private static async Task Main(string[] args)
         {
             var loggerFactory = new Echo.Server.Logging.NLogLoggerFactory("NLog.config");
 
-            server = new TcpSocketServer()
+            server = new TcpStreamPipeSocketServer()
                 .SetMsgFilterFactory(new DefaultMsgFilterFactory<EchoFilter>())
                 .SetLoggerFactory(loggerFactory)
                 .SetOnError((server, ex) =>

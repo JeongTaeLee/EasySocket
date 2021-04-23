@@ -15,9 +15,9 @@ namespace EasySocket.Test
 {
     public static class TestExtensions
     {
-        public static TcpSocketServer CreateTcpSocketServer(EventSessionBehaviour sessionBehavior = null)
+        public static TcpStreamPipeSocketServer CreateTcpSocketServer(EventSessionBehaviour sessionBehavior = null)
         {
-            return new TcpSocketServer()
+            return new TcpStreamPipeSocketServer()
                 .SetLoggerFactory(new ConsoleLoggerFactory())
                 .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
                 .SetSessionConfigrator((ssn) =>
@@ -31,12 +31,9 @@ namespace EasySocket.Test
             var client = new TcpSocketClient()
                 .SetLoggerFactory(new ConsoleLoggerFactory())
                 .SetMsgFilter(new StringMsgFilter())
-                .SetSocketClientConfig(new SocketClientConfig(ip, port));
-
-            if (cntBhvr != null)
-            {
-                client.SetClientBehaviour(cntBhvr ?? new EventClientBehavior());
-            }
+                .SetSocketClientConfig(new SocketClientConfig(ip, port))
+                .SetClientBehaviour(cntBhvr ?? new EventClientBehavior());
+            
 
             await client.StartAsync();
 
@@ -52,12 +49,8 @@ namespace EasySocket.Test
                 var client = new TcpSocketClient()
                     .SetLoggerFactory(new ConsoleLoggerFactory())
                     .SetMsgFilter(new StringMsgFilter())
-                    .SetSocketClientConfig(new SocketClientConfig(ip, port));
-
-                if (clientBehavior != null)
-                {
-                    client.SetClientBehaviour(clientBehavior ?? new EventClientBehavior());
-                }
+                    .SetSocketClientConfig(new SocketClientConfig(ip, port))
+                    .SetClientBehaviour(clientBehavior ?? new EventClientBehavior());
 
                 await client.StartAsync();
 

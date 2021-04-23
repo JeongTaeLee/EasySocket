@@ -31,7 +31,7 @@ namespace EasySocket.Test.Servers
             await server.StartAsync(new ListenerConfig("127.0.0.1", port, 1000));
 
             // 다수의 클라이언트 연결
-            int connectCount = 10000;
+            int connectCount = 100;
             var clients = await TestExtensions.ConnectTcpSocketClients("127.0.0.1", port, connectCount);
 
             // 연결 콜백 확인.

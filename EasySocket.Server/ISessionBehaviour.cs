@@ -7,7 +7,6 @@ namespace EasySocket.Server
     {
         void OnStartBefore(ISession ssn);
         void OnStartAfter(ISession ssn);
-
         void OnStopped(ISession ssn);
 
         ValueTask OnReceived(ISession ssn, object packet);

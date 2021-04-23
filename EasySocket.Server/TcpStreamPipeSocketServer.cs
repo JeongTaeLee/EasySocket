@@ -3,7 +3,7 @@ using EasySocket.Server.Listeners;
 
 namespace EasySocket.Server
 {
-    public class TcpSocketServer : SocketServer<TcpSocketServer, TcpStreamPipeSocketSession>
+    public class TcpStreamPipeSocketServer : SocketServer<TcpStreamPipeSocketServer, TcpStreamPipeSocketSession>
     {
         protected override IListener CreateListener()
         {

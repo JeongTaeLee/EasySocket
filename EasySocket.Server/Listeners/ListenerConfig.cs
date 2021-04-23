@@ -1,10 +1,12 @@
+using EasySocket.Common;
+
 namespace EasySocket.Server.Listeners
 {
-    public class ListenerConfig
+    public readonly struct ListenerConfig
     {
-        public readonly string ip;
-        public readonly int port;
-        public readonly int backlog;
+        public string ip { get; }
+        public int port { get; }
+        public int backlog { get; }
 
         public ListenerConfig(string ip, int port, int backlog)
         {
