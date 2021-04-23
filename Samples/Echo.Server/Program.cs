@@ -55,7 +55,7 @@ namespace Echo.Server
 
     }
 
-    internal class EchoFilter : FixedHeaderMsgFilter
+    internal class EchoFilter : FixedHeaderSizeMsgFilter
     {
         public EchoFilter()
             : base(4)

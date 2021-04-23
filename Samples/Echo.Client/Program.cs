@@ -11,7 +11,7 @@ using System.Diagnostics;
 
 namespace Echo.Client
 {
-    class EchoFilter : FixedHeaderMsgFilter
+    class EchoFilter : FixedHeaderSizeMsgFilter
     {
         public EchoFilter()
             : base(4)

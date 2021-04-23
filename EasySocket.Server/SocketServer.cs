@@ -3,10 +3,11 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using EasySocket.Common.Extensions;
-using EasySocket.Server.Listeners;
 using EasySocket.Common.Logging;
+using EasySocket.Server.Listeners;
+using EasySocket.Common.Extensions;
 using EasySocket.Common.Protocols.MsgFilters.Factories;
+using EasySocket.Common.Protocols.MsgFilters;
 using System.Collections.Concurrent;
 
 namespace EasySocket.Server
@@ -15,24 +16,51 @@ namespace EasySocket.Server
         where TServer : SocketServer<TServer, TSession>
         where TSession : SocketSession<TSession>
     {
+        /// <summary>
+        /// 서버의 상태(<see cref="ServerState"/>)를 반환하는 Property 입니다.
+        /// </summary>
         public ServerState state => (ServerState)_state;
+
+        /// <summary>
+        /// 서버에 연결된 Session 개수 입니다.
+        /// </summary>
         public int sessionCount => sessionContainer.count;
 
         private int _state = (int)ServerState.None;
-
         private ConcurrentDictionary<int, (ListenerConfig, IListener)> _listenerDict = new ConcurrentDictionary<int, (ListenerConfig, IListener)>();
-
         private ILogger _sessionLogger = null;
         private ILogger _listenerLogger = null;
 
         protected ISessionContainer<TSession> sessionContainer { get; private set; } = new GUIDSessionContainer<TSession>();
         protected ILogger logger { get; private set; } = null;
 
+        /// <summary>
+        /// 서버의 설정 객체입니다.
+        /// </summary>
         public SocketServerConfig socketServerConfig { get; private set; } = new SocketServerConfig();
+
+        /// <summary>
+        /// 메세지를 필터링하는 <see cref="IMsgFilter"/> 파생 클래스를 생성하는 객체입니다.
+        /// <see cref="SocketServer{TServer, TSession}.SetMsgFilterFactory(IMsgFilterFactory)"/>로 초기화 하며,
+        /// Null 일 수 없습니다.
+        /// </summary>
         public IMsgFilterFactory msgFilterFactory { get; private set; } = null;
+
+        /// <summary>
+        /// 로그를 출력하는 <see cref="ILogger"/> 파생 클래스를 생성하는 객체입니다.
+        /// <see cref="SocketServer{TServer, TSession}.SetLoggerFactory(ILoggerFactory)"/>로 초기화 하며,
+        /// Null 일 수 없습니다.
+        /// </summary>
         public ILoggerFactory loggerFactory { get; private set; } = null;
 
+        /// <summary>
+        /// 서버에 새로운 세션이 연결 되었을때 연결된 세션을 설정하는 콜백 함수 입니다. 
+        /// </summary>
         public Action<ISession> sessionConfigrator { get; private set; } = null;
+
+        /// <summary>
+        /// 서버 내부 로직에서 예외가 발생 했을 때 호출되는 콜백 함수 입니다. 
+        /// </summary>
         public Action<TServer, Exception> onError { get; private set; } = null;
 
         public ValueTask StartAsync(ListenerConfig listenerCnfg)
@@ -119,115 +147,18 @@ namespace EasySocket.Server
                 throw ExceptionExtensions.CantStopObjectIOE("Server", (ServerState)prevState);
             }
 
-            await StopAllListenersAsync();
+            await StopAllListenerAsync();
             await StopAllSessionAsync();
             await InternalStopAsync();
 
             _state = (int)ServerState.Stopped;
         }
-        
-        private void InitializeListener(IListener listener)
-        {
-            if (listener == null)
-            {
-                throw new ArgumentNullException(nameof(listener));
-            }
 
-            listener.onAccept = OnAcceptFromListener;
-            listener.onError = OnErrorFromListener;
-        }
-
-        public async ValueTask StartListenerAsync(ListenerConfig listenerCnfg)
-        {
-            if (!_listenerDict.TryAdd(listenerCnfg.port, default))
-            {
-                throw new InvalidOperationException($"The port is already open : the port({listenerCnfg.port}) number cannot be duplicated.");
-            }
-
-            try
-            {
-                var listener = CreateListener();
-
-                InitializeListener(listener);
-
-                await listener.StartAsync(listenerCnfg, _listenerLogger);
-
-                _listenerDict[listenerCnfg.port] = (listenerCnfg, listener);
-            }
-            catch (System.Exception)
-            {
-                _listenerDict.TryRemove(listenerCnfg.port, out var _);
-
-                throw;
-            }
-        }
-
-        public async ValueTask StartListenersAsync(List<ListenerConfig> listenerCnfgs)
-        {
-            if (listenerCnfgs == null)
-            {
-                throw new ArgumentNullException(nameof(listenerCnfgs));
-            }
-
-            if (0 >= listenerCnfgs.Count)
-            {
-                throw new ArgumentException($"{nameof(listenerCnfgs)} must contain at least one ListenerConfig");
-            }
-
-            foreach (var cnfg in listenerCnfgs)
-            {
-                await StartListenerAsync(cnfg);
-
-                logger.InfoFormat("Started listener : {0}", cnfg.ToString());
-            }
-        }
-
-        public async ValueTask StopListenerAsync(int port)
-        {
-            if (!_listenerDict.TryRemove(port, out var listenerPair))
-            {
-                throw new ArgumentNullException($"Listener(Port {port}) did not start.");
-            }
-
-            await listenerPair.Item2.StopAsync();
-        }
-
-        public async ValueTask StopAllListenersAsync()
-        {
-            if (0 >= _listenerDict.Count)
-            {
-                return;
-            }
-
-            var listenerPairIter = _listenerDict.Values.GetEnumerator();
-            while (listenerPairIter.MoveNext())
-            {
-                var curListenerPair = listenerPairIter.Current;
-                await StopListenerAsync(curListenerPair.Item1.port);
-            }
-        }
-
-        private async ValueTask StopAllSessionAsync()
-        {
-            var iter = sessionContainer.GetSessionEnumerator();
-
-            var tasks = new List<Task>();
-            while (iter.MoveNext())
-            {
-                try
-                {
-                    var session = iter.Current as TSession;
-                    tasks.Add(session.StopAsync().AsTask());
-                }
-                catch (Exception ex)
-                {
-                    ProcessError(ex);
-                }
-            }
-
-            await Task.WhenAll(tasks);
-        }
-
+        /// <summary>
+        /// 리스너에서 새 <see cref="Socket"/>이 연결되 었을 때 호출되는 콜백
+        /// </summary>
+        /// <param name="listener">호출한 <see cref="IListener"/>.</param>
+        /// <param name="sck">연결된 <see cref="Socket"/>.</param>
         protected async ValueTask OnAcceptFromListener(IListener listener, Socket sck)
         {
             TSession session = null;
@@ -324,11 +255,20 @@ namespace EasySocket.Server
             }
         }
 
+        /// <summary>
+        /// 리스너에서 에외 발생시 호출되는 콜백.
+        /// </summary>
+        /// <param name="listener">호출한 <see cref="IListener"/>.</param>
+        /// <param name="ex">발생한 예외.</param>
         protected void OnErrorFromListener(IListener listener, Exception ex)
         {
             ProcessError(ex);
         }
 
+        /// <summary>
+        /// 세션이 종료될 때 최종적으로 호출듸는 콜백.
+        /// </summary>
+        /// <param name="session">종료된 세션.</param>
         protected void OnStopFromSession(TSession session)
         {
             try
@@ -341,17 +281,144 @@ namespace EasySocket.Server
             }
         }
 
+        /// <summary>
+        /// 서버 내부에서 예외 발생시 호출되는 콜백
+        /// </summary>
+        /// <param name="ex">발샹한 예외</param>
         protected void ProcessError(Exception ex)
         {
             onError?.Invoke(this as TServer, ex);
         }
 
+        /// <summary>
+        /// 서버가 시작될때 호출되는 함수, <see cref="SocketServer{TServer, TSession}"/> 파생 클래스에서 재정의 합니다.
+        /// </summary>
         protected virtual ValueTask InternalStartAsync() { return new ValueTask(); }
+
+        /// <summary>
+        /// 서버가 종료될때 호출되는 함수, <see cref="SocketServer{TServer, TSession}"/> 파생 클래스에서 재정의 합니다.
+        /// </summary>
         protected virtual ValueTask InternalStopAsync() { return new ValueTask(); }
 
+        /// <summary>
+        /// 서버에서 사용할 리스너를 생성하는 함수 <see cref="SocketServer{TServer, TSession}"/> 파생 클래스에서 재정의 합니다.
+        /// </summary>
         protected abstract IListener CreateListener();
+        
+        /// <summary>
+        /// 서버에서 사용할 세션을 생성하는 함수 <see cref="SocketServer{TServer, TSession}"/> 파생 클래스에서 재정의 합니다.
+        /// </summary>
         protected abstract TSession CreateSession();
 
+        /// <summary>
+        /// 새 리스너를 작동합니다.
+        /// </summary>
+        /// <param name="listenerCnfg">작동할 리스너의 설정 객체입니다.</param>
+        public async ValueTask StartListenerAsync(ListenerConfig listenerCnfg)
+        {
+            if (!_listenerDict.TryAdd(listenerCnfg.port, default))
+            {
+                throw new InvalidOperationException($"The port is already open : the port({listenerCnfg.port}) number cannot be duplicated.");
+            }
+
+            try
+            {
+                var listener = CreateListener();
+
+                listener.onAccept = OnAcceptFromListener;
+                listener.onError = OnErrorFromListener;
+        
+                await listener.StartAsync(listenerCnfg, _listenerLogger);
+
+                _listenerDict[listenerCnfg.port] = (listenerCnfg, listener);
+            }
+            catch (System.Exception)
+            {
+                _listenerDict.TryRemove(listenerCnfg.port, out var _);
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 다수의 새 리스너를 작동합니다.
+        /// </summary>
+        /// <param name="listenerCnfgs">작동할 리스너의 설정 객체입니다.</param>
+        public async ValueTask StartListenersAsync(List<ListenerConfig> listenerCnfgs)
+        {
+            if (listenerCnfgs == null)
+            {
+                throw new ArgumentNullException(nameof(listenerCnfgs));
+            }
+
+            if (0 >= listenerCnfgs.Count)
+            {
+                throw new ArgumentException($"{nameof(listenerCnfgs)} must contain at least one ListenerConfig");
+            }
+
+            foreach (var cnfg in listenerCnfgs)
+            {
+                await StartListenerAsync(cnfg);
+
+                logger.InfoFormat("Started listener : {0}", cnfg.ToString());
+            }
+        }
+
+        /// <summary>
+        /// 인자의 포트로 작동중인 리스너를 중지합니다.
+        /// </summary>
+        /// <param name="port">작동중인 리스너의 포트</param>
+        public async ValueTask StopListenerAsync(int port)
+        {
+            if (!_listenerDict.TryRemove(port, out var listenerPair))
+            {
+                throw new ArgumentNullException($"Listener(Port {port}) did not start.");
+            }
+
+            await listenerPair.Item2.StopAsync();
+        }
+
+        /// <summary>
+        /// 모든 리스너를 중지합니다.
+        /// </summary>
+        public async ValueTask StopAllListenerAsync()
+        {
+            if (0 >= _listenerDict.Count)
+            {
+                return;
+            }
+
+            var listenerPairIter = _listenerDict.Values.GetEnumerator();
+            while (listenerPairIter.MoveNext())
+            {
+                var curListenerPair = listenerPairIter.Current;
+                await StopListenerAsync(curListenerPair.Item1.port);
+            }
+        }
+
+        /// <summary>
+        /// 모든 세션과의 연결을 종료합니다.
+        /// </summary>
+        public async ValueTask StopAllSessionAsync()
+        {
+            var iter = sessionContainer.GetSessionEnumerator();
+
+            var tasks = new List<Task>();
+            while (iter.MoveNext())
+            {
+                try
+                {
+                    var session = iter.Current as TSession;
+                    tasks.Add(session.StopAsync().AsTask());
+                }
+                catch (Exception ex)
+                {
+                    ProcessError(ex);
+                }
+            }
+
+            await Task.WhenAll(tasks);
+        }
 
         #region Setter / Getter
         public TServer SetSocketServerConfig(SocketServerConfig sckServCnfg)

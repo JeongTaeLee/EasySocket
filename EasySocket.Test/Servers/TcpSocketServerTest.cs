@@ -154,7 +154,7 @@ namespace EasySocket.Test.Servers
             Assert.AreEqual(clientCount, server.sessionCount);
 
             // 모두 리스너 모두 스톱
-            await server.StopAllListenersAsync();
+            await server.StopAllListenerAsync();
 
             // 연결 실패 확인.
             await Assert.ThrowsExceptionAsync<SocketException>(async () => { await TestExtensions.ConnectTcpSocketClient("127.0.0.1", curPort);});

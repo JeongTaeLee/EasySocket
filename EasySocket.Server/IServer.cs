@@ -20,6 +20,7 @@ namespace EasySocket.Server
         int sessionCount { get; }
 
         ValueTask StopAsync();
+        
         ISession GetSessionById(string ssn);
     }
 }

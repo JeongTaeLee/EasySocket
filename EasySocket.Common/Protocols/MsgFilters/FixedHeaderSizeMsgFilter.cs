@@ -6,7 +6,7 @@ namespace EasySocket.Common.Protocols.MsgFilters
     /// Body 부분 사이즈를 고정된 사이즈의 헤더에 포함하는 Msg 필터
     /// Message 구조 = Header(width BodySize) + Body
     ///</summary>
-    public abstract class FixedHeaderMsgFilter : IMsgFilter
+    public abstract class FixedHeaderSizeMsgFilter : IMsgFilter
     {
         /// <summary>
         /// 고정된 헤더 사이즈
@@ -23,7 +23,7 @@ namespace EasySocket.Common.Protocols.MsgFilters
         /// </summary>
         protected bool parsedHeader { get; private set; } = false;
 
-        protected FixedHeaderMsgFilter(int headerSize)
+        protected FixedHeaderSizeMsgFilter(int headerSize)
         {
             this.headerSize = headerSize;
         }
