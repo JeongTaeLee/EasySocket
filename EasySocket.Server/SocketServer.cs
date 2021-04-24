@@ -64,8 +64,6 @@ namespace EasySocket.Server
         /// </summary>
         public Action<TServer, Exception> onError { get; private set; } = null;
 
-        public IReadOnlyList<ISession> sessions => throw new NotImplementedException();
-
         public ValueTask StartAsync(ListenerConfig listenerCnfg)
         {
             return StartAsync(new List<ListenerConfig>() { listenerCnfg });
@@ -150,8 +148,8 @@ namespace EasySocket.Server
                 throw ExceptionExtensions.CantStopObjectIOE("Server", (ServerState)prevState);
             }
 
-            await StopAllListenerAsync();
-            await StopAllSessionAsync();
+            await InternalStopAllListenerAsync();
+            await InternalStopAllSession();
             await InternalStopAsync();
 
             _state = (int)ServerState.Stopped;
@@ -187,7 +185,7 @@ namespace EasySocket.Server
         {
             if (!_listenerDict.TryRemove(port, out var listenerPair))
             {
-                throw new ArgumentNullException($"Listener(Port {port}) did not start.");
+                return;
             }
 
             if (listenerPair.Item2.state != ListenerState.Running)
@@ -198,6 +196,62 @@ namespace EasySocket.Server
             await listenerPair.Item2.StopAsync();
         }
         
+        private async ValueTask InternalStopAllListenerAsync()
+        {
+            if (0 >= _listenerDict.Count)
+            {
+                return;
+            }
+
+            var keys = _listenerDict.Keys.ToArray();
+            await Task.WhenAll(keys.Select(key =>
+            {
+                try
+                {
+                    if (_listenerDict.TryGetValue(key, out var pair))
+                    {
+                        var cnfg = pair.Item1;
+                        var listener = pair.Item2;
+    
+                        return InternalStopListenerAsync(cnfg.port).AsTask();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ProcessError(ex);
+
+                    return Task.CompletedTask;
+                }
+                
+
+                return Task.CompletedTask;
+            }));
+        }
+
+        private async ValueTask InternalStopAllSession()
+        {
+            var ssns = sessionContainer.GetAllSession();
+
+            await Task.WhenAll(ssns.Select(ssn =>
+                {
+                    try
+                    {
+                        if (ssn.state != SessionState.Running)
+                        {
+                            return Task.CompletedTask;
+                        }
+
+                        return ssn.StopAsync().AsTask();
+                    }
+                    catch (Exception ex)
+                    {
+                        ProcessError(ex);
+
+                        return Task.CompletedTask;
+                    }
+                }));
+        }
+
         /// <summary>
         /// 리스너에서 새 <see cref="Socket"/>이 연결되 었을 때 호출되는 콜백
         /// </summary>
@@ -398,57 +452,27 @@ namespace EasySocket.Server
         /// <summary>
         /// 모든 리스너를 중지합니다.
         /// </summary>
-        public async ValueTask StopAllListenerAsync()
+        public ValueTask StopAllListenerAsync()
         {                    
             if (state != ServerState.Running)
             {
                 throw ExceptionExtensions.InvalidObjectStateIOE("Server", state);
             }
 
-            if (0 >= _listenerDict.Count)
-            {
-                return;
-            }
-
-            var keys = _listenerDict.Keys.ToArray();
-            await Task.WhenAll(keys.Select(key =>
-            {
-                if (_listenerDict.TryGetValue(key, out var pair))
-                {
-                    var cnfg = pair.Item1;
-                    var listener = pair.Item2;
-
-                    return InternalStopListenerAsync(cnfg.port).AsTask();
-                }
-
-                return Task.CompletedTask;
-            }));
+            return InternalStopAllListenerAsync();
         }
 
         /// <summary>
         /// 연결된 모든 세션을 종료합니다.
         /// </summary>
-        public async ValueTask StopAllSessionAsync()
+        public ValueTask StopAllSessionAsync()
         {
-            var ssns = sessionContainer.GetAllSession();
+            if (state != ServerState.Running)
+            {
+                throw ExceptionExtensions.InvalidObjectStateIOE("Server", state);
+            }
 
-            await Task.WhenAll(sessions.Select(ssn =>
-                {
-                    try
-                    {
-                        if (ssn.state != SessionState.Running)
-                        {
-                            return Task.CompletedTask;
-                        }
-
-                        return ssn.StopAsync().AsTask();
-                    }
-                    catch (Exception ex)
-                    {
-                        ProcessError(ex);
-                        return Task.CompletedTask;
-                    }
-                }));
+            return InternalStopAllSession();
         }
 
         #region Setter / Getter

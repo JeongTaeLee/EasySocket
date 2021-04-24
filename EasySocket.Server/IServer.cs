@@ -19,8 +19,7 @@ namespace EasySocket.Server
     {
         ServerState state { get; }
         int sessionCount { get; }
-        IReadOnlyList<ISession> sessions { get; }
-
+        
         ValueTask StopAsync();
         
         ISession GetSessionById(string ssn);

@@ -1,3 +1,4 @@
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -147,7 +148,7 @@ namespace EasySocket.Test.Servers
             Assert.AreEqual(clientCount, server.sessionCount);
 
             // 모두 리스너 모두 스톱
-            var sessions = server.GetAllSession();
+            await server.StopAllListenerAsync();
 
             // 연결 실패 확인.
             await Assert.ThrowsExceptionAsync<SocketException>(async () => { await TestExtensions.ConnectTcpSocketClient("127.0.0.1", curPort);});
