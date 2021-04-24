@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ namespace EasySocket.Server
         /// </summary>
         public int sessionCount => sessionContainer.count;
 
-        private int _state = (int)ServerState.None;
+        private int _state = (int)ServerState.None;  
         private ConcurrentDictionary<int, (ListenerConfig, IListener)> _listenerDict = new ConcurrentDictionary<int, (ListenerConfig, IListener)>();
         private ILogger _sessionLogger = null;
         private ILogger _listenerLogger = null;
@@ -62,6 +63,8 @@ namespace EasySocket.Server
         /// 서버 내부 로직에서 예외가 발생 했을 때 호출되는 콜백 함수 입니다. 
         /// </summary>
         public Action<TServer, Exception> onError { get; private set; } = null;
+
+        public IReadOnlyList<ISession> sessions => throw new NotImplementedException();
 
         public ValueTask StartAsync(ListenerConfig listenerCnfg)
         {
@@ -125,7 +128,7 @@ namespace EasySocket.Server
 
                 if (0 < listenerCnfgs.Count)
                 {
-                    await StartListenersAsync(listenerCnfgs);
+                    await Task.WhenAll(listenerCnfgs.Select(listenerCnfg => InternalStartListenerAsync(listenerCnfg).AsTask()));
                 }
 
                 _state = (int)ServerState.Running;
@@ -154,6 +157,47 @@ namespace EasySocket.Server
             _state = (int)ServerState.Stopped;
         }
 
+        private async ValueTask InternalStartListenerAsync(ListenerConfig listenerCnfg)
+        {
+            if (!_listenerDict.TryAdd(listenerCnfg.port, default))
+            {
+                throw new InvalidOperationException($"The port is already open : the port({listenerCnfg.port}) number cannot be duplicated.");
+            }
+
+            try
+            {
+                var listener = CreateListener();
+
+                listener.onAccept = OnAcceptFromListener;
+                listener.onError = OnErrorFromListener;
+        
+                await listener.StartAsync(listenerCnfg, _listenerLogger);
+
+                _listenerDict[listenerCnfg.port] = (listenerCnfg, listener);
+            }
+            catch (System.Exception)
+            {
+                _listenerDict.TryRemove(listenerCnfg.port, out var _);
+
+                throw;
+            }
+        }
+
+        private async ValueTask InternalStopListenerAsync(int port)
+        {
+            if (!_listenerDict.TryRemove(port, out var listenerPair))
+            {
+                throw new ArgumentNullException($"Listener(Port {port}) did not start.");
+            }
+
+            if (listenerPair.Item2.state != ListenerState.Running)
+            {
+                return;
+            }
+
+            await listenerPair.Item2.StopAsync();
+        }
+        
         /// <summary>
         /// 리스너에서 새 <see cref="Socket"/>이 연결되 었을 때 호출되는 콜백
         /// </summary>
@@ -210,7 +254,6 @@ namespace EasySocket.Server
                 // 설정 완료 후 생성한 ID로 컨테이너 등록.
                 sessionContainer.SetSession(sessionId, session);
 
-
                 // NOTE : 정상적인 플로우를 위해 세션 시작과 관련된 모든 작업은 마치고 session을 시작해야한다.
                 await session.StartAsync(ssnPrmtr, sck)
                     .ConfigureAwait(false);
@@ -220,7 +263,7 @@ namespace EasySocket.Server
                 ProcessError(ex);
             }
             finally
-            {
+            {   
                 // 세션이 시작되지 못했다면 소켓을 중단.
                 if (session == null || session.state != SessionState.Running)
                 {
@@ -314,110 +357,98 @@ namespace EasySocket.Server
         /// 새 리스너를 작동합니다.
         /// </summary>
         /// <param name="listenerCnfg">작동할 리스너의 설정 객체입니다.</param>
-        public async ValueTask StartListenerAsync(ListenerConfig listenerCnfg)
+        public ValueTask StartListenerAsync(ListenerConfig listenerCnfg)
         {
-            if (!_listenerDict.TryAdd(listenerCnfg.port, default))
+            if (state != ServerState.Running)
             {
-                throw new InvalidOperationException($"The port is already open : the port({listenerCnfg.port}) number cannot be duplicated.");
+                throw ExceptionExtensions.InvalidObjectStateIOE("Server", state);
             }
 
-            try
-            {
-                var listener = CreateListener();
-
-                listener.onAccept = OnAcceptFromListener;
-                listener.onError = OnErrorFromListener;
-        
-                await listener.StartAsync(listenerCnfg, _listenerLogger);
-
-                _listenerDict[listenerCnfg.port] = (listenerCnfg, listener);
-            }
-            catch (System.Exception)
-            {
-                _listenerDict.TryRemove(listenerCnfg.port, out var _);
-
-                throw;
-            }
+            return InternalStartListenerAsync(listenerCnfg);
         }
 
         /// <summary>
-        /// 다수의 새 리스너를 작동합니다.
+        /// 다수의 리스너를 작동합니다. 
         /// </summary>
-        /// <param name="listenerCnfgs">작동할 리스너의 설정 객체입니다.</param>
+        /// <param name="listenerCnfgs">작동할 다수의 리스너의 설정 객체입니다.</param>
         public async ValueTask StartListenersAsync(List<ListenerConfig> listenerCnfgs)
         {
-            if (listenerCnfgs == null)
+            if (state != ServerState.Running)
             {
-                throw new ArgumentNullException(nameof(listenerCnfgs));
-            }
+                throw ExceptionExtensions.InvalidObjectStateIOE("Server", state);
+            }   
 
-            if (0 >= listenerCnfgs.Count)
-            {
-                throw new ArgumentException($"{nameof(listenerCnfgs)} must contain at least one ListenerConfig");
-            }
-
-            foreach (var cnfg in listenerCnfgs)
-            {
-                await StartListenerAsync(cnfg);
-
-                logger.InfoFormat("Started listener : {0}", cnfg.ToString());
-            }
+            await Task.WhenAll(listenerCnfgs.Select(listenerCnfg => InternalStartListenerAsync(listenerCnfg).AsTask()));
         }
-
+        
         /// <summary>
         /// 인자의 포트로 작동중인 리스너를 중지합니다.
         /// </summary>
         /// <param name="port">작동중인 리스너의 포트</param>
-        public async ValueTask StopListenerAsync(int port)
-        {
-            if (!_listenerDict.TryRemove(port, out var listenerPair))
+        public ValueTask StopListenerAsync(int port)
+        {   
+            if (state != ServerState.Running)
             {
-                throw new ArgumentNullException($"Listener(Port {port}) did not start.");
+                throw ExceptionExtensions.InvalidObjectStateIOE("Server", state);
             }
 
-            await listenerPair.Item2.StopAsync();
+            return InternalStopListenerAsync(port);
         }
 
         /// <summary>
         /// 모든 리스너를 중지합니다.
         /// </summary>
         public async ValueTask StopAllListenerAsync()
-        {
+        {                    
+            if (state != ServerState.Running)
+            {
+                throw ExceptionExtensions.InvalidObjectStateIOE("Server", state);
+            }
+
             if (0 >= _listenerDict.Count)
             {
                 return;
             }
 
-            var listenerPairIter = _listenerDict.Values.GetEnumerator();
-            while (listenerPairIter.MoveNext())
+            var keys = _listenerDict.Keys.ToArray();
+            await Task.WhenAll(keys.Select(key =>
             {
-                var curListenerPair = listenerPairIter.Current;
-                await StopListenerAsync(curListenerPair.Item1.port);
-            }
+                if (_listenerDict.TryGetValue(key, out var pair))
+                {
+                    var cnfg = pair.Item1;
+                    var listener = pair.Item2;
+
+                    return InternalStopListenerAsync(cnfg.port).AsTask();
+                }
+
+                return Task.CompletedTask;
+            }));
         }
 
         /// <summary>
-        /// 모든 세션과의 연결을 종료합니다.
+        /// 연결된 모든 세션을 종료합니다.
         /// </summary>
         public async ValueTask StopAllSessionAsync()
         {
-            var iter = sessionContainer.GetSessionEnumerator();
+            var ssns = sessionContainer.GetAllSession();
 
-            var tasks = new List<Task>();
-            while (iter.MoveNext())
-            {
-                try
+            await Task.WhenAll(sessions.Select(ssn =>
                 {
-                    var session = iter.Current as TSession;
-                    tasks.Add(session.StopAsync().AsTask());
-                }
-                catch (Exception ex)
-                {
-                    ProcessError(ex);
-                }
-            }
+                    try
+                    {
+                        if (ssn.state != SessionState.Running)
+                        {
+                            return Task.CompletedTask;
+                        }
 
-            await Task.WhenAll(tasks);
+                        return ssn.StopAsync().AsTask();
+                    }
+                    catch (Exception ex)
+                    {
+                        ProcessError(ex);
+                        return Task.CompletedTask;
+                    }
+                }));
         }
 
         #region Setter / Getter
@@ -451,9 +482,31 @@ namespace EasySocket.Server
             return this as TServer;
         }
 
+        /// <summary>
+        /// 인자로 전달된 세션 ID에 해당하는 세션을 반환합니다.
+        /// </summary>
+        /// <param name="ssnId">가져올 세션의 세션 ID 입니다.</param>
         public ISession GetSessionById(string ssnId)
         {
+            if (state != ServerState.Running)
+            {
+                ExceptionExtensions.InvalidObjectStateIOE("Server", state);
+            }
+            
             return sessionContainer.GetSession(ssnId);
+        }
+
+        /// <summary>
+        /// 서버에 연결된 모든 세션을 반환합니다. 세션은 복사되어 새 컨테이너로 반환됩니다.(ToArray)
+        /// </summary>
+        public ISession[] GetAllSession()
+        {
+            if (state != ServerState.Running)
+            {
+                ExceptionExtensions.InvalidObjectStateIOE("Server", state);    
+            }
+
+            return sessionContainer.GetAllSession().ToArray();
         }
         #endregion
     }

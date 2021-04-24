@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+
 namespace EasySocket.Server
 {
     public interface ISessionContainer<TSession>
@@ -13,6 +15,6 @@ namespace EasySocket.Server
 
         bool TryPreoccupancySessionId(out string sessionId);
 
-        IEnumerator GetSessionEnumerator();
+        IEnumerable<TSession> GetAllSession();
     }
 }

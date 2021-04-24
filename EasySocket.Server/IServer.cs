@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using EasySocket.Common.Logging;
 using EasySocket.Common.Protocols.MsgFilters.Factories;
@@ -18,9 +19,11 @@ namespace EasySocket.Server
     {
         ServerState state { get; }
         int sessionCount { get; }
+        IReadOnlyList<ISession> sessions { get; }
 
         ValueTask StopAsync();
         
         ISession GetSessionById(string ssn);
+        ISession[] GetAllSession();
     }
 }

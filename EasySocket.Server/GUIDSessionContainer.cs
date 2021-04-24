@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace EasySocket.Server
 {
@@ -67,9 +68,9 @@ namespace EasySocket.Server
             return !string.IsNullOrEmpty(sessionId);
         }
 
-        public IEnumerator GetSessionEnumerator()
+        public IEnumerable<TSession> GetAllSession()
         {
-            return _sessions.Values.GetEnumerator();
+            return _sessions.Values;
         }
     }
 }
