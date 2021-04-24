@@ -195,7 +195,7 @@ namespace EasySocket.Server
 
             await listenerPair.Item2.StopAsync();
         }
-        
+
         private async ValueTask InternalStopAllListenerAsync()
         {
             if (0 >= _listenerDict.Count)
