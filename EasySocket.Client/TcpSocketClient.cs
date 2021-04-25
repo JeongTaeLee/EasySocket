@@ -105,7 +105,7 @@ namespace EasySocket.Client
                     }
                     finally
                     {
-                        _pipeReader.AdvanceTo(buffer.GetPosition(readLength));
+                        _pipeReader.AdvanceTo(buffer.GetPosition(readLength), buffer.GetPosition(buffer.Length));
                     }
                 }
             }

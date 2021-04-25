@@ -141,7 +141,7 @@ namespace EasySocket.Server
                     var packet = param.msgFilter.Filter(ref sequenceReader);
                     if (packet == null)
                     {
-                        return sequence.Length;
+                        break;
                     }
 
                     behaviour?.OnReceived(this, packet).GetAwaiter().GetResult(); // 대기

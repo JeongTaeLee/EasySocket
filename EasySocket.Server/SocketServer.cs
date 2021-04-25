@@ -80,6 +80,11 @@ namespace EasySocket.Server
         /// </summary>
         public Action<TServer, Exception> onError { get; private set; } = null;
 
+        public ValueTask StartAsync()
+        {
+            return StartAsync(new List<ListenerConfig>());
+        }
+
         public ValueTask StartAsync(ListenerConfig listenerCnfg)
         {
             return StartAsync(new List<ListenerConfig>() { listenerCnfg });
@@ -231,16 +236,14 @@ namespace EasySocket.Server
     
                         return InternalStopListenerAsync(cnfg.port).AsTask();
                     }
+
+                    return Task.CompletedTask;
                 }
                 catch (Exception ex)
                 {
                     ProcessError(ex);
-
                     return Task.CompletedTask;
                 }
-                
-
-                return Task.CompletedTask;
             }));
         }
 
@@ -262,7 +265,6 @@ namespace EasySocket.Server
                     catch (Exception ex)
                     {
                         ProcessError(ex);
-
                         return Task.CompletedTask;
                     }
                 }));

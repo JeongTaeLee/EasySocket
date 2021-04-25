@@ -67,7 +67,7 @@ namespace EasySocket.Server
                     }
                     finally
                     {
-                        pipeReader.AdvanceTo(buffer.GetPosition(readLength));
+                        pipeReader.AdvanceTo(buffer.GetPosition(readLength), buffer.GetPosition(buffer.Length));
                     }
                 }
             }

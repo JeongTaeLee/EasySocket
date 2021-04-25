@@ -1,8 +1,8 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using EasySocket.Server.Listeners;
-using System.Linq;
 
 namespace EasySocket.Test.Servers
 {
@@ -27,9 +27,8 @@ namespace EasySocket.Test.Servers
 
             // 서버 시작.
             int port = 9199;
-            var server = TestExtensions.CreateTcpSocketServer(ssnBhvr);
-            await server.StartAsync(new ListenerConfig("127.0.0.1", port, 1000));
-
+            var server = await TestExtensions.StartTcpSocketServer(new ListenerConfig("127.0.0.1", port, 1000), ssnBhvr : ssnBhvr);
+            
             // 다수의 클라이언트 연결
             int connectCount = 100;
             var clients = await TestExtensions.ConnectTcpSocketClients("127.0.0.1", port, connectCount);

@@ -12,7 +12,7 @@ namespace EasySocket.Test
 
         public event Action<ISession> onStopped;
 
-        public event Action<object> onReceived;
+        public event Action<ISession, object> onReceived;
         public event Action<Exception> onError;
 
         public void OnStartBefore(ISession ssn)
@@ -32,7 +32,7 @@ namespace EasySocket.Test
 
         public ValueTask OnReceived(ISession ssn, object packet)
         {
-            onReceived?.Invoke(packet);
+            onReceived?.Invoke(ssn, packet);
             return new ValueTask();
         }
 
