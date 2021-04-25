@@ -27,6 +27,22 @@ namespace EasySocket.Server
         /// </summary>
         public int sessionCount => sessionContainer.count;
 
+        /// <summary>
+        /// 서버에 연결된 모든 세션입니다.
+        /// </summary>
+        public ISession[] sessions
+        {
+            get 
+            {
+                if (ServerState.Running != state)
+                {
+                    return null;
+                }
+
+                return sessionContainer.GetAllSession().ToArray();
+            }
+        }
+
         private int _state = (int)ServerState.None;  
         private ConcurrentDictionary<int, (ListenerConfig, IListener)> _listenerDict = new ConcurrentDictionary<int, (ListenerConfig, IListener)>();
         private ILogger _sessionLogger = null;
@@ -518,19 +534,6 @@ namespace EasySocket.Server
             }
             
             return sessionContainer.GetSession(ssnId);
-        }
-
-        /// <summary>
-        /// 서버에 연결된 모든 세션을 반환합니다. 세션은 복사되어 새 컨테이너로 반환됩니다.(ToArray)
-        /// </summary>
-        public ISession[] GetAllSession()
-        {
-            if (state != ServerState.Running)
-            {
-                ExceptionExtensions.InvalidObjectStateIOE("Server", state);    
-            }
-
-            return sessionContainer.GetAllSession().ToArray();
         }
         #endregion
     }

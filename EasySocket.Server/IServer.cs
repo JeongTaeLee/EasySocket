@@ -18,11 +18,12 @@ namespace EasySocket.Server
     public interface IServer
     {
         ServerState state { get; }
+
+        ISession[] sessions {get; }
         int sessionCount { get; }
-        
+
         ValueTask StopAsync();
         
         ISession GetSessionById(string ssn);
-        ISession[] GetAllSession();
     }
 }
