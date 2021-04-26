@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using EasySocket.Client;
 
 namespace EasySocket.Test
@@ -20,9 +21,10 @@ namespace EasySocket.Test
             onStopped?.Invoke(client);
         }
 
-        public void OnReceived(IClient client, object msgFilter)
+        public ValueTask OnReceived(IClient client, object msgFilter)
         {
             onReceived?.Invoke(client, msgFilter);
+            return new ValueTask();
         }
 
         public void OnError(IClient client, Exception ex)

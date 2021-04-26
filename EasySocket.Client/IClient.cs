@@ -16,7 +16,6 @@ namespace EasySocket.Client
 
     public interface IClient
     {
-
         ClientState state { get; }
         IClientBehaviour behaviour { get; }
         

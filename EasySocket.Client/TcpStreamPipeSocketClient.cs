@@ -1,16 +1,15 @@
 using System;
-using System.Net.Sockets;
-using System.IO.Pipelines;
-using System.Threading.Tasks;
-using System.Threading;
 using System.IO;
+using System.IO.Pipelines;
+using System.Net.Sockets;
+using System.Threading.Tasks;
 
-namespace EasySocket.Server
+namespace EasySocket.Client
 {
-    public class TcpStreamPipeSocketSession : PipeSocketSession<TcpStreamPipeSocketSession>
-    {
+    public class TcpStreamPipeSocketClient : PipeSocketClient<TcpStreamPipeSocketClient>
+    {        
         private NetworkStream _networkStream = null;
-
+        
         protected override ValueTask StartPipe(out PipeWriter writer, out PipeReader reader)
         {
             _networkStream = new NetworkStream(socket);
@@ -84,15 +83,17 @@ namespace EasySocket.Server
                         return;
                     }   
                 }
+
+                // TODO : Exception
+                ProcessError(ex);    
             }
             catch (SocketException ex)
-            {
-                // ignore Exception
+            {                    // ignore Exception
                 if (ex.ErrorCode == 89)
                 {
                     return;
                 }   
-
+                    
                 // TODO : Exception
                 ProcessError(ex);
             }
@@ -107,9 +108,18 @@ namespace EasySocket.Server
             }
         }
 
-        public override async ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry)
+        public override async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
         {
-            return await socket.SendAsync(mmry, SocketFlags.None);
+            return await socket.SendAsync(sendMemory, SocketFlags.None);
+        }
+
+        protected override Socket CreateSocket(SocketClientConfig sckCnfg)
+        {
+           return new Socket(SocketType.Stream, ProtocolType.Tcp)
+            {
+                SendBufferSize = sckCnfg.sendBufferSize,
+                ReceiveBufferSize = sckCnfg.receiveBufferSize
+            };
         }
     }
 }

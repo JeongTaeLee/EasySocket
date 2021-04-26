@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using EasySocket.Server.Listeners;
+using System;
 
 namespace EasySocket.Test.Servers
 {
@@ -23,14 +24,18 @@ namespace EasySocket.Test.Servers
             ssnBhvr.onStartAfter += (ssn) => { Interlocked.Increment(ref startAfterCallCount); };
             ssnBhvr.onStopped += (ssn) => { Interlocked.Increment(ref stoppedCallCount); };
             //ssnBhvr.onReceived += (ssn) => { Interlocked.Increment(ref receivedCallCount); };
-            ssnBhvr.onError += (ssn) => { Interlocked.Increment(ref errorCallCount); };
+            ssnBhvr.onError += (ex) => 
+            { 
+                Console.WriteLine(ex);
+                Interlocked.Increment(ref errorCallCount); 
+            };
 
             // 서버 시작.
             int port = 9199;
             var server = await TestExtensions.StartTcpSocketServer(new ListenerConfig("127.0.0.1", port, 1000), ssnBhvr : ssnBhvr);
             
             // 다수의 클라이언트 연결
-            int connectCount = 100;
+            int connectCount = 50;
             var clients = await TestExtensions.ConnectTcpSocketClients("127.0.0.1", port, connectCount);
 
             // 연결 콜백 확인.

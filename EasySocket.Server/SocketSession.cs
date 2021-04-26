@@ -107,11 +107,11 @@ namespace EasySocket.Server
             int prevState = Interlocked.CompareExchange(ref _state, (int)SessionState.Stopping, (int)SessionState.Running);
             if (prevState != (int)SessionState.Running)
             {
-                ExceptionExtensions.InvalidObjectStateIOE("Session", (SessionState)prevState);
+                param.logger.InvalidObjectStateError("Server", (SessionState)prevState); 
                 return;
             }
             
-            socket?.Close();
+            socket?.SafeClose();
 
             await InternalStopAsync();
 

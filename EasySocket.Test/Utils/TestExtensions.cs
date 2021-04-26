@@ -76,33 +76,31 @@ namespace EasySocket.Test
             return server;
         }
 
-        public static async Task<TcpSocketClient> ConnectTcpSocketClient(string ip, int port, EventClientBehavior cntBhvr = null)
+        public static async Task<TcpStreamPipeSocketClient> ConnectTcpSocketClient(string ip, int port, EventClientBehavior cntBhvr = null)
         {
-            var client = new TcpSocketClient()
-                .SetLoggerFactory(new ConsoleLoggerFactory())
+            var client = new TcpStreamPipeSocketClient()
+                .SetLogger(new ConsoleLoggerFactory().GetLogger(typeof(TcpStreamPipeSocketClient)))
                 .SetMsgFilter(new StringMsgFilter())
-                .SetSocketClientConfig(new SocketClientConfig(ip, port))
                 .SetClientBehaviour(cntBhvr ?? new EventClientBehavior());
             
 
-            await client.StartAsync();
+            await client.StartAsync(ip, port);
 
             return client;
         }
 
-        public static async Task<List<TcpSocketClient>> ConnectTcpSocketClients(string ip, int port, int connectCount, EventClientBehavior clientBehavior = null)
+        public static async Task<List<TcpStreamPipeSocketClient>> ConnectTcpSocketClients(string ip, int port, int connectCount, EventClientBehavior clientBehavior = null)
         {
-            var lst = new List<TcpSocketClient>();
+            var lst = new List<TcpStreamPipeSocketClient>();
 
             for (int index = 0; index < connectCount; ++index)
             {
-                var client = new TcpSocketClient()
-                    .SetLoggerFactory(new ConsoleLoggerFactory())
+                var client = new TcpStreamPipeSocketClient()
+                    .SetLogger(new ConsoleLoggerFactory().GetLogger(typeof(TcpStreamPipeSocketClient)))
                     .SetMsgFilter(new StringMsgFilter())
-                    .SetSocketClientConfig(new SocketClientConfig(ip, port))
                     .SetClientBehaviour(clientBehavior ?? new EventClientBehavior());
 
-                await client.StartAsync();
+                await client.StartAsync(ip, port);
 
                 lst.Add(client);
             }
@@ -110,34 +108,32 @@ namespace EasySocket.Test
             return lst;
         }
 
-        public static async Task<TcpSocketClient> ConnectTcpSocketClient<TMsgFilter>(string ip, int port, EventClientBehavior cntBhvr = null)
+        public static async Task<TcpStreamPipeSocketClient> ConnectTcpSocketClient<TMsgFilter>(string ip, int port, EventClientBehavior cntBhvr = null)
            where TMsgFilter : class, IMsgFilter, new()
         {
-            var client = new TcpSocketClient()
-                .SetLoggerFactory(new ConsoleLoggerFactory())
+            var client = new TcpStreamPipeSocketClient()
+                .SetLogger(new ConsoleLoggerFactory().GetLogger(typeof(TcpStreamPipeSocketClient)))
                 .SetMsgFilter(new TMsgFilter())
-                .SetSocketClientConfig(new SocketClientConfig(ip, port))
                 .SetClientBehaviour(cntBhvr ?? new EventClientBehavior());
             
-            await client.StartAsync();
+            await client.StartAsync(ip, port);
 
             return client;
         }
 
-        public static async Task<List<TcpSocketClient>> ConnectTcpSocketClients<TMsgFilter>(string ip, int port, int connectCount, EventClientBehavior clientBehavior = null)
+        public static async Task<List<TcpStreamPipeSocketClient>> ConnectTcpSocketClients<TMsgFilter>(string ip, int port, int connectCount, EventClientBehavior clientBehavior = null)
             where TMsgFilter : class, IMsgFilter, new()
         {
-            var lst = new List<TcpSocketClient>();
+            var lst = new List<TcpStreamPipeSocketClient>();
 
             for (int index = 0; index < connectCount; ++index)
             {
-                var client = new TcpSocketClient()
-                    .SetLoggerFactory(new ConsoleLoggerFactory())
+                var client = new TcpStreamPipeSocketClient()
+                    .SetLogger(new ConsoleLoggerFactory().GetLogger(typeof(TcpStreamPipeSocketClient)))
                     .SetMsgFilter(new TMsgFilter())
-                    .SetSocketClientConfig(new SocketClientConfig(ip, port))
                     .SetClientBehaviour(clientBehavior ?? new EventClientBehavior());
 
-                await client.StartAsync();
+                await client.StartAsync(ip, port);
 
                 lst.Add(client);
             }

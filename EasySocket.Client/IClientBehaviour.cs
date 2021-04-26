@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace EasySocket.Client
 {
@@ -6,7 +7,7 @@ namespace EasySocket.Client
     {
         void OnStarted(IClient client);
         void OnStopped(IClient client);
-        void OnReceived(IClient client, object msgFilter);
+        ValueTask OnReceived(IClient client, object msgFilter);
         void OnError(IClient client, Exception ex);
     }
 }
