@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace EasySocket.Test.Servers
 {
     [TestClass]
-    public class TcpSocketServerTest
+    public class TcpStreamPipeSocketServerTest
     {
      
         // 기본 연결 테스트.
