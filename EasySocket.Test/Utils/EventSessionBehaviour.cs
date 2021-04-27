@@ -15,22 +15,25 @@ namespace EasySocket.Test
         public event Action<ISession, object> onReceived;
         public event Action<Exception> onError;
 
-        public void OnStartBefore(ISession ssn)
+        public ValueTask OnStartBeforeAsync(ISession ssn)
         {
             onStartBefore?.Invoke(ssn);
+            return new ValueTask();
         }
 
-        public void OnStartAfter(ISession ssn)
+        public ValueTask OnStartAfterAsync(ISession ssn)
         {
             onStartAfter?.Invoke(ssn);
+            return new ValueTask();
         }
 
-        public void OnStopped(ISession ssn)
+        public ValueTask OnStoppedAsync(ISession ssn)
         {
             onStopped?.Invoke(ssn);
+            return new ValueTask();
         }
 
-        public ValueTask OnReceived(ISession ssn, object packet)
+        public ValueTask OnReceivedAsync(ISession ssn, object packet)
         {
             onReceived?.Invoke(ssn, packet);
             return new ValueTask();

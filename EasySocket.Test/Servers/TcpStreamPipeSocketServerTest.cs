@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using EasySocket.Server.Listeners;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using EasySocket.Server;
+using EasySocket.Test.Components;
+using EasySocket.Common.Protocols.MsgFilters.Factories;
 
 namespace EasySocket.Test.Servers
 {
@@ -15,14 +18,27 @@ namespace EasySocket.Test.Servers
         [TestMethod]
         public async Task ConnectTest()
         {
-            //
-            var ssnBhvr = new EventSessionBehaviour();
+            int curPort = 9199;
+            int serverOnErrorCount = 0;
 
             //
-            int curPort = 9199;
+            var ssnBhvr = new EventSessionBehaviour();
             
-            // 서버 시작.
-            var server = await TestExtensions.StartTcpSocketServer(new ListenerConfig("127.0.0.1", curPort, 100), ssnBhvr : ssnBhvr);
+            //
+            var server = new TcpStreamPipeSocketServer()
+                .SetLoggerFactory(new ConsoleLoggerFactory())
+                .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
+                .SetSessionConfigrator((ssn) =>
+                {
+                    ssn.SetSessionBehaviour(ssnBhvr);
+                })
+                .SetOnError((ssn, ex) =>
+                {
+                    ++serverOnErrorCount;
+                });
+
+            // 서버 시작
+            await server.StartAsync(new ListenerConfig("127.0.0.1", curPort, 1000));
 
             // 연결/종료 테스트
             {
@@ -70,6 +86,9 @@ namespace EasySocket.Test.Servers
             }
 
             await server.StopAsync();
+
+            // 서버 에러 발생 확인
+            Assert.AreEqual(0, serverOnErrorCount);
         }
 
         // 리스너 기능 테스트.
@@ -77,14 +96,28 @@ namespace EasySocket.Test.Servers
         public async Task ListenerTest()
         {
             //
-            var ssnBhvr = new EventSessionBehaviour();
-
-            //
             int curPort = 9199;
             int clientCount = 0;
+            int serverOnErrorCount = 0;
+
+            //
+            var ssnBhvr = new EventSessionBehaviour();
             
             // 서버 시작.
-            var server = await TestExtensions.StartTcpSocketServer(new ListenerConfig("127.0.0.1", curPort, 100), ssnBhvr : ssnBhvr);
+            var server = new TcpStreamPipeSocketServer()
+                .SetLoggerFactory(new ConsoleLoggerFactory())
+                .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
+                .SetSessionConfigrator((ssn) =>
+                {
+                    ssn.SetSessionBehaviour(ssnBhvr);
+                })
+                .SetOnError((ssn, ex) =>
+                {
+                    ++serverOnErrorCount;
+                });
+
+            // 서버 시작
+            await server.StartAsync(new ListenerConfig("127.0.0.1", curPort, 1000));
 
             // 클라이언트 연결
             await TestExtensions.ConnectTcpSocketClient("127.0.0.1", curPort);
@@ -153,6 +186,9 @@ namespace EasySocket.Test.Servers
 
             // 테스트 끝 서버 종료
             await server.StopAsync();
+
+            // 서버 에러 확인
+            Assert.AreEqual(0, serverOnErrorCount);
         }
     }
 }

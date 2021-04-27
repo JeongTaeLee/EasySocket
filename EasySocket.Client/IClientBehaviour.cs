@@ -5,9 +5,9 @@ namespace EasySocket.Client
 {
     public interface IClientBehaviour
     {
-        void OnStarted(IClient client);
-        void OnStopped(IClient client);
-        ValueTask OnReceived(IClient client, object msgFilter);
+        ValueTask OnStartedAsync(IClient client);
+        ValueTask OnStoppedAsync(IClient client);
+        ValueTask OnReceivedAsync(IClient client, object msgFilter);
         void OnError(IClient client, Exception ex);
     }
 }

@@ -45,7 +45,7 @@ namespace EasySocket.Server
             _pipeReader = null;
         }
 
-        protected override void OnStarted()
+        protected override async ValueTask OnStartedAsync()
         {
             if (state != SessionState.Running)
             {
@@ -54,7 +54,10 @@ namespace EasySocket.Server
 
             WaitingForAbort();
 
-            behaviour?.OnStartAfter(this);
+            if (behaviour != null)
+            {
+                await behaviour.OnStartAfterAsync(this);
+            }
         }
 
         private async void WaitingForAbort()

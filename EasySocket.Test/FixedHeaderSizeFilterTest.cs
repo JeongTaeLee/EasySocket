@@ -8,6 +8,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using EasySocket.Common.Protocols.MsgFilters;
 using EasySocket.Server.Listeners;
 using EasySocket.Server;
+using EasySocket.Test.Components;
+using EasySocket.Common.Protocols.MsgFilters.Factories;
+using EasySocket.Client;
 
 namespace EasySocket.Test
 {
@@ -36,14 +39,32 @@ namespace EasySocket.Test
     {
         [TestMethod]
         public async Task ServerTest()
-        {
+        {   
+            int port = 9199;
+            int serverOnErrorCount = 0;
             var receiveStrs = new List<string>();
 
             var ssnBhvr = new EventSessionBehaviour();
             ssnBhvr.onReceived += (ssn, packet) => { receiveStrs.Add(packet.ToString()); };
 
-            var server = await TestExtensions.StartTcpSocketServer<TestFixedHeaderSizeFilter>(new ListenerConfig("127.0.0.1", 9199, 100), ssnBhvr : ssnBhvr);
-            var client = await TestExtensions.ConnectTcpSocketClient("127.0.0.1", 9199);
+            //
+            var server = new TcpStreamPipeSocketServer()
+                .SetLoggerFactory(new ConsoleLoggerFactory())
+                .SetMsgFilterFactory(new DefaultMsgFilterFactory<TestFixedHeaderSizeFilter>())
+                .SetSessionConfigrator((ssn) =>
+                {
+                    ssn.SetSessionBehaviour(ssnBhvr);
+                })
+                .SetOnError((ssn, ex) =>
+                {
+                    ++serverOnErrorCount;
+                });
+
+            // 서버 시작
+            await server.StartAsync(new ListenerConfig("127.0.0.1", port, 1000));
+
+            //
+            var client = await TestExtensions.ConnectTcpSocketClient("127.0.0.1", port);
             await Task.Delay(100);
 
             Assert.AreNotEqual(null, server);
@@ -53,11 +74,17 @@ namespace EasySocket.Test
 
             await client.StopAsync();
             await server.StopAsync();
+
+            // 서버 에러 확인
+            Assert.AreEqual(0, serverOnErrorCount);
         }
 
         [TestMethod]
         public async Task ClientTest()
         {
+            int port = 9199;
+            int serverOnErrorCount = 0;
+
             var session = default(ISession);
             var ssnBhvr = new EventSessionBehaviour();
             ssnBhvr.onStartAfter += (ssn) => { session = ssn; };
@@ -66,8 +93,30 @@ namespace EasySocket.Test
             var clntBhvr = new EventClientBehavior();
             clntBhvr.onReceived += (clnt, packet) => { receiveStrs.Add(packet.ToString()); }; 
 
-            var server = await TestExtensions.StartTcpSocketServer<TestFixedHeaderSizeFilter>(new ListenerConfig("127.0.0.1", 9199, 100), ssnBhvr : ssnBhvr);
-            var client = await TestExtensions.ConnectTcpSocketClient<TestFixedHeaderSizeFilter>("127.0.0.1",  9199, clntBhvr);
+            //
+            var server = new TcpStreamPipeSocketServer()
+                .SetLoggerFactory(new ConsoleLoggerFactory())
+                .SetMsgFilterFactory(new DefaultMsgFilterFactory<TestFixedHeaderSizeFilter>())
+                .SetSessionConfigrator((ssn) =>
+                {
+                    ssn.SetSessionBehaviour(ssnBhvr);
+                })
+                .SetOnError((ssn, ex) =>
+                {
+                    ++serverOnErrorCount;
+                });
+            
+            // 서버 시작
+            await server.StartAsync(new ListenerConfig("127.0.0.1", port, 1000));
+
+            //
+            var client = new TcpStreamPipeSocketClient()
+                .SetLogger(new ConsoleLoggerFactory().GetLogger(typeof(TcpStreamPipeSocketClient)))
+                .SetMsgFilter(new TestFixedHeaderSizeFilter())
+                .SetClientBehaviour(clntBhvr);
+
+            // 클라이언트 시작            
+            await client.StartAsync("127.0.0.1", port);
             await Task.Delay(100);
     
             Assert.AreNotEqual(null, server);
@@ -78,6 +127,9 @@ namespace EasySocket.Test
 
             await client.StopAsync();
             await server.StopAsync();
+
+            // 서버 에러 확인
+            Assert.AreEqual(0, serverOnErrorCount);
         }
 
         private async Task BasicTest(List<string> receiveStrs, Func<byte[], ValueTask<int>> sendFunc)

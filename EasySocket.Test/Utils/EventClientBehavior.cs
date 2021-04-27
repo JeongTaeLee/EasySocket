@@ -11,17 +11,19 @@ namespace EasySocket.Test
         public Action<IClient, object> onReceived { get; set; }
         public Action<IClient, Exception> onError { get; set; }
 
-        public void OnStarted(IClient client)
+        public ValueTask OnStartedAsync(IClient client)
         {
             onStarted?.Invoke(client);
+            return new ValueTask();
         }
 
-        public void OnStopped(IClient client)
+        public ValueTask OnStoppedAsync(IClient client)
         {
             onStopped?.Invoke(client);
+            return new ValueTask();
         }
 
-        public ValueTask OnReceived(IClient client, object msgFilter)
+        public ValueTask OnReceivedAsync(IClient client, object msgFilter)
         {
             onReceived?.Invoke(client, msgFilter);
             return new ValueTask();

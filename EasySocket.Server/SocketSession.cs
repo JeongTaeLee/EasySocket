@@ -45,12 +45,15 @@ namespace EasySocket.Server
 
             try
             {
-                behaviour?.OnStartBefore(this);
+                if (behaviour != null)
+                {
+                    await behaviour.OnStartBeforeAsync(this);
+                }
 
                 await InternalStartAsync();
                 _state = (int)SessionState.Running;
 
-                OnStarted();
+                await OnStartedAsync();
             }
             finally
             {
@@ -74,7 +77,7 @@ namespace EasySocket.Server
         /// <summary>
         /// 세션이 시작된 후 외부(<see cref="IServer"/>) 계열 클래스 에서 호출되는 메서드
         /// </summary>
-        protected virtual void OnStarted()
+        protected virtual async ValueTask OnStartedAsync()
         {
             if (state != SessionState.Running)
             {
@@ -82,13 +85,16 @@ namespace EasySocket.Server
                 return;
             }
 
-            behaviour?.OnStartAfter(this);
+            if (behaviour != null)
+            {
+                await behaviour.OnStartAfterAsync(this);
+            }
         }
 
         /// <summary>
         /// 세션이 종료된 후 외부(<see cref="IServer"/>) 계열 클래스 에서 호출되는 메서드
         /// </summary>
-        protected virtual void OnStopped()
+        protected virtual async ValueTask OnStoppedAsync()
         {
             if (state != SessionState.Stopped)
             {
@@ -96,7 +102,10 @@ namespace EasySocket.Server
                 return;
             }
 
-            behaviour?.OnStopped(this);
+            if (behaviour != null)
+            {
+                await behaviour.OnStoppedAsync(this);
+            }
         }
 
         /// <summary>
@@ -117,7 +126,7 @@ namespace EasySocket.Server
 
             _state = (int)SessionState.Stopped;
 
-            OnStopped();
+            await OnStoppedAsync();
 
             param?.onStop?.Invoke(this as TSession);
         }
@@ -144,7 +153,7 @@ namespace EasySocket.Server
                         break;
                     }
 
-                    behaviour?.OnReceived(this, packet).GetAwaiter().GetResult(); // 대기
+                    behaviour?.OnReceivedAsync(this, packet).GetAwaiter().GetResult(); // 대기
                 }
 
                 return (int)sequenceReader.Consumed;

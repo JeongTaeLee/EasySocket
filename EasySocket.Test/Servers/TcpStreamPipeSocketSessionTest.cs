@@ -1,9 +1,12 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using EasySocket.Server.Listeners;
-using System;
+using EasySocket.Server;
+using EasySocket.Test.Components;
+using EasySocket.Common.Protocols.MsgFilters.Factories;
 
 namespace EasySocket.Test.Servers
 {
@@ -13,17 +16,17 @@ namespace EasySocket.Test.Servers
         [TestMethod]
         public async Task BehaviourCallbackTest()
         {
+            int port = 9199;
+            int serverOnErrorCount = 0;
             int startBeforeCallCount = 0;
             int startAfterCallCount = 0;
             int stoppedCallCount = 0;
-            //int receivedCallCount = 0;
             int errorCallCount = 0;
 
             EventSessionBehaviour ssnBhvr  = new EventSessionBehaviour();
             ssnBhvr.onStartBefore += (ssn) => { Interlocked.Increment(ref startBeforeCallCount); };
             ssnBhvr.onStartAfter += (ssn) => { Interlocked.Increment(ref startAfterCallCount); };
             ssnBhvr.onStopped += (ssn) => { Interlocked.Increment(ref stoppedCallCount); };
-            //ssnBhvr.onReceived += (ssn) => { Interlocked.Increment(ref receivedCallCount); };
             ssnBhvr.onError += (ex) => 
             { 
                 Console.WriteLine(ex);
@@ -31,8 +34,20 @@ namespace EasySocket.Test.Servers
             };
 
             // 서버 시작.
-            int port = 9199;
-            var server = await TestExtensions.StartTcpSocketServer(new ListenerConfig("127.0.0.1", port, 1000), ssnBhvr : ssnBhvr);
+            var server = new TcpStreamPipeSocketServer()
+                .SetLoggerFactory(new ConsoleLoggerFactory())
+                .SetMsgFilterFactory(new DefaultMsgFilterFactory<StringMsgFilter>())
+                .SetSessionConfigrator((ssn) =>
+                {
+                    ssn.SetSessionBehaviour(ssnBhvr);
+                })
+                .SetOnError((ssn, ex) =>
+                {
+                    ++serverOnErrorCount;
+                });
+
+            // 서버 시작
+            await server.StartAsync(new ListenerConfig("127.0.0.1", port, 1000));
             
             // 다수의 클라이언트 연결
             int connectCount = 50;
@@ -66,9 +81,12 @@ namespace EasySocket.Test.Servers
 
             // 에러 발생 확인
             Assert.AreEqual(0, errorCallCount);
-            
+        
             // 종료
             await server.StopAsync();
+
+            // 서버 에러 확인
+            Assert.AreEqual(0, serverOnErrorCount);
         }
     }
 }

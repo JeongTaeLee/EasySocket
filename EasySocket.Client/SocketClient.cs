@@ -65,7 +65,7 @@ namespace EasySocket.Client
 
                 _state = (int)ClientState.Running;
 
-                OnStarted();
+                await OnStartedAsync();
             }
             finally
             {
@@ -86,24 +86,30 @@ namespace EasySocket.Client
             await ProcessStopAsync();
         }
 
-        protected virtual void OnStarted()
+        protected virtual async ValueTask OnStartedAsync()
         {
             if (state != ClientState.Running)
             {
                 throw new InvalidObjectStateException("Client", state.ToString());
             }
 
-            behaviour?.OnStarted(this);
+            if (behaviour != null)
+            {
+                await behaviour.OnStartedAsync(this);
+            }
         }
 
-        protected virtual void OnStopped()
+        protected virtual async ValueTask OnStoppedAsync()
         {
             if (state != ClientState.Stopped)
             {
                 throw new InvalidObjectStateException("Client", state.ToString());
             }
 
-            behaviour?.OnStopped(this);
+            if (behaviour != null)
+            {
+                await behaviour.OnStoppedAsync(this);
+            }
         }
 
         protected async ValueTask ProcessStopAsync()
@@ -121,7 +127,7 @@ namespace EasySocket.Client
 
             _state = (int)ClientState.Stopped;
 
-            OnStopped();
+            await OnStoppedAsync();
         }
 
         protected long ProcessReceive(ReadOnlySequence<byte> sequence)
@@ -143,7 +149,7 @@ namespace EasySocket.Client
                         break;
                     }
 
-                    behaviour?.OnReceived(this, packet).GetAwaiter().GetResult(); // 대기
+                    behaviour?.OnReceivedAsync(this, packet).GetAwaiter().GetResult(); // 대기
                 }
 
                 return (int)sequenceReader.Consumed;
