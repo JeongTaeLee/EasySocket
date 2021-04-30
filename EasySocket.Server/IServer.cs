@@ -15,6 +15,15 @@ namespace EasySocket.Server
         Stopped,
     }
 
+    public interface IServer<TServer> : IServer
+        where TServer : IServer<TServer>
+    {
+        TServer SetLoggerFactory(ILoggerFactory lgerFctry);
+        TServer SetMsgFilterFactory(IMsgFilterFactory msgFltrFctry);
+        TServer SetSessionConfigrator(Action<ISession> ssnCnfgtr);
+        TServer SetOnError(Action<TServer, Exception> onErr);
+    }
+
     public interface IServer
     {
         ServerState state { get; }

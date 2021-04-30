@@ -13,7 +13,7 @@ using System.Collections.Concurrent;
 
 namespace EasySocket.Server
 {
-    public abstract class SocketServer<TServer, TSession> : IServer
+    public abstract class SocketServer<TServer, TSession> : IServer<TServer>
         where TServer : SocketServer<TServer, TSession>
         where TSession : SocketSession<TSession>
     {
