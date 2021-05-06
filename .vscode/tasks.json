@@ -1,6 +1,62 @@
 {
     "version": "2.0.0",
     "tasks": [
+
+        // Debug
+        {
+            "label": "EasySocket.Server - debug build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/EasySocket.Server/EasySocket.Server.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "EasySocket.Client - debug build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/EasySocket.Client/EasySocket.Client.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        // Release
+        {
+            "label": "EasySocket.Server - release build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/EasySocket.Server/EasySocket.Server.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary",
+                "-c", "Release"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "EasySocket.Client - release build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/EasySocket.Client/EasySocket.Client.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary",
+                "-c", "Release"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
+        //Test
         {
             "label": "watch",
             "command": "dotnet",
@@ -14,46 +70,8 @@
             ],
             "problemMatcher": "$msCompile"
         },
-
         {
-            "label": "build",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-            ],
-            "problemMatcher": "$msCompile"
-        },        
-        
-        {
-            "label": "build_Samples_Echo.Server",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-                "${workspaceFolder}/Samples/Echo.Server/Echo.Server.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        
-        },
-
-        {
-            "label": "build_Samples_Echo.Client",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-                "${workspaceFolder}/Samples/Echo.Client/Echo.Client.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-
-        {
-            "label": "Test_EasySocket.Test",
+            "label": "EasySocket.Test - test",
             "command": "dotnet",
             "type": "process",
             "args": [
@@ -64,7 +82,7 @@
             ],
             "problemMatcher": "$msCompile"
         },
-
+        
         {
             "label": "publish",
             "command": "dotnet",
