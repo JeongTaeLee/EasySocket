@@ -44,7 +44,8 @@ namespace EasySocket.Server
                     {
                         if (0 < buffer.Length)
                         {
-                            readLength = ProcessReceive(buffer);
+                            var readedSeq = await ProcessReceive(buffer);
+                            readLength = buffer.Length - readedSeq.Length;
                         }
 
                         if (result.IsCanceled)

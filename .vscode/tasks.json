@@ -56,6 +56,34 @@
             "problemMatcher": "$msCompile"
         },
 
+        // publish
+        {
+            "label": "EasySocket.Server - release publish",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "${workspaceFolder}/EasySocket.Server/EasySocket.Server.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary",
+                "-c", "Release"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "EasySocket.Client - release publish",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "${workspaceFolder}/EasySocket.Client/EasySocket.Client.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary",
+                "-c", "Release"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+
         //Test
         {
             "label": "watch",

@@ -22,12 +22,12 @@ namespace EasySocket.Test
             
         }
 
-        protected override int ParseBodySizeFromHeader(ReadOnlySequence<byte> headerSeq)
+        protected override int ParseBodySizeFromHeader(ref ReadOnlySequence<byte> headerSeq)
         {
             return BitConverter.ToInt32(headerSeq.FirstSpan);
         }
 
-        protected override object ParseMsgInfo(ReadOnlySequence<byte> totalSeq)
+        protected override object ParseMsgInfo(ref ReadOnlySequence<byte> totalSeq)
         {
             return Encoding.Default.GetString(totalSeq.Slice(headerSize));
         }

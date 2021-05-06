@@ -4,7 +4,7 @@ namespace EasySocket.Common.Logging
 {
     public interface ILoggerFactory
     {
-        public ILogger GetLogger(string name);
-        public ILogger GetLogger(Type type);
+        ILogger GetLogger(string name);
+        ILogger GetLogger(Type type);
     }
 }

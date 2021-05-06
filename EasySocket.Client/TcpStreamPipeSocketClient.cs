@@ -43,7 +43,8 @@ namespace EasySocket.Client
                     {
                         if (0 < buffer.Length)
                         {
-                            readLength = ProcessReceive(buffer);
+                            var readedBuffer = await ProcessReceive(buffer);
+                            readLength = buffer.Length - readedBuffer.Length;
                         }
 
                         if (result.IsCanceled)
@@ -108,9 +109,14 @@ namespace EasySocket.Client
             }
         }
 
-        public override async ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory)
+        public override async ValueTask<int> SendAsync(byte[] buffer)
         {
-            return await socket.SendAsync(sendMemory, SocketFlags.None);
+            return await socket.SendAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
+        }
+
+        public override async ValueTask<int> SendAsync(ArraySegment<byte> segment)
+        {
+            return await socket.SendAsync(segment, SocketFlags.None);
         }
 
         protected override Socket CreateSocket(SocketClientConfig sckCnfg)

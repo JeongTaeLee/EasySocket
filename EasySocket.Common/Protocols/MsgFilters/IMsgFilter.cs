@@ -7,7 +7,7 @@ namespace EasySocket.Common.Protocols.MsgFilters
     /// </summary>
     public interface IMsgFilter
     {
-        object Filter(ref SequenceReader<byte> sequence);
+        object Filter(ref ReadOnlySequence<byte> sequence);
 
         /// <summary>
         /// 파싱이 끝나면 Reset하는 함수 입니다.

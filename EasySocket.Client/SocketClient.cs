@@ -130,7 +130,7 @@ namespace EasySocket.Client
             await OnStoppedAsync();
         }
 
-        protected long ProcessReceive(ReadOnlySequence<byte> sequence)
+        protected async Task<ReadOnlySequence<byte>> ProcessReceive(ReadOnlySequence<byte> sequence)
         {
             if (state != ClientState.Running)
             {
@@ -139,25 +139,27 @@ namespace EasySocket.Client
 
             try
             {
-                var sequenceReader = new SequenceReader<byte>(sequence);
-
-                while (sequence.Length > sequenceReader.Consumed)
+                while (sequence.Length > 0)
                 {
-                    var packet = msgFilter.Filter(ref sequenceReader);
+                    var packet = msgFilter.Filter(ref sequence);
                     if (packet == null)
                     {
                         break;
                     }
-
-                    behaviour?.OnReceivedAsync(this, packet).GetAwaiter().GetResult(); // 대기
+                    
+                    if (behaviour != null)
+                    {
+                        await behaviour.OnReceivedAsync(this, packet);
+                    }
                 }
 
-                return (int)sequenceReader.Consumed;
+                return sequence;
             }
             catch (Exception ex)
             {
                 ProcessError(ex);
-                return sequence.Length;
+                sequence = sequence.Slice(sequence.Length);
+                return sequence;
             }
         }
 
@@ -166,8 +168,10 @@ namespace EasySocket.Client
             behaviour.OnError(this, ex);
         }
         
+        public abstract ValueTask<int> SendAsync(byte[] buffer);
+        public abstract ValueTask<int> SendAsync(ArraySegment<byte> segment);
+ 
         protected abstract Socket CreateSocket(SocketClientConfig sckCnfg);
-        public abstract ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory);
         protected virtual ValueTask InternalStartAsync() { return new ValueTask(); }
         protected virtual ValueTask InternalStopAsync() { return new ValueTask(); }
 

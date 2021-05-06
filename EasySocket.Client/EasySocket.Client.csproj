@@ -6,10 +6,11 @@
 
   <ItemGroup>
       <PackageReference Include="System.IO.Pipelines" Version="5.0.1" />
+      <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
 </Project>

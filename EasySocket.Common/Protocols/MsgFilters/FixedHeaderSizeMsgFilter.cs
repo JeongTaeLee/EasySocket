@@ -29,11 +29,11 @@ namespace EasySocket.Common.Protocols.MsgFilters
             this.headerSize = headerSize;
         }
 
-        public object Filter(ref SequenceReader<byte> sequenceReader)
+        public object Filter(ref ReadOnlySequence<byte> seq)
         {
             if (!parsedHeader)
             {
-                parsedHeader = InternalParseBodySize(ref sequenceReader);
+                parsedHeader = InternalParseBodySize(ref seq);
             
                 if (!parsedHeader)
                 {
@@ -41,19 +41,19 @@ namespace EasySocket.Common.Protocols.MsgFilters
                 }
             }    
 
-            return InternalParseBody(ref sequenceReader);
+            return InternalParseBody(ref seq);
         }
 
-        private bool InternalParseBodySize(ref SequenceReader<byte> sequenceReader)
+        private bool InternalParseBodySize(ref ReadOnlySequence<byte> seq)
         {
-            if (headerSize > sequenceReader.Remaining)
+            if (headerSize > seq.Length)
             {
                 return false;
             }
 
-            var headerSeq = sequenceReader.Sequence.Slice(sequenceReader.Consumed, headerSize);
-        
-            bodySize = ParseBodySizeFromHeader(headerSeq);
+            var headerSeq = seq.Slice(0, headerSize);
+
+            bodySize = ParseBodySizeFromHeader(ref headerSeq);
             if (0 > bodySize)
             {
                 throw new ProtocolException("The body size cannot be smaller than 0.");
@@ -62,7 +62,7 @@ namespace EasySocket.Common.Protocols.MsgFilters
             return true;
         }
 
-        private object InternalParseBody(ref SequenceReader<byte> sequenceReader)
+        private object InternalParseBody(ref ReadOnlySequence<byte> sequence)
         {
             if (!parsedHeader)
             {
@@ -73,22 +73,23 @@ namespace EasySocket.Common.Protocols.MsgFilters
             {
                 if (0 == bodySize)
                 {
-                    var headerSeq = sequenceReader.Sequence.Slice(0, headerSize);
-                    sequenceReader.Advance(headerSize);
-    
-                    return ParseMsgInfo(headerSeq);
+                    var headerSeq = sequence.Slice(0, headerSize);
+                    sequence = sequence.Slice(headerSize);
+
+                    return ParseMsgInfo(ref headerSeq);
                 }
                 else
                 {
-                    if (sequenceReader.Remaining - headerSize < bodySize)
+                    if (sequence.Length - headerSize < bodySize)
                     {
                         return null;
                     }
     
-                    var totalSeq = sequenceReader.Sequence.Slice(sequenceReader.Consumed, headerSize + bodySize);
-                    sequenceReader.Advance(headerSize + bodySize);
-    
-                    return ParseMsgInfo(totalSeq);
+                    var totalSize = headerSize + bodySize;
+                    var totalSeq = sequence.Slice(0, totalSize);
+                    sequence = sequence.Slice(totalSize);
+
+                    return ParseMsgInfo(ref sequence);
                 }
             }
             finally
@@ -164,12 +165,12 @@ namespace EasySocket.Common.Protocols.MsgFilters
         ///<summary>
         /// Message Header 부분에서 body의 사이즈를 파싱합니다.
         ///</summary>
-        protected abstract int ParseBodySizeFromHeader(ReadOnlySequence<byte> headerSeq);
+        protected abstract int ParseBodySizeFromHeader(ref ReadOnlySequence<byte> headerSeq);
         
         ///<summary>
         /// Message Body 부분에서 IMsgInfo를 파싱합니다.
         ///</summary>
-        protected abstract object ParseMsgInfo(ReadOnlySequence<byte> totalSeq);
+        protected abstract object ParseMsgInfo(ref ReadOnlySequence<byte> totalSeq);
 
     }
 }

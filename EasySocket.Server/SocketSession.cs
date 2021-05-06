@@ -134,7 +134,7 @@ namespace EasySocket.Server
         /// <summary>
         /// 데이터 수신시 호출되는 메서드.
         /// </summary>
-        protected long ProcessReceive(ReadOnlySequence<byte> sequence)
+        protected async Task<ReadOnlySequence<byte>> ProcessReceive(ReadOnlySequence<byte> sequence)
         {
             if (state != SessionState.Running)
             {
@@ -143,25 +143,28 @@ namespace EasySocket.Server
 
             try
             {
-                var sequenceReader = new SequenceReader<byte>(sequence);
-
-                while (sequence.Length > sequenceReader.Consumed)
+                while (sequence.Length > 0)
                 {
-                    var packet = param.msgFilter.Filter(ref sequenceReader);
+                    var packet = param.msgFilter.Filter(ref sequence);
                     if (packet == null)
                     {
                         break;
                     }
 
-                    behaviour?.OnReceivedAsync(this, packet).GetAwaiter().GetResult(); // 대기
+                    if (behaviour != null)
+                    {
+                        await behaviour.OnReceivedAsync(this, packet);
+                    }
                 }
 
-                return (int)sequenceReader.Consumed;
+                return sequence;
             }
             catch (Exception ex)
             {
                 ProcessError(ex);
-                return sequence.Length;
+                sequence = sequence.Slice(sequence.Length);
+                
+                return sequence;
             }
         }
 

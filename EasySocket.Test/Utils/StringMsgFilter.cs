@@ -6,16 +6,9 @@ namespace EasySocket.Test
 {
     public class StringMsgFilter : IMsgFilter
     {
-        public object Filter(ref SequenceReader<byte> sequence)
+        public object Filter(ref ReadOnlySequence<byte> sequence)
         {
-            try
-            {
-                return Encoding.Default.GetString(sequence.Sequence.Slice(0, sequence.Length));
-            }
-            finally
-            {
-                sequence.Advance(sequence.Length);
-            }
+            return Encoding.Default.GetString(sequence);
         }
 
         public void Reset()

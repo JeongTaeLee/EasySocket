@@ -20,6 +20,7 @@ namespace EasySocket.Client
         IClientBehaviour behaviour { get; }
         
         Task StopAsync();
-        ValueTask<int> SendAsync(ReadOnlyMemory<byte> sendMemory);
+        ValueTask<int> SendAsync(byte[] buffer);
+        ValueTask<int> SendAsync(ArraySegment<byte> segement);
     }
 }
