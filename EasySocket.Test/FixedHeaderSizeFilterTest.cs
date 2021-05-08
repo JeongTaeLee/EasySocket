@@ -37,6 +37,10 @@ namespace EasySocket.Test
     [TestClass]
     public class FixedHeaderSizeFilterTest
     {
+        public FixedHeaderSizeFilterTest()
+        {
+        }
+
         [TestMethod]
         public async Task ServerTest()
         {   

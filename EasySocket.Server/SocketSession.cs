@@ -141,31 +141,21 @@ namespace EasySocket.Server
                 ExceptionExtensions.InvalidObjectStateIOE("Session", state);
             }
 
-            try
+            while (sequence.Length > 0)
             {
-                while (sequence.Length > 0)
+                var packet = param.msgFilter.Filter(ref sequence);
+                if (packet == null)
                 {
-                    var packet = param.msgFilter.Filter(ref sequence);
-                    if (packet == null)
-                    {
-                        break;
-                    }
-
-                    if (behaviour != null)
-                    {
-                        await behaviour.OnReceivedAsync(this, packet);
-                    }
+                    break;
                 }
 
-                return sequence;
+                if (behaviour != null)
+                {
+                    await behaviour.OnReceivedAsync(this, packet);
+                }
             }
-            catch (Exception ex)
-            {
-                ProcessError(ex);
-                sequence = sequence.Slice(sequence.Length);
-                
-                return sequence;
-            }
+
+            return sequence;
         }
 
         /// <summary>

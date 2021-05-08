@@ -87,9 +87,10 @@ namespace EasySocket.Common.Protocols.MsgFilters
     
                     var totalSize = headerSize + bodySize;
                     var totalSeq = sequence.Slice(0, totalSize);
-                    sequence = sequence.Slice(totalSize);
 
-                    return ParseMsgInfo(ref sequence);
+                    sequence = sequence.Slice(sequence.GetPosition(totalSize));
+
+                    return ParseMsgInfo(ref totalSeq);
                 }
             }
             finally
