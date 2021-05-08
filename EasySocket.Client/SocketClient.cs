@@ -60,7 +60,7 @@ namespace EasySocket.Client
             try
             {
                 socket = CreateSocket(socketClientConfig);
-                await socket.ConnectAsync(ip.ToIPAddress(), port);
+                socket.Connect(ip.ToIPAddress(), port);
                 await InternalStartAsync();
 
                 _state = (int)ClientState.Running;
