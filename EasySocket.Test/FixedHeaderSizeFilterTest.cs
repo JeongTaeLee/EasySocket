@@ -5,12 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using EasySocket.Common.Protocols.MsgFilters;
-using EasySocket.Server.Listeners;
 using EasySocket.Server;
-using EasySocket.Test.Components;
-using EasySocket.Common.Protocols.MsgFilters.Factories;
+using EasySocket.Server.Listeners;
 using EasySocket.Client;
+using EasySocket.Common.Protocols;
+using EasySocket.Common.Protocols.Factories;
+using EasySocket.Test.Components;
 
 namespace EasySocket.Test
 {

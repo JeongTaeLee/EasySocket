@@ -7,8 +7,7 @@ using System.Collections.Generic;
 using EasySocket.Common.Logging;
 using EasySocket.Server.Listeners;
 using EasySocket.Common.Extensions;
-using EasySocket.Common.Protocols.MsgFilters.Factories;
-using EasySocket.Common.Protocols.MsgFilters;
+using EasySocket.Common.Protocols.Factories;
 using System.Collections.Concurrent;
 
 namespace EasySocket.Server

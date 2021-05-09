@@ -1,4 +1,4 @@
-﻿namespace EasySocket.Common.Protocols.MsgFilters.Factories
+﻿namespace EasySocket.Common.Protocols.Factories
 {
     public interface IMsgFilterFactory
     {

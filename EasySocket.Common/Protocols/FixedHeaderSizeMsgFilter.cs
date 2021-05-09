@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers;
 
-namespace EasySocket.Common.Protocols.MsgFilters
+namespace EasySocket.Common.Protocols
 {
     public abstract class FixedHeaderSizeMsgFilter : IMsgFilter
     {

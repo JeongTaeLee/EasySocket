@@ -8,7 +8,7 @@ using EasySocket.Client;
 using EasySocket.Test.Components;
 using EasySocket.Server.Listeners;
 using EasySocket.Common.Protocols;
-using EasySocket.Common.Protocols.MsgFilters.Factories;
+using EasySocket.Common.Protocols.Factories;
 
 namespace EasySocket.Test
 {

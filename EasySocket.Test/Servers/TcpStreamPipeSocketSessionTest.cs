@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using EasySocket.Server.Listeners;
 using EasySocket.Server;
+using EasySocket.Common.Protocols.Factories;
 using EasySocket.Test.Components;
-using EasySocket.Common.Protocols.MsgFilters.Factories;
 
 namespace EasySocket.Test.Servers
 {
