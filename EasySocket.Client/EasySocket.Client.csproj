@@ -1,16 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\EasySocket.Common\EasySocket.Common.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-      <PackageReference Include="System.IO.Pipelines" Version="5.0.1" />
-      <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.IO.Pipelines" Version="5.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EasySocket.Common\EasySocket.Common.csproj" />
+  </ItemGroup>
 </Project>

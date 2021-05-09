@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace EasySocket.Common.Extensions
 {
@@ -8,7 +8,7 @@ namespace EasySocket.Common.Extensions
         {
             return new InvalidOperationException($"{memberName} is not set : Please call the \"{methodName}\" Method and set it up.");
         }
-        
+
         public static InvalidOperationException InvalidObjectStateIOE<TEnum>(string objectName, TEnum state)
             where TEnum : Enum
         {

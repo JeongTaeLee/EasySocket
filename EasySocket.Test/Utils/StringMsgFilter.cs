@@ -1,6 +1,6 @@
 using System.Buffers;
 using System.Text;
-using EasySocket.Common.Protocols.MsgFilters;
+using EasySocket.Common.Protocols;
 
 namespace EasySocket.Test
 {

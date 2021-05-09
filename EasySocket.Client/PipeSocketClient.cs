@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO.Pipelines;
 using System.Threading.Tasks;
 using EasySocket.Common;
@@ -6,7 +6,7 @@ using EasySocket.Common;
 namespace EasySocket.Client
 {
     public abstract class PipeSocketClient<TClient> : SocketClient<TClient>
-        where TClient : SocketClient<TClient> 
+        where TClient : SocketClient<TClient>
     {
         private PipeWriter _pipeWriter = null;
         private PipeReader _pipeReader = null;
@@ -16,9 +16,9 @@ namespace EasySocket.Client
 
         protected PipeWriter pipeWriter => _pipeWriter;
         protected PipeReader pipeReader => _pipeReader;
-    
-    
-        protected override async ValueTask InternalStartAsync()
+
+
+        protected override async Task InternalStartAsync()
         {
             await StartPipe(out _pipeWriter, out _pipeReader);
 
@@ -26,7 +26,7 @@ namespace EasySocket.Client
             readTask = ReadAsync(pipeReader);
         }
 
-        protected override async ValueTask InternalStopAsync()
+        protected override async Task InternalStopAsync()
         {
             await StopPipe();
 
@@ -45,7 +45,7 @@ namespace EasySocket.Client
             _pipeWriter = null;
             _pipeReader = null;
         }
-        protected override async ValueTask OnStartedAsync()
+        protected override async Task OnStartedAsync()
         {
             if (state != ClientState.Running)
             {
@@ -97,7 +97,7 @@ namespace EasySocket.Client
             await Task.CompletedTask;
         }
 
-        protected abstract ValueTask StartPipe(out PipeWriter writer, out PipeReader reader);
-        protected abstract ValueTask StopPipe();
+        protected abstract Task StartPipe(out PipeWriter writer, out PipeReader reader);
+        protected abstract Task StopPipe();
     }
 }

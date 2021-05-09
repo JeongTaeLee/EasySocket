@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EasySocket.Server\EasySocket.Server.csproj" />
-    <ProjectReference Include="..\EasySocket.Client\EasySocket.Client.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

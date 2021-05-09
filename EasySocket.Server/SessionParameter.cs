@@ -1,6 +1,6 @@
 using System;
 using EasySocket.Common.Logging;
-using EasySocket.Common.Protocols.MsgFilters;
+using EasySocket.Common.Protocols;
 
 namespace EasySocket.Server
 {

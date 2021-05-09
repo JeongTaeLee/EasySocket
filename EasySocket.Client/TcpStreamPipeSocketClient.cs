@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Pipelines;
 using System.Net.Sockets;
@@ -7,25 +7,25 @@ using System.Threading.Tasks;
 namespace EasySocket.Client
 {
     public class TcpStreamPipeSocketClient : PipeSocketClient<TcpStreamPipeSocketClient>
-    {        
+    {
         private NetworkStream _networkStream = null;
-        
-        protected override ValueTask StartPipe(out PipeWriter writer, out PipeReader reader)
+
+        protected override Task StartPipe(out PipeWriter writer, out PipeReader reader)
         {
             _networkStream = new NetworkStream(socket);
 
             writer = null;
             reader = PipeReader.Create(_networkStream);
 
-            return new ValueTask();
+            return Task.CompletedTask;
         }
 
-        protected override ValueTask StopPipe()
+        protected override Task StopPipe()
         {
             _networkStream?.Close();
             _networkStream = null;
 
-            return new ValueTask();
+            return Task.CompletedTask;
         }
 
         protected override async Task ReadAsync(PipeReader reader)
@@ -82,19 +82,19 @@ namespace EasySocket.Client
                     if (socketEx.ErrorCode == 89)
                     {
                         return;
-                    }   
+                    }
                 }
 
                 // TODO : Exception
-                ProcessError(ex);    
+                ProcessError(ex);
             }
             catch (SocketException ex)
             {                    // ignore Exception
                 if (ex.ErrorCode == 89)
                 {
                     return;
-                }   
-                    
+                }
+
                 // TODO : Exception
                 ProcessError(ex);
             }
@@ -109,19 +109,19 @@ namespace EasySocket.Client
             }
         }
 
-        public override async ValueTask<int> SendAsync(byte[] buffer)
+        public override async Task<int> SendAsync(byte[] buffer)
         {
             return await socket.SendAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
         }
 
-        public override async ValueTask<int> SendAsync(ArraySegment<byte> segment)
+        public override async Task<int> SendAsync(ArraySegment<byte> segment)
         {
             return await socket.SendAsync(segment, SocketFlags.None);
         }
 
         protected override Socket CreateSocket(SocketClientConfig sckCnfg)
         {
-           return new Socket(SocketType.Stream, ProtocolType.Tcp)
+            return new Socket(SocketType.Stream, ProtocolType.Tcp)
             {
                 SendBufferSize = sckCnfg.sendBufferSize,
                 ReceiveBufferSize = sckCnfg.receiveBufferSize

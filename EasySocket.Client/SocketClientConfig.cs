@@ -1,4 +1,4 @@
-namespace EasySocket.Client
+﻿namespace EasySocket.Client
 {
     public class SocketClientConfig
     {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Buffers;
 using System.Net.Sockets;
 using System.Threading;
@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using EasySocket.Common;
 using EasySocket.Common.Extensions;
 using EasySocket.Common.Logging;
-using EasySocket.Common.Protocols.MsgFilters;
+using EasySocket.Common.Protocols;
 
 namespace EasySocket.Client
 {
@@ -56,11 +56,12 @@ namespace EasySocket.Client
             {
                 throw new InvalidObjectStateException("Client", ((ClientState)prevState).ToString());
             }
-        
+
             try
             {
                 socket = CreateSocket(socketClientConfig);
-                socket.Connect(ip.ToIPAddress(), port);
+                await socket.ConnectAsync(ip.ToIPAddress(), port);
+
                 await InternalStartAsync();
 
                 _state = (int)ClientState.Running;
@@ -82,11 +83,11 @@ namespace EasySocket.Client
             {
                 throw new InvalidObjectStateException("Client", state.ToString());
             }
-            
+
             await ProcessStopAsync();
         }
 
-        protected virtual async ValueTask OnStartedAsync()
+        protected virtual async Task OnStartedAsync()
         {
             if (state != ClientState.Running)
             {
@@ -99,7 +100,7 @@ namespace EasySocket.Client
             }
         }
 
-        protected virtual async ValueTask OnStoppedAsync()
+        protected virtual async Task OnStoppedAsync()
         {
             if (state != ClientState.Stopped)
             {
@@ -112,15 +113,15 @@ namespace EasySocket.Client
             }
         }
 
-        protected async ValueTask ProcessStopAsync()
+        protected async Task ProcessStopAsync()
         {
             int prevState = Interlocked.CompareExchange(ref _state, (int)ClientState.Stopping, (int)ClientState.Running);
             if (prevState != (int)ClientState.Running)
             {
-                logger.InvalidObjectStateError("Client", (ClientState)prevState); 
+                logger.InvalidObjectStateError("Client", (ClientState)prevState);
                 return;
             }
-        
+
             socket?.SafeClose();
 
             await InternalStopAsync();
@@ -146,7 +147,7 @@ namespace EasySocket.Client
                     {
                         break;
                     }
-                    
+
                     if (behaviour != null)
                     {
                         await behaviour.OnReceivedAsync(this, packet);
@@ -167,13 +168,13 @@ namespace EasySocket.Client
         {
             behaviour.OnError(this, ex);
         }
-        
-        public abstract ValueTask<int> SendAsync(byte[] buffer);
-        public abstract ValueTask<int> SendAsync(ArraySegment<byte> segment);
- 
+
+        public abstract Task<int> SendAsync(byte[] buffer);
+        public abstract Task<int> SendAsync(ArraySegment<byte> segment);
+
         protected abstract Socket CreateSocket(SocketClientConfig sckCnfg);
-        protected virtual ValueTask InternalStartAsync() { return new ValueTask(); }
-        protected virtual ValueTask InternalStopAsync() { return new ValueTask(); }
+        protected virtual Task InternalStartAsync() { return Task.CompletedTask; }
+        protected virtual Task InternalStopAsync() { return Task.CompletedTask; }
 
         #region Getter/Setter
         public TClient SetMsgFilter(IMsgFilter msgFltr)

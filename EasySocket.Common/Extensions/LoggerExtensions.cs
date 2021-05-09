@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using EasySocket.Common.Logging;
 
 namespace EasySocket.Common.Extensions
@@ -26,7 +26,5 @@ namespace EasySocket.Common.Extensions
         {
             logger?.Warn($"{propertyName} is not set : Please call the \"{propertyName}\" property and set it up.");
         }
-
-
     }
 }
