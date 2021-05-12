@@ -109,6 +109,16 @@ namespace EasySocket.Client
             }
         }
 
+        public override int Send(byte[] buffer)
+        {
+            return socket.Send(buffer, SocketFlags.None);
+        }
+
+        public override int Send(ArraySegment<byte> segment)
+        {
+            return socket.Send(segment.Array, segment.Offset, segment.Count, SocketFlags.None);
+        }
+
         public override async Task<int> SendAsync(byte[] buffer)
         {
             return await socket.SendAsync(new ArraySegment<byte>(buffer), SocketFlags.None);

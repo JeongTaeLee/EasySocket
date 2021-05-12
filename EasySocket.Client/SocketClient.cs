@@ -169,6 +169,8 @@ namespace EasySocket.Client
             behaviour.OnError(this, ex);
         }
 
+        public abstract int Send(byte[] buffer);
+        public abstract int Send(ArraySegment<byte> segment);
         public abstract Task<int> SendAsync(byte[] buffer);
         public abstract Task<int> SendAsync(ArraySegment<byte> segment);
 

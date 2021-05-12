@@ -18,7 +18,10 @@ namespace EasySocket.Client
         IClientBehaviour behaviour { get; }
 
         Task StopAsync();
+        int Send(byte[] buffer);
+        int Send(ArraySegment<byte> segement);
         Task<int> SendAsync(byte[] buffer);
         Task<int> SendAsync(ArraySegment<byte> segement);
+        
     }
 }
