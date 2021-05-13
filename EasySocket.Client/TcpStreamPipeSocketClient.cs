@@ -121,12 +121,12 @@ namespace EasySocket.Client
 
         public override async Task<int> SendAsync(byte[] buffer)
         {
-            return await socket.SendAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
+            return await socket.SendAsync(new ArraySegment<byte>(buffer), SocketFlags.None).ConfigureAwait(false);
         }
 
         public override async Task<int> SendAsync(ArraySegment<byte> segment)
         {
-            return await socket.SendAsync(segment, SocketFlags.None);
+            return await socket.SendAsync(segment, SocketFlags.None).ConfigureAwait(false);
         }
 
         protected override Socket CreateSocket(SocketClientConfig sckCnfg)

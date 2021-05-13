@@ -29,22 +29,14 @@ namespace EasySocket.Client
         protected override async Task InternalStopAsync()
         {
             await StopPipe();
-
-            if (writeTask != null)
-            {
-                await writeTask;
-            }
-
-            if (readTask != null)
-            {
-                await readTask;
-            }
+            await WaitPipeTask();
 
             writeTask = null;
             readTask = null;
             _pipeWriter = null;
             _pipeReader = null;
         }
+
         protected override async Task OnStartedAsync()
         {
             if (state != ClientState.Running)
@@ -64,15 +56,7 @@ namespace EasySocket.Client
         {
             try
             {
-                if (writeTask != null)
-                {
-                    await writeTask;
-                }
-
-                if (readTask != null)
-                {
-                    await readTask;
-                }
+                await WaitPipeTask();
             }
             catch (Exception ex)
             {
@@ -84,6 +68,19 @@ namespace EasySocket.Client
                 {
                     await ProcessStopAsync();
                 }
+            }
+        }
+
+        private async Task WaitPipeTask()
+        {
+            if (writeTask != null)
+            {
+                await writeTask.ConfigureAwait(false);
+            }
+
+            if (readTask != null)
+            {
+                await readTask.ConfigureAwait(false);
             }
         }
 

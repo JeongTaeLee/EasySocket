@@ -59,13 +59,16 @@ namespace EasySocket.Client
 
             try
             {
+                //
                 socket = CreateSocket(socketClientConfig);
-                await socket.ConnectAsync(ip.ToIPAddress(), port);
+                await socket.ConnectAsync(ip.ToIPAddress(), port).ConfigureAwait(false);
 
+                //
                 await InternalStartAsync();
 
                 _state = (int)ClientState.Running;
 
+                //
                 await OnStartedAsync();
             }
             finally
