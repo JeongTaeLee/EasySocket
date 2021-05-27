@@ -119,14 +119,14 @@ namespace EasySocket.Client
             return socket.Send(segment.Array, segment.Offset, segment.Count, SocketFlags.None);
         }
 
-        public override async Task<int> SendAsync(byte[] buffer)
+        public override Task<int> SendAsync(byte[] buffer)
         {
-            return await socket.SendAsync(new ArraySegment<byte>(buffer), SocketFlags.None).ConfigureAwait(false);
+            return socket.SendAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
         }
 
-        public override async Task<int> SendAsync(ArraySegment<byte> segment)
+        public override Task<int> SendAsync(ArraySegment<byte> segment)
         {
-            return await socket.SendAsync(segment, SocketFlags.None).ConfigureAwait(false);
+            return socket.SendAsync(segment, SocketFlags.None);
         }
 
         protected override Socket CreateSocket(SocketClientConfig sckCnfg)

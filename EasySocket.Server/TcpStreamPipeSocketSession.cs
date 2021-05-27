@@ -108,9 +108,9 @@ namespace EasySocket.Server
             }
         }
 
-        public override async ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry)
+        public override ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry)
         {
-            return await socket.SendAsync(mmry, SocketFlags.None);
+            return socket.SendAsync(mmry, SocketFlags.None);
         }
     }
 }
