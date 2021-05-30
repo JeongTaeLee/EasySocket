@@ -166,6 +166,22 @@ namespace EasySocket.Server
             behaviour?.OnError(this as TSession, ex);
         }
 
+
+        /// <summary>
+        /// 하위 객체에서 정의하는 데이터 동기 전송 메서드.
+        /// </summary>
+        public abstract int Send(byte[] buffer);
+
+        /// <summary>
+        /// 하위 객체에서 정의하는 데이터 동기 전송 메서드.
+        /// </summary>
+        public abstract int Send(byte[] buffer, int offset, int count);
+
+        /// <summary>
+        /// 하위 객체에서 정의하는 데이터 동기 전송 메서드.
+        /// </summary>
+        public abstract int Send(ArraySegment<byte> segment);
+
         /// <summary>
         /// 하위 객체에서 정의하는 데이터 전송 메서드.
         /// </summary>

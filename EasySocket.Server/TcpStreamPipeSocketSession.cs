@@ -108,6 +108,21 @@ namespace EasySocket.Server
             }
         }
 
+        public override int Send(byte[] buffer)
+        {
+            return socket.Send(buffer);
+        }
+
+        public override int Send(ArraySegment<byte> segment)
+        {
+            return socket.Send(segment);
+        }
+
+        public override int Send(byte[] buffer, int offset, int count)
+        {
+            return socket.Send(buffer, offset, count, SocketFlags.None);
+        }
+
         public override ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry)
         {
             return socket.SendAsync(mmry, SocketFlags.None);

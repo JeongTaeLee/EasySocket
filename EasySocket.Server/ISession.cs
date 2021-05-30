@@ -19,7 +19,11 @@ namespace EasySocket.Server
         ISessionBehaviour behaviour { get; }
 
         ValueTask StopAsync();
-        
+
+        int Send(byte[] buffer);
+        int Send(byte[] buffer, int offset, int count);
+        int Send(ArraySegment<byte> segement);
+
         ValueTask<int> SendAsync(ReadOnlyMemory<byte> mmry);
 
         ISession SetSessionBehaviour(ISessionBehaviour bhvr);

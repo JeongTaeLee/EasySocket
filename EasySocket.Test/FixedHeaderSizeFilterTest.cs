@@ -127,7 +127,11 @@ namespace EasySocket.Test
             Assert.AreNotEqual(null, client);
             Assert.AreNotEqual(null, session);
 
+            // 비동기 전송
             await BasicTest(receiveStrs, async (bt) => { return await session.SendAsync(bt); });
+
+            // 동기 전송
+            await BasicTest(receiveStrs, (bt) => { return ValueTask.FromResult(session.Send(bt)); });
 
             await client.StopAsync();
             await server.StopAsync();
@@ -138,6 +142,8 @@ namespace EasySocket.Test
 
         private async Task BasicTest(List<string> receiveStrs, Func<byte[], ValueTask<int>> sendFunc)
         {
+            receiveStrs.Clear();
+
             // 기본 송신 테스트.
             {
                 var sendStr = "Hello World";
